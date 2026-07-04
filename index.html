@@ -1689,6 +1689,126 @@ const __busyOldNormalize=normalize;
 normalize=function(){__busyOldNormalize();Object.values(data.classes||{}).forEach(cls=>(cls.students||[]).forEach(s=>{s.busySlots=Array.isArray(s.busySlots)?s.busySlots:[]}));data.schedulerSettings={...(data.schedulerSettings||{}),version:'7.3',busyStudentSchedule:true}};
 
 
+
+
+/* ---------- TODAY DASHBOARD REAL ATTENDANCE v7.4 ----------
+   Chỉ tính "Đã điểm danh" khi đúng buổi/ngày đã được giáo viên thao tác điểm danh.
+   Đồng thời hiện danh sách học sinh vắng của ngày hôm đó trên Bảng điều khiển hôm nay. */
+function todayRealDate(){return ymd(new Date())}
+function todayRealActiveStudents(cls){return (cls?.students||[]).filter(st=>st.status!=='left')}
+function todayRealEnsureAttendanceSessions(cls){cls.attendanceSessions=cls.attendanceSessions&&typeof cls.attendanceSessions==='object'?cls.attendanceSessions:{};return cls.attendanceSessions}
+function todayRealSessionDateByKey(cls,key){const idx=Number(String(key||'').replace('B',''))-1;const d=parseDateLoose((cls?.sessionDates||[])[idx]||'');return d?ymd(d):''}
+function todayRealMarkSession(cls,key){
+    if(!cls||!key)return;
+    const map=todayRealEnsureAttendanceSessions(cls);
+    const day=todayRealDate();
+    map[key]={...(map[key]||{}),date:day,marked:true,markedAt:new Date().toISOString(),markedBy:(typeof getActiveUserId==='function'?getActiveUserId():'')};
+    const idx=Number(String(key).replace('B',''))-1;
+    if(idx>=0&&Array.isArray(cls.sessionDates)&&!String(cls.sessionDates[idx]||'').trim())cls.sessionDates[idx]=day;
+}
+function todayRealKeysForDate(cls,date){
+    const keys=[]; if(!cls)return keys;
+    for(let i=1;i<=Number(cls.sessions||0);i++){
+        const key='B'+i;
+        const meta=cls.attendanceSessions?.[key];
+        const dateBySession=todayRealSessionDateByKey(cls,key);
+        if(dateBySession===date || (meta&&meta.marked&&meta.date===date))keys.push(key);
+    }
+    return keys;
+}
+function todayRealMarkedKeyForEvent(ev){
+    const cls=ev?.cls; if(!cls)return '';
+    const date=ev.date||todayRealDate();
+    const active=todayRealActiveStudents(cls);
+    const keys=todayRealKeysForDate(cls,date);
+    for(const key of keys){
+        const meta=cls.attendanceSessions?.[key];
+        const hasPresent=active.some(st=>st.attendance&&st.attendance[key]===true);
+        if((meta&&meta.marked&&meta.date===date)||hasPresent)return key;
+    }
+    return '';
+}
+function todayRealClassDoneForEvent(ev){return !!todayRealMarkedKeyForEvent(ev)}
+function todayRealAbsentHtml(ev){
+    const cls=ev?.cls; const key=todayRealMarkedKeyForEvent(ev); if(!cls||!key)return '';
+    const active=todayRealActiveStudents(cls);
+    const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
+    if(!active.length)return `<small> · Chưa có học sinh trong lớp</small>`;
+    if(!absent.length)return `<small> · ✅ Không có học sinh vắng</small>`;
+    const names=absent.map(st=>st.name||'Học sinh').slice(0,6).join(', ')+(absent.length>6?'...':'');
+    return `<small> · 🚩 Vắng ${absent.length}/${active.length}: ${esc(names)}</small>`;
+}
+function todayRealStatusText(ev){
+    const key=todayRealMarkedKeyForEvent(ev);
+    if(!key)return 'chưa điểm danh';
+    return `đã điểm danh ${key}`;
+}
+const __todayRealOldToggleAttendance=toggleAttendance;
+toggleAttendance=function(className,id,key){
+    const cls=data.classes[className];
+    if(cls)todayRealMarkSession(cls,key);
+    return __todayRealOldToggleAttendance(className,id,key);
+};
+const __todayRealOldBulkSetAttendance=bulkSetAttendance;
+bulkSetAttendance=function(className,key,value){
+    const cls=data.classes[className];
+    if(cls)todayRealMarkSession(cls,key);
+    return __todayRealOldBulkSetAttendance(className,key,value);
+};
+const __todayRealOldNormalize=normalize;
+normalize=function(){
+    __todayRealOldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>{
+        todayRealEnsureAttendanceSessions(cls);
+        for(let i=1;i<=Number(cls.sessions||0);i++){
+            const key='B'+i;
+            const day=todayRealSessionDateByKey(cls,key);
+            const active=todayRealActiveStudents(cls);
+            if(day&&active.some(st=>st.attendance&&st.attendance[key]===true)&&!cls.attendanceSessions[key]){
+                cls.attendanceSessions[key]={date:day,marked:true,markedAt:cls.updatedAt||new Date().toISOString(),markedBy:'legacy'};
+            }
+        }
+    });
+};
+ux70ClassTodayDone=function(cls){
+    if(!cls)return false;
+    const today=todayRealDate();
+    return ux70TodayEvents().some(ev=>ev.cls===cls&&todayRealClassDoneForEvent(ev)) || todayRealKeysForDate(cls,today).some(key=>{
+        const meta=cls.attendanceSessions?.[key];
+        return meta&&meta.marked&&meta.date===today;
+    });
+};
+ux70Insights=function(){
+    const students=getAllStudents().filter(x=>x.s.status!=='left');
+    const today=ux70TodayEvents();
+    const tomorrow=ux70TomorrowEvents();
+    const debts=students.filter(x=>debtOf(x.s)>0);
+    const risk=students.map(x=>({...x,rate:ux70AttendanceRateStudent(x.s),debt:debtOf(x.s)})).filter(x=>x.rate>0&&x.rate<70||x.debt>0).sort((a,b)=>(b.debt-a.debt)||(a.rate-b.rate)).slice(0,8);
+    const done=today.filter(e=>todayRealClassDoneForEvent(e)).length;
+    return {students,today,tomorrow,debts,risk,done};
+};
+ux70TimelineHtml=function(list){
+    if(!list.length)return `<div class="ux71-duty"><div class="time">—</div><div><b>Không có lớp theo lịch hôm nay</b><small>Màn hình chính đã bỏ các khối điểm danh lặp. Vào Lịch học nếu cần xem toàn bộ thời khóa biểu.</small></div><button class="btn btn-soft" onclick="setView('schedule')">Mở lịch</button></div>`;
+    return list.map(ev=>{
+        const done=todayRealClassDoneForEvent(ev);
+        const range=uxRangeLabel(ev.start,ev.end)||'Chưa đặt giờ';
+        const absent=todayRealAbsentHtml(ev);
+        return `<div class="ux71-duty" style="${colorVarsForClass(ev.classKey,ev.color)}"><div class="time">${esc(range)}</div><div><b>${esc(ev.cls?.name||ev.className||ev.title)}</b><small>${esc(ev.end?uxRangeLabel(ev.start,ev.end):(ev.fromFixed?'Lịch cố định chưa đặt giờ':'Lịch hôm nay'))}${ev.room?' · '+esc(ev.room):''} · ${done?todayRealStatusText(ev):'chưa điểm danh'}</small>${absent}</div><button class="btn ${done?'btn-green':'btn-primary'}" onclick="viewClass('${esc(ev.classKey)}')">${done?'Xem lớp':'Điểm danh'}</button></div>`;
+    }).join('');
+};
+ux70SmartItems=function(i){
+    const arr=[];
+    if(i.today.length)arr.push({type:i.done===i.today.length?'ok':'warn',t:`Hôm nay có ${i.today.length} lớp, đã điểm danh đúng ngày ${i.done}/${i.today.length} lớp.`});
+    else arr.push({type:'warn',t:'Hôm nay chưa thấy lớp theo lịch cố định hoặc lịch riêng.'});
+    const absentToday=[];i.today.forEach(ev=>{const key=todayRealMarkedKeyForEvent(ev);if(key){const a=todayRealActiveStudents(ev.cls).filter(st=>!(st.attendance&&st.attendance[key]===true));if(a.length)absentToday.push(`${ev.cls?.name||ev.className}: ${a.length} vắng`)}});
+    if(absentToday.length)arr.push({type:'warn',t:'Vắng hôm nay: '+absentToday.slice(0,3).join('; ')});
+    if(i.debts.length)arr.push({type:'warn',t:`Có ${i.debts.length} học sinh còn công nợ, nên ưu tiên kiểm tra trước cuối tuần.`});
+    if(i.risk.length)arr.push({type:'warn',t:`${i.risk.length} học sinh cần chú ý về chuyên cần/công nợ.`});
+    if(!i.risk.length&&i.students.length)arr.push({type:'ok',t:'Tình hình lớp đang ổn, chưa có cảnh báo lớn trong dữ liệu hiện tại.'});
+    if(i.tomorrow.length)arr.push({type:'',t:`Ngày mai có ${i.tomorrow.length} lịch học đã được lên lịch.`});
+    return arr.slice(0,5);
+};
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
 </script>
 <!-- UX 7.1 dashboard cleanup applied: gom điểm danh hôm nay vào một khối, ẩn thành phần trùng trên dashboard giáo viên. -->
