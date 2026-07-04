@@ -1809,6 +1809,86 @@ ux70SmartItems=function(i){
     return arr.slice(0,5);
 };
 
+
+/* ---------- ABSENT-ONLY STUDENT ATTENTION v7.6 ----------
+   Danh sách "Học sinh vắng học" tập hợp toàn bộ học sinh đã từng vắng trong các buổi đã điểm danh.
+   Mỗi học sinh được gom một dòng, đếm số buổi vắng và sắp xếp theo số buổi vắng giảm dần. */
+function ux75MarkedAttendanceKeys(cls){
+    const keys=[];
+    const sessions=Number(cls?.sessions||0);
+    for(let i=1;i<=sessions;i++){
+        const key='B'+i;
+        const meta=cls.attendanceSessions?.[key];
+        const hasMeta=!!(meta&&meta.marked);
+        const hasLegacyPresent=(cls.students||[]).some(st=>st.attendance&&st.attendance[key]===true);
+        if(hasMeta||hasLegacyPresent){
+            keys.push({key,date:meta?.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i});
+        }
+    }
+    return keys;
+}
+function ux75AbsentStudentsAll(){
+    const map=new Map();
+    getVisibleClassEntries().forEach(([classKey,cls])=>{
+        const active=todayRealActiveStudents(cls);
+        const markedKeys=ux75MarkedAttendanceKeys(cls);
+        if(!active.length||!markedKeys.length)return;
+        active.forEach(st=>{
+            const missed=[];
+            markedKeys.forEach(info=>{
+                if(!(st.attendance&&st.attendance[info.key]===true)){
+                    missed.push(info.date?`${info.label} · ${info.date}`:info.label);
+                }
+            });
+            if(!missed.length)return;
+            const id=(classKey||cls.id||cls.name||'')+'_'+(st.id||st.firestoreId||st.name||'');
+            map.set(id,{
+                classKey,
+                className:cls.name||'Lớp học',
+                classCode:cls.code||'',
+                s:st,
+                absentCount:missed.length,
+                totalMarked:markedKeys.length,
+                sessions:missed,
+                time:missed.slice(0,3).join('; ')+(missed.length>3?`; +${missed.length-3} buổi`:''),
+                key:`Vắng ${missed.length}/${markedKeys.length} buổi đã điểm danh`
+            });
+        });
+    });
+    return Array.from(map.values()).sort((a,b)=>(b.absentCount-a.absentCount)||String(a.s.name||'').localeCompare(String(b.s.name||''),'vi'));
+}
+ux70Insights=function(){
+    const students=getAllStudents().filter(x=>x.s.status!=='left');
+    const today=ux70TodayEvents();
+    const tomorrow=ux70TomorrowEvents();
+    const debts=students.filter(x=>debtOf(x.s)>0);
+    const absentStudents=ux75AbsentStudentsAll();
+    const done=today.filter(e=>todayRealClassDoneForEvent(e)).length;
+    return {students,today,tomorrow,debts,risk:absentStudents,absentStudents,done};
+};
+ux70RiskHtml=function(i){
+    const list=i?.absentStudents||i?.risk||[];
+    if(!list.length)return '<div class="subtext">Chỉ hiển thị học sinh vắng học. Hiện chưa có học sinh vắng trong các buổi đã điểm danh.</div>';
+    return list.map(x=>`<div class="ux70-risk"><div><b>${esc(x.s.name||'Học sinh')}</b><small>${esc(x.className||'Lớp học')} · <b>${Number(x.absentCount||0)} buổi vắng</b> · ${esc(x.time||'Đã điểm danh')}</small></div><button class="btn btn-soft" onclick="viewClass('${esc(x.classKey)}')">Xem lớp</button></div>`).join('');
+};
+ux70SmartItems=function(i){
+    const arr=[];
+    const absentList=i.absentStudents||i.risk||[];
+    const absentCount=absentList.length;
+    const absentTurns=absentList.reduce((sum,x)=>sum+Number(x.absentCount||0),0);
+    if(i.today.length)arr.push({type:i.done===i.today.length?'ok':'warn',t:`Hôm nay có ${i.today.length} lớp, đã điểm danh đúng ngày ${i.done}/${i.today.length} lớp.`});
+    else arr.push({type:'warn',t:'Hôm nay chưa thấy lớp theo lịch cố định hoặc lịch riêng.'});
+    if(absentCount)arr.push({type:'warn',t:`Có ${absentCount} học sinh từng vắng, tổng ${absentTurns} lượt vắng. Danh sách đã sắp xếp theo số buổi vắng giảm dần.`});
+    else if(i.done>0)arr.push({type:'ok',t:'Các buổi đã điểm danh chưa ghi nhận học sinh vắng.'});
+    if(i.tomorrow.length)arr.push({type:'',t:`Ngày mai có ${i.tomorrow.length} lịch học đã được lên lịch.`});
+    return arr.slice(0,5);
+};
+ux70DashboardPanel=function(){
+    const i=ux70Insights();
+    const absentTurns=(i.absentStudents||[]).reduce((sum,x)=>sum+Number(x.absentCount||0),0);
+    return `<section class="ux71-workspace"><div class="ux71-focus-card"><h2> Bảng điều khiển hôm nay</h2><div class="ux71-kpis"><div class="ux71-kpi"><b>${i.today.length}</b><span>Lớp hôm nay</span></div><div class="ux71-kpi"><b>${i.done}</b><span>Đã điểm danh</span></div><div class="ux71-kpi"><b>${i.today.length-i.done}</b><span>Còn xử lý</span></div><div class="ux71-kpi"><b>${absentTurns}</b><span>Lượt vắng</span></div></div><div class="ux71-duty-list">${ux70TimelineHtml(i.today)}</div><div class="ux71-compact-actions"><button class="btn btn-soft" onclick="setView('schedule')">🗓️ Xem lịch đầy đủ</button><button class="btn btn-green" onclick="setView('debts')">💰 Xem công nợ</button></div></div><div class="ux71-side"><div class="ux71-panel"><h3>🤖 Gợi ý ưu tiên</h3>${ux70SmartItems(i).map(x=>`<div class="ux71-note ${x.type||''}">${esc(x.t)}</div>`).join('')}</div><div class="ux71-panel"><h3>🎯 Học sinh vắng học</h3><div class="subtext" style="margin-bottom:8px">Gom tất cả buổi đã điểm danh · sắp xếp theo số buổi vắng giảm dần</div><div class="ux70-risk-list">${ux70RiskHtml(i)}</div></div></div></section>`;
+};
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
 </script>
 <!-- UX 7.1 dashboard cleanup applied: gom điểm danh hôm nay vào một khối, ẩn thành phần trùng trên dashboard giáo viên. -->
