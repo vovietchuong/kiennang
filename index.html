@@ -1508,10 +1508,12 @@ function getAbsentSummaryHtml(cls){
     const activeStudents=(cls.students||[]).filter(st=>st.status!=='left');
     if(!activeStudents.length)return '<div class="absent-box wait">Chưa có học sinh trong lớp.</div>';
     if(!info)return '<div class="absent-box wait">Chưa điểm danh xong nên chưa hiện học sinh vắng.</div>';
-    const absent=activeStudents.filter(st=>!(st.attendance&&st.attendance[info.key]));
+    const countableStudents=activeStudents.filter(st=>ux76IsCountableAbsence(st,cls,info.key));
+    if(!countableStudents.length)return '<div class="absent-box wait">Buổi này chưa có học sinh nào bắt đầu học thực tế nên không tính vắng.</div>';
+    const absent=countableStudents.filter(st=>!(st.attendance&&st.attendance[info.key]));
     const label='B'+info.index+(info.date?' · '+info.date:'');
     if(!absent.length)return `<div class="absent-box ok">✅ ${esc(label)}: đủ lớp, không có học sinh vắng.</div>`;
-    return `<div class="absent-box warn">🚩 Vắng ${absent.length}/${activeStudents.length} ở ${esc(label)}: ${absent.map(st=>esc(st.name||'Học sinh')).join(', ')}</div>`;
+    return `<div class="absent-box warn">🚩 Vắng ${absent.length}/${countableStudents.length} ở ${esc(label)}: ${absent.map(st=>esc(st.name||'Học sinh')).join(', ')}</div>`;
 }
 function getTodayRelevantClasses(){
     const evKeys=new Set(uxTodayEvents().map(ev=>ev.classKey));
@@ -1796,9 +1798,9 @@ function todayRealMarkedKeyForEvent(ev){
 function todayRealClassDoneForEvent(ev){return !!todayRealMarkedKeyForEvent(ev)}
 function todayRealAbsentHtml(ev){
     const cls=ev?.cls; const key=todayRealMarkedKeyForEvent(ev); if(!cls||!key)return '';
-    const active=todayRealActiveStudents(cls);
+    const active=todayRealActiveStudents(cls).filter(st=>ux76IsCountableAbsence(st,cls,key));
     const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
-    if(!active.length)return `<small> · Chưa có học sinh trong lớp</small>`;
+    if(!active.length)return `<small> · Chưa có học sinh tính vắng từ buổi này</small>`;
     if(!absent.length)return `<small> · ✅ Không có học sinh vắng</small>`;
     const names=absent.map(st=>st.name||'Học sinh').slice(0,6).join(', ')+(absent.length>6?'...':'');
     return `<small> · 🚩 Vắng ${absent.length}/${active.length}: ${esc(names)}</small>`;
@@ -1887,10 +1889,31 @@ function ux75MarkedAttendanceKeys(cls){
         const hasMeta=!!(meta&&meta.marked);
         const hasLegacyPresent=(cls.students||[]).some(st=>st.attendance&&st.attendance[key]===true);
         if(hasMeta||hasLegacyPresent){
-            keys.push({key,date:meta?.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i});
+            keys.push({key,date:meta?.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i,index:i});
         }
     }
     return keys;
+}
+function ux76SessionIndex(key){
+    const m=String(key||'').match(/B(\d+)/i);
+    return m?Number(m[1]):0;
+}
+function ux76FirstPresentSessionIndex(st,cls){
+    const sessions=Number(cls?.sessions||0);
+    for(let i=1;i<=sessions;i++){
+        if(st?.attendance&&st.attendance['B'+i]===true)return i;
+    }
+    return 0;
+}
+function ux76CountableMarkedKeysForStudent(st,cls,markedKeys){
+    const first=ux76FirstPresentSessionIndex(st,cls);
+    if(!first)return [];
+    return (markedKeys||[]).filter(info=>(info.index||ux76SessionIndex(info.key))>=first);
+}
+function ux76IsCountableAbsence(st,cls,key){
+    const first=ux76FirstPresentSessionIndex(st,cls);
+    const idx=ux76SessionIndex(key);
+    return !!first&&!!idx&&idx>=first;
 }
 function ux75AbsentStudentsAll(){
     const map=new Map();
@@ -1899,8 +1922,10 @@ function ux75AbsentStudentsAll(){
         const markedKeys=ux75MarkedAttendanceKeys(cls);
         if(!active.length||!markedKeys.length)return;
         active.forEach(st=>{
+            const countableKeys=ux76CountableMarkedKeysForStudent(st,cls,markedKeys);
+            if(!countableKeys.length)return;
             const missed=[];
-            markedKeys.forEach(info=>{
+            countableKeys.forEach(info=>{
                 if(!(st.attendance&&st.attendance[info.key]===true)){
                     missed.push(info.date?`${info.label} · ${info.date}`:info.label);
                 }
@@ -1913,10 +1938,11 @@ function ux75AbsentStudentsAll(){
                 classCode:cls.code||'',
                 s:st,
                 absentCount:missed.length,
-                totalMarked:markedKeys.length,
+                totalMarked:countableKeys.length,
+                firstPresent:'B'+ux76FirstPresentSessionIndex(st,cls),
                 sessions:missed,
                 time:missed.slice(0,3).join('; ')+(missed.length>3?`; +${missed.length-3} buổi`:''),
-                key:`Vắng ${missed.length}/${markedKeys.length} buổi đã điểm danh`
+                key:`Vắng ${missed.length}/${countableKeys.length} buổi tính từ buổi đầu có mặt`
             });
         });
     });
@@ -1934,7 +1960,7 @@ ux70Insights=function(){
 ux70RiskHtml=function(i){
     const list=i?.absentStudents||i?.risk||[];
     if(!list.length)return '<div class="subtext">Chỉ hiển thị học sinh vắng học. Hiện chưa có học sinh vắng trong các buổi đã điểm danh.</div>';
-    return list.map(x=>`<div class="ux70-risk"><div><b>${esc(x.s.name||'Học sinh')}</b><small>${esc(x.className||'Lớp học')} · <b>${Number(x.absentCount||0)} buổi vắng</b> · ${esc(x.time||'Đã điểm danh')}</small></div><button class="btn btn-soft" onclick="viewClass('${esc(x.classKey)}')">Xem lớp</button></div>`).join('');
+    return list.map(x=>`<div class="ux70-risk"><div><b>${esc(x.s.name||'Học sinh')}</b><small>${esc(x.className||'Lớp học')} · <b>${Number(x.absentCount||0)} buổi vắng</b> · từ ${esc(x.firstPresent||'buổi đầu có mặt')} · ${esc(x.time||'Đã điểm danh')}</small></div><button class="btn btn-soft" onclick="viewClass('${esc(x.classKey)}')">Xem lớp</button></div>`).join('');
 };
 ux70SmartItems=function(i){
     const arr=[];
@@ -1951,7 +1977,7 @@ ux70SmartItems=function(i){
 ux70DashboardPanel=function(){
     const i=ux70Insights();
     const absentTurns=(i.absentStudents||[]).reduce((sum,x)=>sum+Number(x.absentCount||0),0);
-    return `<section class="ux71-workspace"><div class="ux71-focus-card"><h2> Bảng điều khiển hôm nay</h2><div class="ux71-kpis"><div class="ux71-kpi"><b>${i.today.length}</b><span>Lớp hôm nay</span></div><div class="ux71-kpi"><b>${i.done}</b><span>Đã điểm danh</span></div><div class="ux71-kpi"><b>${i.today.length-i.done}</b><span>Còn xử lý</span></div><div class="ux71-kpi"><b>${absentTurns}</b><span>Lượt vắng</span></div></div><div class="ux71-duty-list">${ux70TimelineHtml(i.today)}</div><div class="ux71-compact-actions"><button class="btn btn-soft" onclick="setView('schedule')">🗓️ Xem lịch đầy đủ</button><button class="btn btn-green" onclick="setView('debts')">💰 Xem công nợ</button></div></div><div class="ux71-side"><div class="ux71-panel"><h3>🤖 Gợi ý ưu tiên</h3>${ux70SmartItems(i).map(x=>`<div class="ux71-note ${x.type||''}">${esc(x.t)}</div>`).join('')}</div><div class="ux71-panel"><h3>🎯 Học sinh vắng học</h3><div class="subtext" style="margin-bottom:8px">Gom tất cả buổi đã điểm danh · sắp xếp theo số buổi vắng giảm dần</div><div class="ux70-risk-list">${ux70RiskHtml(i)}</div></div></div></section>`;
+    return `<section class="ux71-workspace"><div class="ux71-focus-card"><h2> Bảng điều khiển hôm nay</h2><div class="ux71-kpis"><div class="ux71-kpi"><b>${i.today.length}</b><span>Lớp hôm nay</span></div><div class="ux71-kpi"><b>${i.done}</b><span>Đã điểm danh</span></div><div class="ux71-kpi"><b>${i.today.length-i.done}</b><span>Còn xử lý</span></div><div class="ux71-kpi"><b>${absentTurns}</b><span>Lượt vắng</span></div></div><div class="ux71-duty-list">${ux70TimelineHtml(i.today)}</div><div class="ux71-compact-actions"><button class="btn btn-soft" onclick="setView('schedule')">🗓️ Xem lịch đầy đủ</button><button class="btn btn-green" onclick="setView('debts')">💰 Xem công nợ</button></div></div><div class="ux71-side"><div class="ux71-panel"><h3>🤖 Gợi ý ưu tiên</h3>${ux70SmartItems(i).map(x=>`<div class="ux71-note ${x.type||''}">${esc(x.t)}</div>`).join('')}</div><div class="ux71-panel"><h3>🎯 Học sinh vắng học</h3><div class="subtext" style="margin-bottom:8px">Chỉ tính từ buổi đầu tiên học sinh có mặt · sắp xếp theo số buổi vắng giảm dần</div><div class="ux70-risk-list">${ux70RiskHtml(i)}</div></div></div></section>`;
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
