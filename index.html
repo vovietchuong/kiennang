@@ -1219,8 +1219,73 @@ function setCalendarMode(m){calendarMode=m;renderSchedule()}
 function moveCalendar(step){if(calendarMode==='month')calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()+step,1);else calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth(),calendarDate.getDate()+step*(calendarMode==='agenda'?14:7));renderSchedule()}
 function todayCalendar(){calendarDate=new Date();renderSchedule()}
 function setCalendarClass(v){calendarClassFilter=v;renderSchedule()}
+
+function scheduleTargetDate(days=1){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+days);return d}
+function scheduleHasFixedClassOnDow(schedule,dow){
+    const lower=String(schedule||'').toLowerCase();
+    if(!lower)return false;
+    const map={0:['chủ nhật','chu nhat','cn'],1:['thứ 2','thu 2','thứ hai','thu hai','t2'],2:['thứ 3','thu 3','thứ ba','thu ba','t3'],3:['thứ 4','thu 4','thứ tư','thu tư','thu tu','t4'],4:['thứ 5','thu 5','thứ năm','thu nam','t5'],5:['thứ 6','thu 6','thứ sáu','thu sau','t6'],6:['thứ 7','thu 7','thứ bảy','thu bay','t7']};
+    if((map[dow]||[]).some(x=>lower.includes(x)))return true;
+    // Hỗ trợ kiểu viết gọn: "Thứ 2,4 lúc 17h-19h", "T2,T4", "thu 3-5".
+    const target=dow===0?null:dow+1;
+    if(target){
+        const compact=[...lower.matchAll(/(?:thứ|thu|t)\s*([2-7](?:\s*[,/&+\-]\s*[2-7])*)/g)];
+        for(const m of compact){
+            const nums=(m[1].match(/[2-7]/g)||[]).map(Number);
+            if(nums.includes(target))return true;
+        }
+    }
+    return false;
+}
+function scheduleExtractFixedTimeRange(schedule,dow){
+    const first=(typeof uxExtractFixedTimeRange==='function'?uxExtractFixedTimeRange(schedule,dow):null);
+    if(first)return first;
+    const re=/(\d{1,2})(?:\s*(?:h|:)(\d{1,2}))?\s*(?:-|–|—|đến|toi|tới|to)\s*(\d{1,2})(?:\s*(?:h|:)(\d{1,2}))?/i;
+    const m=String(schedule||'').match(re);
+    return m?{start:uxNormalizeFixedTime(m[1],m[2]),end:uxNormalizeFixedTime(m[3],m[4])}:null;
+}
+function scheduleFixedEventsForDate(targetDate){
+    const day=ymd(targetDate), dow=targetDate.getDay();
+    let arr=[];
+    for(const [classKey,cls] of getVisibleClassEntries()){
+        if(!scheduleHasFixedClassOnDow(cls.schedule,dow))continue;
+        const fixedTime=scheduleExtractFixedTimeRange(cls.schedule,dow)||{};
+        arr.push({
+            id:'fixed-'+classKey+'-'+day,
+            classKey,
+            className:cls.name||classKey,
+            classCode:cls.code||classKey,
+            title:'Lịch cố định',
+            date:day,
+            start:fixedTime.start||'',
+            end:fixedTime.end||'',
+            room:'',
+            note:cls.schedule||'',
+            type:'fixed',
+            readonly:true,
+            status:'planned',
+            fromFixed:true,
+            color:cls.color||colorForClass(classKey),
+            cls
+        });
+    }
+    return arr;
+}
+function scheduleTomorrowUpcomingEvents(){
+    const target=scheduleTargetDate(1), key=ymd(target), query=q();
+    const byClass=new Map();
+    filteredCalendarEvents().filter(e=>e.date===key).forEach(e=>{if(e.classKey)byClass.set(e.classKey,e)});
+    scheduleFixedEventsForDate(target).forEach(e=>{
+        if(calendarClassFilter!=='all'&&e.classKey!==calendarClassFilter)return;
+        if(!byClass.has(e.classKey))byClass.set(e.classKey,e);
+    });
+    let events=Array.from(byClass.values());
+    if(query)events=events.filter(e=>[e.className,e.classCode,e.title,e.date,e.start,e.end,e.room,e.note,e.status].join(' ').toLowerCase().includes(query));
+    return events.sort((a,b)=>String(a.start||'99:99').localeCompare(String(b.start||'99:99')));
+}
+
 function scheduleRangeEvents(events){const today=ymd(new Date());return {today:events.filter(e=>e.date===today).length,upcoming:events.filter(e=>e.date>=today).length,done:events.filter(e=>e.status==='done').length,cancel:events.filter(e=>e.status==='cancel').length}}
-function renderSchedule(){const events=filteredCalendarEvents();const k=scheduleRangeEvents(events);const classOptions='<option value="all">Tất cả lớp</option>'+getVisibleClassEntries().map(([k,c])=>`<option value="${esc(k)}" ${calendarClassFilter===k?'selected':''}>${esc(classOptionLabel(k))}</option>`).join('');const upcoming=events.filter(e=>e.date>=ymd(new Date())).slice(0,12);let side=`<aside class="schedule-side"><h3>📌 Điều khiển lịch</h3><div class="schedule-kpi"><div class="box"><b>${k.today}</b><span>Lịch hôm nay</span></div><div class="box"><b>${k.upcoming}</b><span>Sắp tới</span></div><div class="box"><b>${k.done}</b><span>Đã học</span></div><div class="box"><b>${k.cancel}</b><span>Đã huỷ</span></div></div><div class="schedule-filter"><label>Lọc theo lớp</label><select onchange="setCalendarClass(this.value)">${classOptions}</select></div><div class="quick-actions">${isStudent()?'': '<button class="btn btn-blue" onclick="openScheduleEventModal()">➕ Tạo lịch</button>'}<button class="btn btn-green" onclick="exportScheduleCSV()">📊 Xuất lịch CSV</button><button class="btn btn-gray" onclick="printCurrent()">🖨️ In lịch</button></div><h3 style="margin-top:16px">⏱️ Lịch sắp tới</h3><div class="upcoming-list">${upcoming.length?upcoming.map(e=>`<div class="upcoming-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="${e.readonly?`viewClass('${esc(e.classKey)}')`:`openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')`}"><b><span class="class-color-dot" style="${colorVarsForClass(e.classKey,e.color)}"></span>${esc(e.className)}</b> · ${esc(e.title)}<div class="u-time">${esc(e.date)} ${esc(e.start||'')} ${e.room?'· '+esc(e.room):''}</div></div>`).join(''):'<div class="subtext">Chưa có lịch sắp tới.</div>'}</div></aside>`;let calendar=`<div class="calendar-shell"><div class="calendar-top"><div><div class="calendar-title">🗓️ Thời khóa biểu Pro</div><div class="calendar-sub">Lịch học đã làm gọn · bỏ mã lớp trên ô lịch · tự ẩn lịch dự kiến khi ngày đó đã điểm danh</div></div><div class="calendar-controls"><button class="btn btn-gray" onclick="moveCalendar(-1)">‹</button><button class="btn btn-gray" onclick="todayCalendar()">Hôm nay</button><button class="btn btn-gray" onclick="moveCalendar(1)">›</button><b style="color:#0b3b5c;min-width:130px;text-align:center">${calendarMode==='month'?monthTitle(calendarDate):calendarMode==='week'?'Tuần '+viDate(startOfWeek(calendarDate)):'Agenda từ '+viDate(calendarDate)}</b><span class="calendar-mode"><button class="btn ${calendarMode==='month'?'active':''}" onclick="setCalendarMode('month')">Tháng</button><button class="btn ${calendarMode==='week'?'active':''}" onclick="setCalendarMode('week')">Tuần</button><button class="btn ${calendarMode==='agenda'?'active':''}" onclick="setCalendarMode('agenda')">Agenda</button></span></div></div>${calendarMode==='month'?renderMonth(events):calendarMode==='week'?renderWeek(events):renderAgenda(events)}<div class="schedule-compact-note">✅ Lịch dự kiến trùng ngày với buổi đã điểm danh sẽ tự ẩn khỏi lịch hiển thị. Dữ liệu gốc vẫn còn để sao lưu/phục hồi.</div><div class="legend"><span><i class="dot"></i>Lịch tạo riêng</span><span><i class="dot session"></i>Buổi đã điểm danh</span><span>🖱️ Nhấp đúp vào ngày để tạo lịch</span></div></div>`;mainContent.innerHTML=`<div class="schedule-pro-layout">${side}${calendar}</div>`}
+function renderSchedule(){const events=filteredCalendarEvents();const k=scheduleRangeEvents(events);const classOptions='<option value="all">Tất cả lớp</option>'+getVisibleClassEntries().map(([k,c])=>`<option value="${esc(k)}" ${calendarClassFilter===k?'selected':''}>${esc(classOptionLabel(k))}</option>`).join('');const upcoming=scheduleTomorrowUpcomingEvents();const tomorrowText=viDateFull(scheduleTargetDate(1));let side=`<aside class="schedule-side"><h3>📌 Điều khiển lịch</h3><div class="schedule-kpi"><div class="box"><b>${k.today}</b><span>Lịch hôm nay</span></div><div class="box"><b>${k.upcoming}</b><span>Sắp tới</span></div><div class="box"><b>${k.done}</b><span>Đã học</span></div><div class="box"><b>${k.cancel}</b><span>Đã huỷ</span></div></div><div class="schedule-filter"><label>Lọc theo lớp</label><select onchange="setCalendarClass(this.value)">${classOptions}</select></div><div class="quick-actions">${isStudent()?'': '<button class="btn btn-blue" onclick="openScheduleEventModal()">➕ Tạo lịch</button>'}<button class="btn btn-green" onclick="exportScheduleCSV()">📊 Xuất lịch CSV</button><button class="btn btn-gray" onclick="printCurrent()">🖨️ In lịch</button></div><h3 style="margin-top:16px">⏱️ Lịch ngày mai</h3><div class="subtext" style="margin-bottom:8px">Dựa vào lịch cố định theo lớp · ${esc(tomorrowText)}</div><div class="upcoming-list">${upcoming.length?upcoming.map(e=>`<div class="upcoming-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="${e.readonly?`viewClass('${esc(e.classKey)}')`:`openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')`}"><b><span class="class-color-dot" style="${colorVarsForClass(e.classKey,e.color)}"></span>${esc(e.className)}</b> · ${esc(e.title)}<div class="u-time">${esc(e.date)} ${esc(e.start||'')} ${e.room?'· '+esc(e.room):''}</div></div>`).join(''):'<div class="subtext">Ngày mai chưa có lớp theo lịch cố định.</div>'}</div></aside>`;let calendar=`<div class="calendar-shell"><div class="calendar-top"><div><div class="calendar-title">🗓️ Thời khóa biểu Pro</div><div class="calendar-sub">Lịch học đã làm gọn · bỏ mã lớp trên ô lịch · tự ẩn lịch dự kiến khi ngày đó đã điểm danh</div></div><div class="calendar-controls"><button class="btn btn-gray" onclick="moveCalendar(-1)">‹</button><button class="btn btn-gray" onclick="todayCalendar()">Hôm nay</button><button class="btn btn-gray" onclick="moveCalendar(1)">›</button><b style="color:#0b3b5c;min-width:130px;text-align:center">${calendarMode==='month'?monthTitle(calendarDate):calendarMode==='week'?'Tuần '+viDate(startOfWeek(calendarDate)):'Agenda từ '+viDate(calendarDate)}</b><span class="calendar-mode"><button class="btn ${calendarMode==='month'?'active':''}" onclick="setCalendarMode('month')">Tháng</button><button class="btn ${calendarMode==='week'?'active':''}" onclick="setCalendarMode('week')">Tuần</button><button class="btn ${calendarMode==='agenda'?'active':''}" onclick="setCalendarMode('agenda')">Agenda</button></span></div></div>${calendarMode==='month'?renderMonth(events):calendarMode==='week'?renderWeek(events):renderAgenda(events)}<div class="schedule-compact-note">✅ Lịch dự kiến trùng ngày với buổi đã điểm danh sẽ tự ẩn khỏi lịch hiển thị. Dữ liệu gốc vẫn còn để sao lưu/phục hồi.</div><div class="legend"><span><i class="dot"></i>Lịch tạo riêng</span><span><i class="dot session"></i>Buổi đã điểm danh</span><span>🖱️ Nhấp đúp vào ngày để tạo lịch</span></div></div>`;mainContent.innerHTML=`<div class="schedule-pro-layout">${side}${calendar}</div>`}
 function startOfWeek(d){let x=new Date(d.getFullYear(),d.getMonth(),d.getDate());let day=x.getDay();let diff=day===0?-6:1-day;x.setDate(x.getDate()+diff);return x}
 function statusLabel(s){return s==='done'?'Đã học':s==='cancel'?'Huỷ':'Dự kiến'}
 function eventHtml(e){const time=e.start?`<span class="time">${esc(e.start)}${e.end?'–'+esc(e.end):''}</span> · `:'';const room=e.room?`<div class="subtext">📍 ${esc(e.room)}</div>`:'';const click=e.readonly?`onclick="viewClass('${esc(e.classKey)}')"`:`onclick="openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')"`;const color=e.color||colorForClass(e.classKey||e.className);const colorVars=colorVarsForClass(e.classKey||e.className,color);return `<div draggable="${!e.readonly}" ondragstart="dragSchedule(event,'${esc(e.classKey)}','${esc(e.id)}')" class="calendar-event type-${e.type}" style="${colorVars}" ${click}><div class="event-main">${time}<b>${esc(e.className)}</b><span class="event-status ${e.status==='done'?'done':e.status==='cancel'?'cancel':''}">${statusLabel(e.status)}</span></div><div class="event-title">${esc(e.title)}</div>${room}</div>`}
