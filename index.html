@@ -248,7 +248,33 @@
         /* ---------- SCHEDULER PRO INTEGRATION v7.2 ---------- */
         .planner-shell{display:grid;grid-template-columns:330px 1fr;gap:16px}.planner-card{background:#fff;border:1px solid #e9eef3;border-radius:20px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,.05)}.planner-card h2,.planner-card h3{color:#0b3b5c}.planner-card h2{font-size:24px;margin-bottom:6px}.planner-card h3{font-size:18px;margin-bottom:10px}.planner-help{color:#64748b;font-size:13px;font-weight:700;line-height:1.5;margin-bottom:12px}.planner-form label{font-size:13px;font-weight:900;color:#334155;margin:10px 0 5px;display:block}.planner-form select,.planner-form input{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;font-weight:800;color:#334155}.planner-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:8px 0}.planner-checks label{margin:0!important;background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:8px 10px;display:flex!important;align-items:center;gap:7px;font-size:12px}.planner-checks input{width:auto}.planner-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.planner-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.planner-kpi{background:#f8fafc;border:1px solid #eef2f7;border-radius:16px;padding:12px}.planner-kpi b{font-size:24px;color:#0b3b5c}.planner-kpi span{display:block;color:#64748b;font-size:12px;font-weight:800}.planner-grid{display:grid;grid-template-columns:75px repeat(7,1fr);border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;background:#e2e8f0;gap:1px}.planner-cell{background:#fff;min-height:70px;padding:7px;font-size:12px}.planner-cell.head{background:#f8fafc;min-height:42px;text-align:center;font-weight:950;color:#475569;display:flex;align-items:center;justify-content:center}.planner-cell.time{background:#f8fafc;font-weight:900;color:#0b3b5c;display:flex;align-items:center;justify-content:center;text-align:center}.planner-slot{border-radius:12px;padding:7px 8px;margin:3px 0;font-weight:900;line-height:1.25}.planner-slot.free{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;cursor:pointer}.planner-slot.busy{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}.planner-slot.pick{background:#e0f2fe;color:#075985;border:1px solid #bae6fd}.planner-slot small{display:block;font-weight:700;opacity:.85;margin-top:2px}.planner-result{display:flex;flex-direction:column;gap:8px;margin-top:12px}.planner-suggestion{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #e2e8f0;border-left:5px solid #0b3b5c;border-radius:14px;padding:10px 12px;background:#f8fafc}.planner-suggestion b{color:#0b3b5c}.planner-warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:10px 12px;font-weight:800;margin:10px 0}.planner-ok{background:#ecfdf5;border:1px solid #bbf7d0;color:#166534;border-radius:14px;padding:10px 12px;font-weight:800;margin:10px 0}.planner-student-filter{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.planner-student-filter select{min-width:220px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;font-weight:800}.planner-student-list{display:flex;gap:6px;flex-wrap:wrap;max-height:130px;overflow:auto}.planner-student-chip{background:#eef6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900}body.dark-mode .planner-card,body.dark-mode .planner-cell{background:#111827;border-color:#263244}body.dark-mode .planner-cell.head,body.dark-mode .planner-cell.time,body.dark-mode .planner-kpi,body.dark-mode .planner-checks label{background:#0b1220;border-color:#263244;color:#cbd5e1}body.dark-mode .planner-help{color:#94a3b8}@media(max-width:980px){.planner-shell{grid-template-columns:1fr}.planner-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:768px){.planner-grid{min-width:820px}.planner-card{overflow:auto}.planner-checks{grid-template-columns:1fr}}
 
-        @media print{body{background:#fff;padding:0}.header,.toolbar,.actions,.btn,.modal-overlay,.toast-container{display:none!important}.app{max-width:none}.detail-view,.panel,.class-card{box-shadow:none;border:none}.print-only{display:block}.data-table th{position:static}}
+
+
+        /* ---------- WEEKLY FIXED TIMETABLE UPGRADE v8.3 ---------- */
+        .weekly-fixed-card{background:var(--ux-card,#fff);border:1px solid var(--ux-line,#e2e8f0);border-radius:20px;padding:18px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,.05)}
+        .weekly-fixed-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+        .weekly-fixed-title{font-size:20px;font-weight:950;color:var(--ux-primary,#0b3b5c)}
+        .weekly-fixed-title span{display:block;font-size:12px;color:var(--ux-muted,#64748b);font-weight:800;margin-top:3px;line-height:1.45}
+        .weekly-fixed-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+        .weekly-fixed-day{border:1px solid var(--ux-line,#e2e8f0);background:#f8fafc;border-radius:16px;overflow:hidden;min-height:122px}
+        .weekly-fixed-day-head{background:#eef6ff;color:#0b3b5c;padding:10px 11px;font-weight:950;display:flex;justify-content:space-between;gap:8px;align-items:center}
+        .weekly-fixed-day-head small{color:#64748b;font-weight:850}
+        .weekly-fixed-list{padding:9px;display:flex;flex-direction:column;gap:7px}
+        .weekly-fixed-item{border:1px solid var(--ev-soft,#dbeafe);border-left:5px solid var(--ev,#0b3b5c);background:linear-gradient(90deg,var(--ev-bg,rgba(226,240,250,.75)),#fff);border-radius:13px;padding:9px 10px;cursor:pointer}
+        .weekly-fixed-item:hover{filter:brightness(.985);transform:translateY(-1px)}
+        .weekly-fixed-time{font-size:12px;font-weight:950;color:var(--ev,#0b3b5c);margin-bottom:3px}
+        .weekly-fixed-name{font-weight:950;color:#0b3b5c;line-height:1.25}
+        .weekly-fixed-note{font-size:11px;color:#64748b;font-weight:750;margin-top:3px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .weekly-fixed-empty{font-size:12px;color:#94a3b8;font-weight:800;text-align:center;padding:18px 8px}
+        body.dark-mode .weekly-fixed-day{background:#0b1220;border-color:#263244}
+        body.dark-mode .weekly-fixed-day-head{background:#10223a;color:#7dd3fc}
+        body.dark-mode .weekly-fixed-item{background:linear-gradient(90deg,rgba(15,23,42,.92),#111827)!important;border-color:#263244}
+        body.dark-mode .weekly-fixed-name{color:#7dd3fc}
+        body.dark-mode .weekly-fixed-note,body.dark-mode .weekly-fixed-day-head small{color:#94a3b8}
+        @media(max-width:980px){.weekly-fixed-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:560px){.weekly-fixed-grid{grid-template-columns:1fr}}
+
+                @media print{body{background:#fff;padding:0}.header,.toolbar,.actions,.btn,.modal-overlay,.toast-container{display:none!important}.app{max-width:none}.detail-view,.panel,.class-card{box-shadow:none;border:none}.print-only{display:block}.data-table th{position:static}}
     
 
         /* ---------- TODAY ATTENDANCE ABSENT UPGRADE v5.5.1 ---------- */
@@ -410,7 +436,57 @@
         body.dark-mode .calendar-event{background:linear-gradient(90deg,rgba(15,35,57,.96),#111827)!important;border-color:#253044!important}body.dark-mode .calendar-event.type-session{background:linear-gradient(90deg,rgba(73,50,13,.9),#111827)!important}
         body.dark-mode .btn-soft{background:#10233d!important;color:#bfdbfe!important}body.dark-mode .btn-green{background:#09291a!important;color:#bbf7d0!important}body.dark-mode .btn-warn{background:#2a1b0d!important;color:#fed7aa!important}
 
-    </style>
+    
+        /* ---------- WEEKLY FIXED TIMETABLE COMPACT v8.3 ---------- */
+        .weekly-fixed-day-head{justify-content:center;text-align:center}
+        .weekly-fixed-item{display:flex;flex-direction:column;gap:4px}
+        .weekly-fixed-item .weekly-fixed-name{font-size:13px}
+        .weekly-fixed-item .weekly-fixed-time{font-size:12px;margin-bottom:0}
+        .weekly-fixed-note{display:none!important}
+
+    
+
+        /* ---------- WEEKLY TIMETABLE FULL-WIDTH LAYOUT v8.4 ---------- */
+        .schedule-pro-layout{display:flex!important;flex-direction:column!important;gap:16px!important}
+        .schedule-pro-layout>div{width:100%}
+        .schedule-side{width:100%!important;display:grid!important;grid-template-columns:auto minmax(360px,1fr) minmax(220px,.65fr) minmax(280px,1fr)!important;gap:12px!important;align-items:start!important;padding:16px 18px!important}
+        .schedule-side h3{margin:0!important;white-space:nowrap}
+        .schedule-side h3:nth-of-type(2){margin-top:0!important}
+        .schedule-kpi{display:grid!important;grid-template-columns:repeat(4,minmax(90px,1fr))!important;gap:8px!important;margin:0!important}
+        .schedule-kpi .box{padding:10px 12px!important}
+        .schedule-kpi .box b{font-size:20px!important}
+        .schedule-filter{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important}
+        .schedule-filter label{margin:0!important;white-space:nowrap}
+        .schedule-filter select{width:auto!important;min-width:190px!important}
+        .quick-actions{margin:0!important;align-items:center!important}
+        .schedule-side .subtext{grid-column:4!important;margin:26px 0 0!important;align-self:start!important}
+        .upcoming-list{grid-column:4!important;margin-top:0!important;max-height:92px!important;display:flex!important;flex-direction:row!important;gap:8px!important;overflow:auto!important}
+        .upcoming-item{min-width:210px!important;flex:0 0 auto!important}
+        @media(max-width:1100px){.schedule-side{grid-template-columns:1fr 1fr!important}.schedule-side h3:nth-of-type(2),.schedule-side .subtext,.upcoming-list{grid-column:auto!important}.schedule-kpi{grid-template-columns:repeat(2,1fr)!important}}
+        @media(max-width:768px){.schedule-side{display:flex!important;flex-direction:column!important}.schedule-filter select{width:100%!important}.upcoming-list{width:100%;max-height:160px!important;flex-direction:column!important}.upcoming-item{min-width:0!important;width:100%}.schedule-kpi{width:100%}}
+
+    
+        /* ---------- LỊCH NGÀY MAI CÂN ĐỐI v8.4 ---------- */
+        @media(min-width:1101px){
+            .schedule-side .subtext{
+                grid-column:2 / 5!important;
+                grid-row:2!important;
+                margin:0 0 6px!important;
+                align-self:start!important;
+            }
+            .schedule-side .upcoming-list{
+                grid-column:2 / 5!important;
+                grid-row:3!important;
+                margin-top:-4px!important;
+                justify-content:flex-start!important;
+                width:100%!important;
+            }
+            .schedule-side .upcoming-item{
+                flex:0 0 min(250px,32%)!important;
+                min-width:220px!important;
+            }
+        }
+</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -1404,9 +1480,30 @@ function scheduleTomorrowUpcomingEvents(){
     if(query)events=events.filter(e=>[e.className,e.classCode,e.title,e.date,e.start,e.end,e.room,e.note,e.status].join(' ').toLowerCase().includes(query));
     return events.sort((a,b)=>String(a.start||'99:99').localeCompare(String(b.start||'99:99')));
 }
+function scheduleFixedEventsForWeek(anchorDate=calendarDate){
+    const start=startOfWeek(anchorDate||new Date());
+    const query=q();
+    let days=[];
+    for(let i=0;i<7;i++){
+        const d=new Date(start); d.setDate(start.getDate()+i);
+        let events=scheduleFixedEventsForDate(d);
+        if(calendarClassFilter!=='all')events=events.filter(e=>e.classKey===calendarClassFilter);
+        if(query)events=events.filter(e=>[e.className,e.classCode,e.title,e.date,e.start,e.end,e.room,e.note,e.status].join(' ').toLowerCase().includes(query));
+        events.sort((a,b)=>String(a.start||'99:99').localeCompare(String(b.start||'99:99')) || String(a.className||'').localeCompare(String(b.className||''),'vi'));
+        days.push({date:d,key:ymd(d),events});
+    }
+    return days;
+}
+function renderWeeklyFixedTimetable(){
+    const days=scheduleFixedEventsForWeek(calendarDate);
+    const total=days.reduce((s,d)=>s+d.events.length,0);
+    const start=days[0]?.date||startOfWeek(calendarDate), end=days[6]?.date||calendarDate;
+    const labels=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
+    return `<section class="weekly-fixed-card"><div class="weekly-fixed-head"><div class="weekly-fixed-title">📅 Thời khóa biểu cố định trong tuần<span>Hiển thị gọn theo lịch cố định: chỉ tên lớp và khung giờ học.</span></div><span class="badge">${total} ca học/tuần</span></div><div class="weekly-fixed-grid">${days.map((day,i)=>`<div class="weekly-fixed-day"><div class="weekly-fixed-day-head"><b>${labels[i]}</b></div><div class="weekly-fixed-list">${day.events.length?day.events.map(e=>`<div class="weekly-fixed-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="viewClass('${esc(e.classKey)}')"><div class="weekly-fixed-name">${esc(e.className)}</div><div class="weekly-fixed-time">${esc(e.start||'Chưa rõ giờ')}${e.end?' – '+esc(e.end):''}</div></div>`).join(''):'<div class="weekly-fixed-empty">Không có lớp</div>'}</div></div>`).join('')}</div></section>`;
+}
 
 function scheduleRangeEvents(events){const today=ymd(new Date());return {today:events.filter(e=>e.date===today).length,upcoming:events.filter(e=>e.date>=today).length,done:events.filter(e=>e.status==='done').length,cancel:events.filter(e=>e.status==='cancel').length}}
-function renderSchedule(){const events=filteredCalendarEvents();const k=scheduleRangeEvents(events);const classOptions='<option value="all">Tất cả lớp</option>'+getVisibleClassEntries().map(([k,c])=>`<option value="${esc(k)}" ${calendarClassFilter===k?'selected':''}>${esc(classOptionLabel(k))}</option>`).join('');const upcoming=scheduleTomorrowUpcomingEvents();const tomorrowText=viDateFull(scheduleTargetDate(1));let side=`<aside class="schedule-side"><h3>📌 Điều khiển lịch</h3><div class="schedule-kpi"><div class="box"><b>${k.today}</b><span>Lịch hôm nay</span></div><div class="box"><b>${k.upcoming}</b><span>Sắp tới</span></div><div class="box"><b>${k.done}</b><span>Đã học</span></div><div class="box"><b>${k.cancel}</b><span>Đã huỷ</span></div></div><div class="schedule-filter"><label>Lọc theo lớp</label><select onchange="setCalendarClass(this.value)">${classOptions}</select></div><div class="quick-actions">${isStudent()?'': '<button class="btn btn-blue" onclick="openScheduleEventModal()">➕ Tạo lịch</button>'}<button class="btn btn-green" onclick="exportScheduleCSV()">📊 Xuất lịch CSV</button><button class="btn btn-gray" onclick="printCurrent()">🖨️ In lịch</button></div><h3 style="margin-top:16px">⏱️ Lịch ngày mai</h3><div class="subtext" style="margin-bottom:8px">Dựa vào lịch cố định theo lớp · ${esc(tomorrowText)}</div><div class="upcoming-list">${upcoming.length?upcoming.map(e=>`<div class="upcoming-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="${e.readonly?`viewClass('${esc(e.classKey)}')`:`openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')`}"><b><span class="class-color-dot" style="${colorVarsForClass(e.classKey,e.color)}"></span>${esc(e.className)}</b> · ${esc(e.title)}<div class="u-time">${esc(e.date)} ${esc(e.start||'')} ${e.room?'· '+esc(e.room):''}</div></div>`).join(''):'<div class="subtext">Ngày mai chưa có lớp theo lịch cố định.</div>'}</div></aside>`;let calendar=`<div class="calendar-shell"><div class="calendar-top"><div><div class="calendar-title">🗓️ Thời khóa biểu Pro</div><div class="calendar-sub">Lịch học đã làm gọn · bỏ mã lớp trên ô lịch · tự ẩn lịch dự kiến khi ngày đó đã điểm danh</div></div><div class="calendar-controls"><button class="btn btn-gray" onclick="moveCalendar(-1)">‹</button><button class="btn btn-gray" onclick="todayCalendar()">Hôm nay</button><button class="btn btn-gray" onclick="moveCalendar(1)">›</button><b style="color:#0b3b5c;min-width:130px;text-align:center">${calendarMode==='month'?monthTitle(calendarDate):calendarMode==='week'?'Tuần '+viDate(startOfWeek(calendarDate)):'Agenda từ '+viDate(calendarDate)}</b><span class="calendar-mode"><button class="btn ${calendarMode==='month'?'active':''}" onclick="setCalendarMode('month')">Tháng</button><button class="btn ${calendarMode==='week'?'active':''}" onclick="setCalendarMode('week')">Tuần</button><button class="btn ${calendarMode==='agenda'?'active':''}" onclick="setCalendarMode('agenda')">Agenda</button></span></div></div>${calendarMode==='month'?renderMonth(events):calendarMode==='week'?renderWeek(events):renderAgenda(events)}<div class="schedule-compact-note">✅ Lịch dự kiến trùng ngày với buổi đã điểm danh sẽ tự ẩn khỏi lịch hiển thị. Dữ liệu gốc vẫn còn để sao lưu/phục hồi.</div><div class="legend"><span><i class="dot"></i>Lịch tạo riêng</span><span><i class="dot session"></i>Buổi đã điểm danh</span><span>🖱️ Nhấp đúp vào ngày để tạo lịch</span></div></div>`;mainContent.innerHTML=`<div class="schedule-pro-layout">${side}${calendar}</div>`}
+function renderSchedule(){const events=filteredCalendarEvents();const k=scheduleRangeEvents(events);const classOptions='<option value="all">Tất cả lớp</option>'+getVisibleClassEntries().map(([k,c])=>`<option value="${esc(k)}" ${calendarClassFilter===k?'selected':''}>${esc(classOptionLabel(k))}</option>`).join('');const upcoming=scheduleTomorrowUpcomingEvents();const tomorrowText=viDateFull(scheduleTargetDate(1));let side=`<aside class="schedule-side"><h3>📌 Điều khiển lịch</h3><div class="schedule-kpi"><div class="box"><b>${k.today}</b><span>Lịch hôm nay</span></div><div class="box"><b>${k.upcoming}</b><span>Sắp tới</span></div><div class="box"><b>${k.done}</b><span>Đã học</span></div><div class="box"><b>${k.cancel}</b><span>Đã huỷ</span></div></div><div class="schedule-filter"><label>Lọc theo lớp</label><select onchange="setCalendarClass(this.value)">${classOptions}</select></div><div class="quick-actions">${isStudent()?'': '<button class="btn btn-blue" onclick="openScheduleEventModal()">➕ Tạo lịch</button>'}<button class="btn btn-green" onclick="exportScheduleCSV()">📊 Xuất lịch CSV</button><button class="btn btn-gray" onclick="printCurrent()">🖨️ In lịch</button></div><h3 style="margin-top:16px">⏱️ Lịch ngày mai</h3><div class="subtext" style="margin-bottom:8px">Dựa vào lịch cố định theo lớp · ${esc(tomorrowText)}</div><div class="upcoming-list">${upcoming.length?upcoming.map(e=>`<div class="upcoming-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="${e.readonly?`viewClass('${esc(e.classKey)}')`:`openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')`}"><b><span class="class-color-dot" style="${colorVarsForClass(e.classKey,e.color)}"></span>${esc(e.className)}</b> · ${esc(e.title)}<div class="u-time">${esc(e.date)} ${esc(e.start||'')} ${e.room?'· '+esc(e.room):''}</div></div>`).join(''):'<div class="subtext">Ngày mai chưa có lớp theo lịch cố định.</div>'}</div></aside>`;let weeklyFixed=renderWeeklyFixedTimetable();let calendar=`${weeklyFixed}<div class="calendar-shell"><div class="calendar-top"><div><div class="calendar-title">🗓️ Thời khóa biểu Pro</div><div class="calendar-sub">Lịch học đã làm gọn · bỏ mã lớp trên ô lịch · tự ẩn lịch dự kiến khi ngày đó đã điểm danh</div></div><div class="calendar-controls"><button class="btn btn-gray" onclick="moveCalendar(-1)">‹</button><button class="btn btn-gray" onclick="todayCalendar()">Hôm nay</button><button class="btn btn-gray" onclick="moveCalendar(1)">›</button><b style="color:#0b3b5c;min-width:130px;text-align:center">${calendarMode==='month'?monthTitle(calendarDate):calendarMode==='week'?'Tuần '+viDate(startOfWeek(calendarDate)):'Agenda từ '+viDate(calendarDate)}</b><span class="calendar-mode"><button class="btn ${calendarMode==='month'?'active':''}" onclick="setCalendarMode('month')">Tháng</button><button class="btn ${calendarMode==='week'?'active':''}" onclick="setCalendarMode('week')">Tuần</button><button class="btn ${calendarMode==='agenda'?'active':''}" onclick="setCalendarMode('agenda')">Agenda</button></span></div></div>${calendarMode==='month'?renderMonth(events):calendarMode==='week'?renderWeek(events):renderAgenda(events)}<div class="schedule-compact-note">✅ Lịch dự kiến trùng ngày với buổi đã điểm danh sẽ tự ẩn khỏi lịch hiển thị. Dữ liệu gốc vẫn còn để sao lưu/phục hồi.</div><div class="legend"><span><i class="dot"></i>Lịch tạo riêng</span><span><i class="dot session"></i>Buổi đã điểm danh</span><span>🖱️ Nhấp đúp vào ngày để tạo lịch</span></div></div>`;mainContent.innerHTML=`<div class="schedule-pro-layout">${side}<div>${calendar}</div></div>`}
 function startOfWeek(d){let x=new Date(d.getFullYear(),d.getMonth(),d.getDate());let day=x.getDay();let diff=day===0?-6:1-day;x.setDate(x.getDate()+diff);return x}
 function statusLabel(s){return s==='done'?'Đã học':s==='cancel'?'Huỷ':'Dự kiến'}
 function eventHtml(e){const time=e.start?`<span class="time">${esc(e.start)}${e.end?'–'+esc(e.end):''}</span> · `:'';const room=e.room?`<div class="subtext">📍 ${esc(e.room)}</div>`:'';const click=e.readonly?`onclick="viewClass('${esc(e.classKey)}')"`:`onclick="openScheduleEventModal('${esc(e.classKey)}','${esc(e.id)}')"`;const color=e.color||colorForClass(e.classKey||e.className);const colorVars=colorVarsForClass(e.classKey||e.className,color);return `<div draggable="${!e.readonly}" ondragstart="dragSchedule(event,'${esc(e.classKey)}','${esc(e.id)}')" class="calendar-event type-${e.type}" style="${colorVars}" ${click}><div class="event-main">${time}<b>${esc(e.className)}</b><span class="event-status ${e.status==='done'?'done':e.status==='cancel'?'cancel':''}">${statusLabel(e.status)}</span></div><div class="event-title">${esc(e.title)}</div>${room}</div>`}
