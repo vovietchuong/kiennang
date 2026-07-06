@@ -1379,10 +1379,61 @@ function parseDateLoose(v){if(!v)return null;v=String(v).trim();let m=v.match(/^
 function viDate(d){return d.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'})}
 function viDateFull(d){return d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}
 function monthTitle(d){return 'Tháng '+(d.getMonth()+1)+'/'+d.getFullYear()}
-function classColorIndex(name){let sum=0;for(const ch of name)sum+=ch.charCodeAt(0);return (sum%6)+1}
+function normalizeClassColorKey(v){
+    // v8.5: Chuẩn hoá nhưng GIỮ đầy đủ chỉ số lớp: 9.1, 9.2, 9A, 9B, 12.1... đều là các lớp khác nhau.
+    return String(v||'')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,' ')
+        .trim();
+}
+function classColorIdentity(classKeyOrName){
+    const raw=String(classKeyOrName||'').trim();
+    if(!raw)return '';
+    const target=normalizeClassColorKey(raw);
+    try{
+        for(const [k,c] of Object.entries(data?.classes||{})){
+            const names=[k,c?.name,c?.code].filter(Boolean).map(normalizeClassColorKey);
+            if(names.includes(target))return normalizeClassColorKey(c?.name||k);
+        }
+    }catch(e){}
+    return target;
+}
+function getClassColorIdentities(){
+    try{
+        const identities=[];
+        for(const [k,c] of Object.entries(data?.classes||{})){
+            const id=classColorIdentity(c?.name||k);
+            if(id&&!identities.includes(id))identities.push(id);
+        }
+        return identities.sort((a,b)=>a.localeCompare(b,'vi',{numeric:true,sensitivity:'base'}));
+    }catch(e){return []}
+}
+function classColorIndex(name){
+    const id=classColorIdentity(name);
+    const ids=getClassColorIdentities();
+    const idx=ids.indexOf(id);
+    if(idx>=0)return idx;
+    let hash=2166136261;
+    for(const ch of id){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619)}
+    return Math.abs(hash);
+}
 function colorForClass(name){
-    const colors=['#0b3b5c','#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#be123c','#15803d','#9333ea','#ea580c','#0f766e','#4f46e5','#ca8a04','#db2777','#65a30d','#0284c7','#b45309','#7c2d12','#0369a1','#047857','#a21caf','#1d4ed8','#c2410c'];
-    return colors[(classColorIndex(name)-1)%colors.length]
+    // v8.5: Màu được tính theo ĐỊNH DANH ĐẦY ĐỦ của lớp, không chỉ theo số khối.
+    // Ví dụ: Toán 9.1 khác Toán 9.2; Toán 12.1 khác Toán 9.1; 9A khác 9B.
+    const idx=classColorIndex(name);
+    const ids=getClassColorIdentities();
+    const inList=ids.indexOf(classColorIdentity(name))>=0;
+    const n=inList?ids.length:Math.max(ids.length,24);
+    const hue=(idx*137.508 + 18)%360;
+    const sat=72 + (idx%3)*6;
+    const light=34 + (idx%4)*5;
+    return hslToHex(hue,sat,light);
+}
+function hslToHex(h,s,l){
+    s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);
+    const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+    return '#'+[f(0),f(8),f(4)].map(x=>Math.round(255*x).toString(16).padStart(2,'0')).join('');
 }
 function hexToRgb(hex){
     const h=String(hex||'').replace('#','').trim();
@@ -1390,9 +1441,18 @@ function hexToRgb(hex){
     return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
 }
 function colorVarsForClass(classKey,color){
-    const c=color||colorForClass(classKey||'');const rgb=hexToRgb(c);
+    // Luôn ưu tiên màu định danh riêng của lớp hiện có, bỏ qua màu cũ đã lưu nếu màu đó bị trùng.
+    const key=String(classKey||'').trim();
+    let hasClass=false;
+    try{
+        const id=classColorIdentity(key);
+        hasClass=!!id && getClassColorIdentities().includes(id);
+    }catch(e){hasClass=false;}
+    const c=hasClass?colorForClass(key):(color||colorForClass(key));
+    const rgb=hexToRgb(c);
     return `--ev:${c};--ev-bg:rgba(${rgb.r},${rgb.g},${rgb.b},.13);--ev-soft:rgba(${rgb.r},${rgb.g},${rgb.b},.24)`;
 }
+
 function isSessionAttendanceDoneOnDate(cls,date){
     if(!cls||!date)return false;
     const dates=cls.sessionDates||[];
