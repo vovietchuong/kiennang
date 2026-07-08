@@ -2300,6 +2300,65 @@ ux70DashboardPanel=function(){
     return `<section class="ux71-workspace"><div class="ux71-focus-card"><h2> Bảng điều khiển hôm nay</h2><div class="ux71-kpis"><div class="ux71-kpi"><b>${i.today.length}</b><span>Lớp hôm nay</span></div><div class="ux71-kpi"><b>${i.done}</b><span>Đã điểm danh</span></div><div class="ux71-kpi"><b>${i.today.length-i.done}</b><span>Còn xử lý</span></div><div class="ux71-kpi"><b>${absentTurns}</b><span>Lượt vắng</span></div></div><div class="ux71-duty-list">${ux70TimelineHtml(i.today)}</div><div class="ux71-compact-actions"><button class="btn btn-soft" onclick="setView('schedule')">🗓️ Xem lịch đầy đủ</button><button class="btn btn-green" onclick="setView('debts')">💰 Xem công nợ</button></div></div><div class="ux71-side"><div class="ux71-panel"><h3>🤖 Gợi ý ưu tiên</h3>${ux70SmartItems(i).map(x=>`<div class="ux71-note ${x.type||''}">${esc(x.t)}</div>`).join('')}</div><div class="ux71-panel"><h3>🎯 Học sinh vắng học</h3><div class="subtext" style="margin-bottom:8px">Chỉ tính từ buổi đầu tiên học sinh có mặt · sắp xếp theo số buổi vắng giảm dần</div><div class="ux70-risk-list">${ux70RiskHtml(i)}</div></div></div></section>`;
 };
 
+
+/* ---------- ATTENDANCE ABSENCE FIX v8.7 ----------
+   Sửa lỗi buổi đầu của đợt mới: học sinh chưa tích có mặt vẫn phải được tính là vắng
+   khi buổi đó đã được giáo viên điểm danh. Nếu học sinh từng có mặt ở buổi muộn hơn,
+   hệ thống vẫn chỉ tính vắng từ buổi đầu tiên em đó có mặt để tránh tính sai học sinh vào lớp muộn. */
+function ux87FirstMarkedSessionIndex(cls){
+    const marked=ux75MarkedAttendanceKeys(cls);
+    if(!marked.length)return 0;
+    return Math.min(...marked.map(info=>Number(info.index||ux76SessionIndex(info.key))||9999));
+}
+function ux87FirstCountableSessionIndex(st,cls){
+    const firstPresent=ux76FirstPresentSessionIndex(st,cls);
+    if(firstPresent)return firstPresent;
+    return ux87FirstMarkedSessionIndex(cls);
+}
+ux76CountableMarkedKeysForStudent=function(st,cls,markedKeys){
+    const first=ux87FirstCountableSessionIndex(st,cls);
+    if(!first)return [];
+    return (markedKeys||[]).filter(info=>(info.index||ux76SessionIndex(info.key))>=first);
+};
+ux76IsCountableAbsence=function(st,cls,key){
+    const first=ux87FirstCountableSessionIndex(st,cls);
+    const idx=ux76SessionIndex(key);
+    return !!first&&!!idx&&idx>=first;
+};
+function todayRealAbsentList(ev){
+    const cls=ev?.cls; const key=todayRealMarkedKeyForEvent(ev);
+    if(!cls||!key)return {key:'',active:[],absent:[]};
+    const active=todayRealActiveStudents(cls).filter(st=>ux76IsCountableAbsence(st,cls,key));
+    const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
+    return {key,active,absent};
+}
+todayRealAbsentHtml=function(ev){
+    const info=todayRealAbsentList(ev);
+    if(!info.key)return '';
+    if(!info.active.length)return `<small> · Chưa có học sinh tính vắng từ buổi này</small>`;
+    if(!info.absent.length)return `<small> · ✅ Không có học sinh vắng</small>`;
+    const names=info.absent.map(st=>st.name||'Học sinh').slice(0,6).join(', ')+(info.absent.length>6?'...':'');
+    return `<small> · 🚩 Vắng ${info.absent.length}/${info.active.length}: ${esc(names)}</small>`;
+};
+ux70SmartItems=function(i){
+    const arr=[];
+    const absentList=i.absentStudents||i.risk||[];
+    const absentCount=absentList.length;
+    const absentTurns=absentList.reduce((sum,x)=>sum+Number(x.absentCount||0),0);
+    if(i.today.length)arr.push({type:i.done===i.today.length?'ok':'warn',t:`Hôm nay có ${i.today.length} lớp, đã điểm danh đúng ngày ${i.done}/${i.today.length} lớp.`});
+    else arr.push({type:'warn',t:'Hôm nay chưa thấy lớp theo lịch cố định hoặc lịch riêng.'});
+    const absentToday=[];
+    (i.today||[]).forEach(ev=>{
+        const info=todayRealAbsentList(ev);
+        if(info.key&&info.absent.length)absentToday.push(`${ev.cls?.name||ev.className}: ${info.absent.length} vắng`);
+    });
+    if(absentToday.length)arr.push({type:'warn',t:'Vắng hôm nay: '+absentToday.slice(0,3).join('; ')});
+    else if(i.done>0)arr.push({type:'ok',t:'Các buổi đã điểm danh hôm nay chưa ghi nhận học sinh vắng.'});
+    if(absentCount)arr.push({type:'warn',t:`Có ${absentCount} học sinh từng vắng, tổng ${absentTurns} lượt vắng. Danh sách đã sắp xếp theo số buổi vắng giảm dần.`});
+    if(i.tomorrow.length)arr.push({type:'',t:`Ngày mai có ${i.tomorrow.length} lịch học đã được lên lịch.`});
+    return arr.slice(0,5);
+};
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
 </script>
 <!-- UX 7.1 dashboard cleanup applied: gom điểm danh hôm nay vào một khối, ẩn thành phần trùng trên dashboard giáo viên. -->
