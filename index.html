@@ -1360,7 +1360,7 @@ function openTransferStudentModal(className,id){const cls=data.classes[className
 function handleTransferStudent(){const fromKey=transferFromClassInput.value,id=transferStudentIdInput.value,toKey=transferTargetClassInput.value,note=transferNoteInput.value.trim();const fromCls=data.classes[fromKey],toCls=data.classes[toKey];if(!fromCls||!toCls)return showToast('Chưa chọn đủ lớp chuyển','error');if(!canEditClass(fromCls)||!canEditClass(toCls))return showToast('Thầy không có quyền chuyển giữa hai lớp này','error');if(fromKey===toKey)return showToast('Lớp mới phải khác lớp cũ','warn');const s=(fromCls.students||[]).find(x=>String(x.id)===String(id));if(!s)return showToast('Không tìm thấy học sinh','error');const duplicate=(toCls.students||[]).find(x=>normalizeKey(x.name||'')===normalizeKey(s.name||'')&&((s.phone&&x.phone===s.phone)||(s.parentPhone&&x.parentPhone===s.parentPhone)));if(duplicate)return showToast('Lớp mới đã có học sinh trùng tên và số điện thoại/phụ huynh','warn');const newStudent=cloneStudentForTransfer(s,fromCls,toCls,note);toCls.students=toCls.students||[];toCls.students.push(newStudent);s.status='transferred';s.transferStatus='moved';s.transferredTo={classKey:toKey,className:toCls.name||toKey,classCode:toCls.code||'',studentId:newStudent.id,at:new Date().toISOString(),note};s.updatedAt=new Date().toISOString();s.note=[s.note||'',note?('Đã chuyển sang '+(toCls.name||toKey)+': '+note):('Đã chuyển sang '+(toCls.name||toKey))].filter(Boolean).join('\n');sortClassStudents(fromCls);sortClassStudents(toCls);fromCls.updatedAt=new Date().toISOString();toCls.updatedAt=new Date().toISOString();saveData();closeModal('transferStudentModal');logActivity('Chuyển học sinh',`${s.name||''} · ${fromCls.name||fromKey} → ${toCls.name||toKey}`,fromKey,s.id);showToast('Đã chuyển học sinh sang lớp mới và khóa điểm danh ở lớp cũ');render()}
 
 function openAddStudentModal(className,studentId=null){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được sửa học sinh lớp này','error');addingToClass=className;editingStudentId=studentId;const cls=data.classes[className];const s=studentId?cls.students.find(x=>x.id===studentId):null;studentModalTitle.textContent=s?'Sửa hồ sơ học sinh':'Thêm học sinh';studentIdInput.value=s?.id||'';studentNameInput.value=s?.name||'';studentGradeInput.value=s?.grade||'';studentPhoneInput.value=s?.phone||'';parentPhoneInput.value=s?.parentPhone||'';schoolInput.value=s?.school||'';tuitionInput.value=s?.tuition??cls.defaultFee??0;paidInput.value=s?.paid||0;statusInput.value=s?.status||'active';noteInput.value=s?.note||'';studentModalConfirm.onclick=handleSaveStudent;openModal('studentModal')}
-function handleSaveStudent(){const cls=data.classes[addingToClass];if(!canEditClass(cls))return showToast('Thầy không có quyền sửa học sinh lớp này','error');const name=studentNameInput.value.trim();if(!name)return showToast('Vui lòng nhập tên học sinh','error');const payload={name,grade:studentGradeInput.value.trim(),phone:studentPhoneInput.value.trim(),parentPhone:parentPhoneInput.value.trim(),school:schoolInput.value.trim(),tuition:Number(tuitionInput.value)||0,paid:Number(paidInput.value)||0,status:statusInput.value,note:noteInput.value.trim()};if(editingStudentId){const s=cls.students.find(x=>x.id==editingStudentId);Object.assign(s,payload,{updatedAt:new Date().toISOString()})}else{let att={};for(let i=1;i<=cls.sessions;i++)att['B'+i]=false;cls.students.push({id:nextStudentId++,...payload,attendance:att,paymentNote:'',classId:cls.id,classKey:addingToClass,classCode:cls.code,teacherId:cls.teacherId||getActiveUserId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}sortClassStudents(cls);cls.updatedAt=new Date().toISOString();saveData();closeModal('studentModal');logActivity(editingStudentId?'Sửa hồ sơ học sinh':'Thêm học sinh',name,addingToClass,editingStudentId||'');showToast('Đã lưu hồ sơ học sinh');render()}
+function handleSaveStudent(){const cls=data.classes[addingToClass];if(!canEditClass(cls))return showToast('Thầy không có quyền sửa học sinh lớp này','error');const name=studentNameInput.value.trim();if(!name)return showToast('Vui lòng nhập tên học sinh','error');const payload={name,grade:studentGradeInput.value.trim(),phone:studentPhoneInput.value.trim(),parentPhone:parentPhoneInput.value.trim(),school:schoolInput.value.trim(),tuition:Number(tuitionInput.value)||0,paid:Number(paidInput.value)||0,status:statusInput.value,note:noteInput.value.trim()};if(editingStudentId){const s=cls.students.find(x=>x.id==editingStudentId);Object.assign(s,payload,{updatedAt:new Date().toISOString()})}else{let att={};for(let i=1;i<=cls.sessions;i++)att['B'+i]=false;cls.students.push({id:nextStudentId++,...payload,attendance:att,attendanceStartSession:(typeof ux88NextAttendanceStartSession==='function'?ux88NextAttendanceStartSession(cls):1),paymentNote:'',classId:cls.id,classKey:addingToClass,classCode:cls.code,teacherId:cls.teacherId||getActiveUserId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}sortClassStudents(cls);cls.updatedAt=new Date().toISOString();saveData();closeModal('studentModal');logActivity(editingStudentId?'Sửa hồ sơ học sinh':'Thêm học sinh',name,addingToClass,editingStudentId||'');showToast('Đã lưu hồ sơ học sinh');render()}
 function viewClass(n){if(!canViewClass(data.classes[n]))return showToast('Lớp này đang ẩn danh hoặc thầy/cô không có quyền xem','error');currentView='detail';currentClass=n;render()}function goBack(){currentView='dashboard';currentClass=null;render()}
 function renderDetailView(className){
 const cls=data.classes[className],students=sortedStudentsOf(cls).filter(s=>{const query=q();return !query||[s.name,s.phone,s.parentPhone,s.school,s.grade,s.note].join(' ').toLowerCase().includes(query)});
@@ -1858,6 +1858,124 @@ function uxCommandKey(e){if(e.key==='Enter'){e.preventDefault();uxRunCommand(0)}
 function uxPostRender(){uxEnsureShell();uxBuildCommandIndex();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.today-card'))mc.insertAdjacentHTML('afterbegin',uxRenderTodayPanel());if(mc&&!mc.querySelector('.crm-grid'))mc.insertAdjacentHTML('afterbegin',renderCRMOverview())}}
 const __uxOldShowToast=showToast;showToast=function(msg,type='success'){uxAddNotification(msg,type);return __uxOldShowToast(msg,type)};
 const __uxOldRender=render;render=function(){__uxOldRender();uxPostRender()};
+
+/* ---------- ATTENDANCE NEW COURSE DISPLAY FIX v8.10 ----------
+   Sửa triệt để lỗi đợt mới vẫn báo "Vắng 26/26 ở B5":
+   - Nút "○ Bỏ" chỉ là xoá chọn, KHÔNG được coi là một lần điểm danh.
+   - Buổi không có học sinh nào được tích có mặt sẽ không được đưa vào Lượt vắng.
+   - Metadata cũ/metadata do thao tác bỏ chọn tạo ra được dọn tự động để không làm nhiễu đợt mới. */
+function ux90UnmarkSession(cls,key){
+    if(!cls||!key)return;
+    todayRealEnsureAttendanceSessions(cls);
+    if(cls.attendanceSessions&&cls.attendanceSessions[key]){
+        delete cls.attendanceSessions[key];
+    }
+}
+function ux90HasAnyPresent(cls,key){
+    return (cls?.students||[]).filter(st=>isStudentAttendanceActive(st)).some(st=>st.attendance&&st.attendance[key]===true);
+}
+function ux90CleanEmptyMarkedSessions(cls){
+    if(!cls)return;
+    todayRealEnsureAttendanceSessions(cls);
+    for(let i=1;i<=Number(cls.sessions||0);i++){
+        const key='B'+i;
+        const meta=cls.attendanceSessions?.[key];
+        const action=String(meta?.action||'').toLowerCase();
+        if(meta&&meta.marked&&!ux90HasAnyPresent(cls,key)){
+            // Không giữ các buổi rỗng, đặc biệt là buổi do bấm "Bỏ" hoặc metadata cũ dính từ đợt trước.
+            delete cls.attendanceSessions[key];
+        }else if(meta&&action.includes('bulk-absent')){
+            delete cls.attendanceSessions[key];
+        }
+    }
+}
+ux89IsSessionMarked=function(cls,key){
+    if(!cls||!key)return false;
+    // Quy tắc an toàn cho đợt mới: một buổi chỉ thật sự tính điểm danh khi có ít nhất một học sinh đang học được tích có mặt.
+    return ux90HasAnyPresent(cls,key);
+};
+ux88IsSessionMarked=function(cls,key){return ux89IsSessionMarked(cls,key);};
+ux88MarkedAttendanceKeys=function(cls){
+    const keys=[]; const sessions=Number(cls?.sessions||0); todayRealEnsureAttendanceSessions(cls); ux90CleanEmptyMarkedSessions(cls);
+    for(let i=1;i<=sessions;i++){
+        const key='B'+i;
+        if(!ux89IsSessionMarked(cls,key))continue;
+        const meta=cls.attendanceSessions?.[key]||{};
+        keys.push({key,date:meta.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i,index:i,markedAt:meta.markedAt||''});
+    }
+    return keys;
+};
+ux75MarkedAttendanceKeys=function(cls){return ux88MarkedAttendanceKeys(cls);};
+ux76IsCountableAbsence=function(st,cls,key){
+    const first=ux88StudentStartIndex(st,cls);
+    const idx=ux76SessionIndex(key);
+    return !!first&&!!idx&&idx>=first&&ux89IsSessionMarked(cls,key);
+};
+ux76CountableMarkedKeysForStudent=function(st,cls,markedKeys){
+    const first=ux88StudentStartIndex(st,cls);
+    if(!first)return [];
+    return (markedKeys||ux88MarkedAttendanceKeys(cls)).filter(info=>(Number(info.index||ux76SessionIndex(info.key))||0)>=first&&ux89IsSessionMarked(cls,info.key));
+};
+getLatestMarkedSessionInfo=function(cls){
+    if(!cls||!Array.isArray(cls.students)||!cls.students.length)return null;
+    const marked=ux88MarkedAttendanceKeys(cls);
+    if(!marked.length)return null;
+    const today=todayRealDate();
+    const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));
+    let best=null;
+    marked.forEach(info=>{
+        const meta=cls.attendanceSessions?.[info.key]||{};
+        const present=active.filter(st=>st.attendance&&st.attendance[info.key]===true).length;
+        if(!present)return;
+        const actionTime=meta.markedAt?Date.parse(meta.markedAt):0;
+        const score=((info.date===today)?1000000:0)+(actionTime||0)/10000000000000+Number(info.index||ux76SessionIndex(info.key));
+        if(!best||score>best.score)best={index:Number(info.index||ux76SessionIndex(info.key)),key:info.key,date:info.date,present,active:active.length,score};
+    });
+    return best;
+};
+todayRealMarkedKeyForEvent=function(ev){
+    const cls=ev?.cls; if(!cls)return '';
+    const date=ev.date||todayRealDate();
+    const keys=todayRealKeysForDate(cls,date);
+    for(const key of keys){if(ux89IsSessionMarked(cls,key))return key;}
+    return '';
+};
+todayRealAbsentList=function(ev){
+    const cls=ev?.cls; const key=todayRealMarkedKeyForEvent(ev);
+    if(!cls||!key)return {key:'',active:[],absent:[]};
+    const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st)).filter(st=>ux76IsCountableAbsence(st,cls,key));
+    const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
+    return {key,active,absent};
+};
+toggleAttendance=function(className,id,key){
+    const cls=data.classes[className];
+    if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
+    const s=cls.students.find(x=>x.id===id); if(!s)return;
+    if(!isStudentAttendanceActive(s))return showToast('Học sinh này đã tạm nghỉ/chuyển lớp nên không điểm danh ở lớp cũ','warn');
+    s.attendance=s.attendance||{};
+    const next=!s.attendance[key];
+    s.attendance[key]=next;
+    if(next)ux89MarkSession(cls,key,'toggle-present');
+    else if(!ux90HasAnyPresent(cls,key))ux90UnmarkSession(cls,key);
+    cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
+    saveData(); render(); logActivity('Điểm danh',key+' · '+(s.name||''),className,id);
+};
+bulkSetAttendance=function(className,key,value){
+    const cls=data.classes[className];
+    if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
+    const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));
+    active.forEach(st=>{st.attendance=st.attendance||{};st.attendance[key]=!!value;st.updatedAt=new Date().toISOString()});
+    if(value)ux89MarkSession(cls,key,'bulk-present');
+    else ux90UnmarkSession(cls,key);
+    cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
+    saveData(); render(); logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');
+};
+const __ux90OldNormalize=normalize;
+normalize=function(){
+    __ux90OldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>ux90CleanEmptyMarkedSessions(cls));
+};
+
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();uxOpenCommand()}if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='n'&&!isStudent()){e.preventDefault();openCreateClassModal()}if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='h'&&!isStudent()){e.preventDefault();uxOpenFirstAddStudent()}});
 
 
@@ -2357,6 +2475,238 @@ ux70SmartItems=function(i){
     if(absentCount)arr.push({type:'warn',t:`Có ${absentCount} học sinh từng vắng, tổng ${absentTurns} lượt vắng. Danh sách đã sắp xếp theo số buổi vắng giảm dần.`});
     if(i.tomorrow.length)arr.push({type:'',t:`Ngày mai có ${i.tomorrow.length} lịch học đã được lên lịch.`});
     return arr.slice(0,5);
+};
+
+
+/* ---------- ATTENDANCE ABSENCE COUNT STABILITY v8.8 ----------
+   Chuẩn hóa lại Lượt vắng:
+   1) Chỉ tính các buổi đã được giáo viên thao tác điểm danh (attendanceSessions[key].marked=true).
+   2) Nếu buổi đã điểm danh mà học sinh đang học không được tích có mặt => tính là vắng.
+   3) Học sinh thêm muộn bắt đầu tính từ buổi chưa điểm danh kế tiếp, tránh cộng vắng ngược về trước.
+   4) Lớp đã hoàn thành đợt học không làm nhiễu Dashboard hôm nay của đợt mới. */
+function ux88SessionDateObject(cls,key){
+    const meta=cls?.attendanceSessions?.[key]||{};
+    const raw=meta.markedAt||meta.date||todayRealSessionDateByKey(cls,key)||'';
+    const d=parseDateLoose(raw)||new Date(raw);
+    return d&& !isNaN(d.getTime())?d:null;
+}
+function ux88IsSessionMarked(cls,key){
+    if(!cls||!key)return false;
+    const meta=cls.attendanceSessions?.[key];
+    if(meta&&meta.marked)return true;
+    const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));
+    return active.some(st=>st.attendance&&st.attendance[key]===true);
+}
+function ux88MarkedAttendanceKeys(cls){
+    const keys=[];
+    const sessions=Number(cls?.sessions||0);
+    todayRealEnsureAttendanceSessions(cls);
+    for(let i=1;i<=sessions;i++){
+        const key='B'+i;
+        if(!ux88IsSessionMarked(cls,key))continue;
+        const meta=cls.attendanceSessions?.[key]||{};
+        keys.push({key,date:meta.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i,index:i});
+    }
+    return keys;
+}
+function ux88FirstMarkedSessionIndex(cls){
+    const marked=ux88MarkedAttendanceKeys(cls);
+    if(!marked.length)return 0;
+    return Math.min(...marked.map(info=>Number(info.index||ux76SessionIndex(info.key))||9999));
+}
+function ux88NextAttendanceStartSession(cls){
+    const marked=ux88MarkedAttendanceKeys(cls);
+    if(!marked.length)return 1;
+    const last=Math.max(...marked.map(info=>Number(info.index||ux76SessionIndex(info.key))||0));
+    return Math.min(Number(cls?.sessions||last+1)||last+1,last+1);
+}
+function ux88StudentStartIndex(st,cls){
+    const manual=Number(st?.attendanceStartSession||st?.joinSession||st?.startSession||0);
+    if(manual>0)return manual;
+    const firstMarked=ux88FirstMarkedSessionIndex(cls);
+    if(!firstMarked)return 0;
+    const createdRaw=st?.createdAt||'';
+    const created=createdRaw?(new Date(createdRaw)):null;
+    if(created&& !isNaN(created.getTime())){
+        const marked=ux88MarkedAttendanceKeys(cls);
+        for(const info of marked){
+            const d=ux88SessionDateObject(cls,info.key);
+            if(!d || d.getTime()+86400000>=created.getTime())return Number(info.index||ux76SessionIndex(info.key));
+        }
+        const last=Math.max(...marked.map(info=>Number(info.index||ux76SessionIndex(info.key))||0));
+        return Math.min(Number(cls?.sessions||last+1)||last+1,last+1);
+    }
+    return firstMarked;
+}
+ux75MarkedAttendanceKeys=function(cls){return ux88MarkedAttendanceKeys(cls)};
+ux87FirstMarkedSessionIndex=function(cls){return ux88FirstMarkedSessionIndex(cls)};
+ux87FirstCountableSessionIndex=function(st,cls){return ux88StudentStartIndex(st,cls)};
+ux76CountableMarkedKeysForStudent=function(st,cls,markedKeys){
+    const first=ux88StudentStartIndex(st,cls);
+    if(!first)return [];
+    return (markedKeys||ux88MarkedAttendanceKeys(cls)).filter(info=>(Number(info.index||ux76SessionIndex(info.key))||0)>=first);
+};
+ux76IsCountableAbsence=function(st,cls,key){
+    const first=ux88StudentStartIndex(st,cls);
+    const idx=ux76SessionIndex(key);
+    return !!first&&!!idx&&idx>=first&&ux88IsSessionMarked(cls,key);
+};
+getLatestMarkedSessionInfo=function(cls){
+    if(!cls||!Array.isArray(cls.students)||!cls.students.length)return null;
+    const marked=ux88MarkedAttendanceKeys(cls);
+    if(!marked.length)return null;
+    const today=todayRealDate();
+    const active=cls.students.filter(st=>isStudentAttendanceActive(st));
+    let best=null;
+    marked.forEach(info=>{
+        const present=active.filter(st=>st.attendance&&st.attendance[info.key]===true).length;
+        const score=((info.date===today)?10000:0)+Number(info.index||ux76SessionIndex(info.key));
+        if(!best||score>best.score)best={index:Number(info.index||ux76SessionIndex(info.key)),key:info.key,date:info.date,present,active:active.length,score};
+    });
+    return best;
+};
+ux75AbsentStudentsAll=function(){
+    const map=new Map();
+    getVisibleClassEntries().forEach(([classKey,cls])=>{
+        if((cls.courseStatus||'current')==='completed')return;
+        const active=todayRealActiveStudents(cls);
+        const markedKeys=ux88MarkedAttendanceKeys(cls);
+        if(!active.length||!markedKeys.length)return;
+        active.forEach(st=>{
+            const countableKeys=ux76CountableMarkedKeysForStudent(st,cls,markedKeys);
+            if(!countableKeys.length)return;
+            const missed=countableKeys.filter(info=>!(st.attendance&&st.attendance[info.key]===true)).map(info=>info.date?`${info.label} · ${info.date}`:info.label);
+            if(!missed.length)return;
+            const startIndex=ux88StudentStartIndex(st,cls);
+            const id=(classKey||cls.id||cls.name||'')+'_'+(st.id||st.firestoreId||st.name||'');
+            map.set(id,{classKey,className:cls.name||'Lớp học',classCode:cls.code||'',s:st,absentCount:missed.length,totalMarked:countableKeys.length,firstPresent:'B'+startIndex,sessions:missed,time:missed.slice(0,3).join('; ')+(missed.length>3?`; +${missed.length-3} buổi`:''),key:`Vắng ${missed.length}/${countableKeys.length} buổi tính từ B${startIndex}`});
+        });
+    });
+    return Array.from(map.values()).sort((a,b)=>(b.absentCount-a.absentCount)||String(a.s.name||'').localeCompare(String(b.s.name||''),'vi'));
+};
+todayRealMarkedKeyForEvent=function(ev){
+    const cls=ev?.cls; if(!cls)return '';
+    const date=ev.date||todayRealDate();
+    const keys=todayRealKeysForDate(cls,date);
+    for(const key of keys){if(ux88IsSessionMarked(cls,key))return key;}
+    return '';
+};
+todayRealAbsentList=function(ev){
+    const cls=ev?.cls; const key=todayRealMarkedKeyForEvent(ev);
+    if(!cls||!key)return {key:'',active:[],absent:[]};
+    const active=todayRealActiveStudents(cls).filter(st=>ux76IsCountableAbsence(st,cls,key));
+    const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
+    return {key,active,absent};
+};
+
+
+
+/* ---------- ATTENDANCE NEW COURSE DISPLAY FIX v8.9 ----------
+   Rà soát lại hiển thị vắng ở đợt mới:
+   - Bỏ qua metadata điểm danh cũ/stale bị dính sang đợt mới.
+   - Một buổi chỉ được xem là đã điểm danh khi có học sinh được tích có mặt,
+     hoặc metadata được tạo bằng thao tác điểm danh thủ công của phiên bản mới.
+   - Khi thầy bấm tick / Tất cả / Bỏ ở buổi nào thì chỉ buổi đó được ghi nhận. */
+function ux89ActiveStudents(cls){return (cls?.students||[]).filter(st=>isStudentAttendanceActive(st));}
+function ux89HasAnyPresent(cls,key){return ux89ActiveStudents(cls).some(st=>st.attendance&&st.attendance[key]===true);}
+function ux89MetaIsManual(meta){return !!(meta&&(meta.manual===true||meta.source==='manual-ui-v8.9'||meta.markedBy==='manual-ui-v8.9'||meta.action));}
+function ux89IsSessionMarked(cls,key){
+    if(!cls||!key)return false;
+    const meta=cls.attendanceSessions?.[key];
+    if(ux89HasAnyPresent(cls,key))return true;
+    // Chỉ chấp nhận buổi toàn vắng nếu metadata do chính thao tác điểm danh mới tạo ra.
+    if(meta&&meta.marked&&ux89MetaIsManual(meta))return true;
+    return false;
+}
+function ux89MarkSession(cls,key,action){
+    if(!cls||!key)return;
+    const map=todayRealEnsureAttendanceSessions(cls);
+    const day=todayRealDate();
+    map[key]={...(map[key]||{}),date:day,marked:true,manual:true,source:'manual-ui-v8.9',action:action||'toggle',markedAt:new Date().toISOString(),markedBy:(typeof getActiveUserId==='function'?getActiveUserId():'')||'manual-ui-v8.9'};
+    const idx=Number(String(key).replace('B',''))-1;
+    if(idx>=0&&Array.isArray(cls.sessionDates)&&!String(cls.sessionDates[idx]||'').trim())cls.sessionDates[idx]=day;
+}
+function ux89CleanStaleAttendanceSessions(cls){
+    if(!cls)return;
+    todayRealEnsureAttendanceSessions(cls);
+    for(let i=1;i<=Number(cls.sessions||0);i++){
+        const key='B'+i;
+        const meta=cls.attendanceSessions?.[key];
+        if(meta&&meta.marked&&!ux89HasAnyPresent(cls,key)&&!ux89MetaIsManual(meta)){
+            delete cls.attendanceSessions[key];
+        }
+    }
+}
+const __ux89OldTodayRealMarkSession=todayRealMarkSession;
+todayRealMarkSession=function(cls,key){ux89MarkSession(cls,key,'toggle');};
+ux88IsSessionMarked=function(cls,key){return ux89IsSessionMarked(cls,key);};
+ux88MarkedAttendanceKeys=function(cls){
+    const keys=[]; const sessions=Number(cls?.sessions||0); todayRealEnsureAttendanceSessions(cls); ux89CleanStaleAttendanceSessions(cls);
+    for(let i=1;i<=sessions;i++){
+        const key='B'+i; if(!ux89IsSessionMarked(cls,key))continue;
+        const meta=cls.attendanceSessions?.[key]||{};
+        keys.push({key,date:meta.date||todayRealSessionDateByKey(cls,key)||'',label:'B'+i,index:i,markedAt:meta.markedAt||''});
+    }
+    return keys;
+};
+ux75MarkedAttendanceKeys=function(cls){return ux88MarkedAttendanceKeys(cls)};
+ux76IsCountableAbsence=function(st,cls,key){
+    const first=ux88StudentStartIndex(st,cls);
+    const idx=ux76SessionIndex(key);
+    return !!first&&!!idx&&idx>=first&&ux89IsSessionMarked(cls,key);
+};
+ux76CountableMarkedKeysForStudent=function(st,cls,markedKeys){
+    const first=ux88StudentStartIndex(st,cls);
+    if(!first)return [];
+    return (markedKeys||ux88MarkedAttendanceKeys(cls)).filter(info=>(Number(info.index||ux76SessionIndex(info.key))||0)>=first&&ux89IsSessionMarked(cls,info.key));
+};
+getLatestMarkedSessionInfo=function(cls){
+    if(!cls||!Array.isArray(cls.students)||!cls.students.length)return null;
+    const marked=ux88MarkedAttendanceKeys(cls);
+    if(!marked.length)return null;
+    const today=todayRealDate();
+    const active=ux89ActiveStudents(cls);
+    let best=null;
+    marked.forEach(info=>{
+        const meta=cls.attendanceSessions?.[info.key]||{};
+        const present=active.filter(st=>st.attendance&&st.attendance[info.key]===true).length;
+        const actionTime=meta.markedAt?Date.parse(meta.markedAt):0;
+        const score=((info.date===today)?1000000:0)+(actionTime||0)/10000000000000+Number(info.index||ux76SessionIndex(info.key));
+        if(!best||score>best.score)best={index:Number(info.index||ux76SessionIndex(info.key)),key:info.key,date:info.date,present,active:active.length,score};
+    });
+    return best;
+};
+todayRealMarkedKeyForEvent=function(ev){
+    const cls=ev?.cls; if(!cls)return '';
+    const date=ev.date||todayRealDate();
+    const keys=todayRealKeysForDate(cls,date);
+    for(const key of keys){if(ux89IsSessionMarked(cls,key))return key;}
+    return '';
+};
+// Ghi đè lại 2 thao tác chính để metadata luôn là metadata mới, không bị nhầm với đợt cũ.
+toggleAttendance=function(className,id,key){
+    const cls=data.classes[className];
+    if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
+    const s=cls.students.find(x=>x.id===id); if(!s)return;
+    if(!isStudentAttendanceActive(s))return showToast('Học sinh này đã tạm nghỉ/chuyển lớp nên không điểm danh ở lớp cũ','warn');
+    ux89MarkSession(cls,key,'toggle');
+    s.attendance=s.attendance||{}; s.attendance[key]=!s.attendance[key];
+    cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
+    saveData(); render(); logActivity('Điểm danh',key+' · '+(s.name||''),className,id);
+};
+bulkSetAttendance=function(className,key,value){
+    const cls=data.classes[className];
+    if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
+    ux89MarkSession(cls,key,value?'bulk-present':'bulk-absent');
+    const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));
+    active.forEach(st=>{st.attendance=st.attendance||{};st.attendance[key]=!!value;st.updatedAt=new Date().toISOString()});
+    cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
+    saveData(); render(); logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');
+};
+const __ux89OldNormalize=normalize;
+normalize=function(){
+    __ux89OldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>ux89CleanStaleAttendanceSessions(cls));
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
