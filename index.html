@@ -1755,7 +1755,53 @@ async function loadAutoBackups(){try{if(!requireSuperAdminAction('xem mốc sao 
 function formatBackupTitle(b){const t=new Date(b.backupAt||Date.now()).toLocaleString('vi-VN');const kind=b.slot==='1200'?'Tự động 12:00':b.slot==='2400'?'Tự động 24:00':'Thủ công';return `${kind} · ${t} · ${b.counts?.classes||0} lớp · ${b.counts?.students||0} HS`}
 function previewSelectedBackup(){const meta=document.getElementById('autoBackupMeta'),sel=document.getElementById('autoBackupSelect');if(!meta||!sel)return;const b=autoBackupCache.find(x=>x.id===sel.value);if(!b){meta.textContent='Chọn một mốc để xem thông tin trước khi khôi phục.';return}meta.innerHTML=`<b>${esc(formatBackupTitle(b))}</b><br>Người tạo: ${esc(b.exportedBy?.name||'Super Admin')} · ${esc(b.exportedBy?.email||'')}<br>Mã mốc: ${esc(b.id)}`}
 async function restoreSelectedAutoBackup(){try{if(!requireSuperAdminAction('khôi phục mốc sao lưu'))return;const sel=document.getElementById('autoBackupSelect');const id=sel?.value;if(!id)return showToast('Thầy/Cô cần chọn một mốc sao lưu để khôi phục','warn');const snap=await backupCollectionRef().doc(id).get();if(!snap.exists)throw new Error('Mốc sao lưu không còn tồn tại');const backup=snap.data();const imported=extractImportedData(backup);const mode=document.getElementById('restoreModeInput')?.value||'replace';const oldCount=Object.keys(data.classes||{}).length;const newCount=Object.keys(imported.classes||{}).length;if(!newCount)throw new Error('Mốc sao lưu không có lớp học nào');const msg=mode==='replace'?`Sắp GHI ĐÈ ${oldCount} lớp hiện tại bằng mốc ${formatBackupTitle(backup)}. Tiếp tục?`:`Sắp GỘP dữ liệu từ mốc ${formatBackupTitle(backup)} vào hệ thống hiện tại. Tiếp tục?`;if(!confirm(msg))return;await createAutoBackupNow('before_restore');if(mode==='merge'){data={...(data||{}),classes:mergeImportedClasses(imported.classes),meta:{...(data.meta||{}),restoredAt:new Date().toISOString(),restoreMode:'merge',restoreFrom:id}}}else{data=imported;data.meta={...(data.meta||{}),restoredAt:new Date().toISOString(),restoreMode:'replace',restoreFrom:id}}normalize();saveData();closeModal('backupRestoreModal');showToast('Đã khôi phục mốc sao lưu và lưu lên Firestore');render()}catch(err){showToast('Không khôi phục được: '+err.message,'error')}}
-function exportJSON(){if(!requireSuperAdminAction('sao lưu JSON'))return;const blob=new Blob([JSON.stringify(buildBackupPayload('download'),null,2)],{type:'application/json'});download(blob,'sao_luu_kien_nang_full_'+new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)+'.json');showToast('Đã tải bản sao lưu JSON đầy đủ')}function csvCell(v){v=String(v??'');return '"'+v.replace(/"/g,'""')+'"'}function exportCSV(){let rows=[['Lớp','Lịch học','Họ tên','Khối','Trường','SĐT','SĐT phụ huynh','Học phí','Đã đóng','Còn nợ','Trạng thái','Ghi chú']];for(const x of getAllStudents())rows.push([x.className,x.cls.schedule,x.s.name,x.s.grade,x.s.school,x.s.phone,x.s.parentPhone,x.s.tuition,x.s.paid,debtOf(x.s),x.s.status,x.s.note]);const csv='\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'danh_sach_hoc_sinh_hoc_phi.csv');showToast('Đã xuất CSV mở bằng Excel')}function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function exportJSON(){if(!requireSuperAdminAction('sao lưu JSON'))return;const blob=new Blob([JSON.stringify(buildBackupPayload('download'),null,2)],{type:'application/json'});download(blob,'sao_luu_kien_nang_full_'+new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)+'.json');showToast('Đã tải bản sao lưu JSON đầy đủ')}
+function csvCell(v){v=String(v??'');return '"'+v.replace(/"/g,'""')+'"'}
+function csvPhoneText(v){
+    const phone=String(v??'').trim();
+    if(!phone)return '';
+    // Buộc Excel đọc số điện thoại là văn bản để không mất số 0 ở đầu.
+    return '="'+phone.replace(/"/g,'""')+'"';
+}
+function exportCSV(){
+    const headers=['Lớp','Lịch học','Họ tên','Khối','Trường','SĐT','SĐT phụ huynh','Học phí','Đã đóng','Còn nợ','Trạng thái','Ghi chú'];
+    const exportRows=[];
+    for(const [classKey,cls] of getVisibleActiveClassEntries()){
+        for(const s of (cls.students||[])){
+            exportRows.push([
+                cls.name||classKey,cls.schedule||'',s.name||'',s.grade||'',s.school||'',
+                String(s.phone||''),String(s.parentPhone||''),Number(s.tuition)||0,Number(s.paid)||0,
+                debtOf(s),s.status||'active',s.note||''
+            ]);
+        }
+    }
+    if(!exportRows.length){showToast('Không có học sinh thuộc lớp đang học để xuất','warn');return}
+
+    // Ưu tiên file Excel thật: hai cột điện thoại được đặt kiểu Text (@).
+    if(window.XLSX){
+        const ws=XLSX.utils.aoa_to_sheet([headers,...exportRows]);
+        const range=XLSX.utils.decode_range(ws['!ref']);
+        for(let r=1;r<=range.e.r;r++){
+            for(const c of [5,6]){
+                const addr=XLSX.utils.encode_cell({r,c});
+                if(ws[addr]){ws[addr].t='s';ws[addr].v=String(ws[addr].v??'');ws[addr].z='@'}
+            }
+        }
+        ws['!cols']=[{wch:24},{wch:22},{wch:28},{wch:10},{wch:26},{wch:16},{wch:18},{wch:14},{wch:14},{wch:14},{wch:14},{wch:34}];
+        const wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,'Học sinh đang học');
+        XLSX.writeFile(wb,'danh_sach_hoc_sinh_dang_hoc.xlsx');
+        showToast('Đã xuất Excel các lớp đang học; số điện thoại giữ nguyên số 0 đầu');
+        return;
+    }
+
+    // Dự phòng CSV: dùng công thức văn bản để Excel không tự bỏ số 0 đầu.
+    const csvRows=[headers,...exportRows.map(r=>r.map((v,i)=>(i===5||i===6)?csvPhoneText(v):v))];
+    const csv='\ufeff'+csvRows.map(r=>r.map(csvCell).join(',')).join('\n');
+    download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'danh_sach_hoc_sinh_dang_hoc.csv');
+    showToast('Đã xuất CSV các lớp đang học; số điện thoại giữ nguyên số 0 đầu');
+}
+function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 
 function toFirestoreCollectionsSnapshot(){normalize();const centerId=getFirestoreCenterId();const classes=[];const students=[];const calendarEvents=[];const attendance=[];for(const [classKey,cls] of Object.entries(data.classes)){classes.push({id:cls.id,code:cls.code,classKey,centerId,className:cls.name,teacherId:cls.teacherId||getActiveUserId(),teacherName:cls.teacherName||'',teacherEmail:cls.teacherEmail||'',sessions:cls.sessions,sessionDates:cls.sessionDates,schedule:cls.schedule,defaultFee:cls.defaultFee,courseNo:cls.courseNo,courseStatus:cls.courseStatus,lineageId:cls.lineageId,previousClassId:cls.previousClassId,nextClassId:cls.nextClassId,createdAt:cls.createdAt,updatedAt:cls.updatedAt});for(const s of cls.students){students.push({id:s.firestoreId,centerId,classId:cls.id,teacherId:s.teacherId||cls.teacherId||getActiveUserId(),name:s.name,grade:s.grade,school:s.school,phone:s.phone,parentPhone:s.parentPhone,status:s.status,tuition:s.tuition,paid:s.paid,paymentNote:s.paymentNote,note:s.note,createdAt:s.createdAt,updatedAt:s.updatedAt});attendance.push({id:'att_'+s.firestoreId,centerId,classId:cls.id,studentId:s.firestoreId,attendance:s.attendance,updatedAt:new Date().toISOString()})}for(const ev of cls.calendarEvents||[]){calendarEvents.push({...ev,centerId,classKey,classId:cls.id,className:cls.name,classCode:cls.code})}}return {center:{id:centerId,name:'Kiên Năng',schemaVersion:7.0,updatedBy:getActiveUserId()},classes,students,calendarEvents,attendance}}
 function exportFirestoreSchemaJSON(){if(!requireSuperAdminAction('sao lưu schema Firestore'))return;const blob=new Blob([JSON.stringify(toFirestoreCollectionsSnapshot(),null,2)],{type:'application/json'});download(blob,'firestore_schema_kien_nang_'+new Date().toISOString().slice(0,10)+'.json');showToast('Đã xuất JSON theo schema Firestore')}
