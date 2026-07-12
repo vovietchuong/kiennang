@@ -479,6 +479,18 @@
         .weekly-fixed-item .weekly-fixed-time{font-size:12px;margin-bottom:0}
         .weekly-fixed-note{display:none!important}
 
+        /* ---------- WEEKLY FIXED TIMETABLE 5 SLOTS v8.7 ---------- */
+        .weekly-fixed-day{min-height:430px;display:flex;flex-direction:column}
+        .weekly-fixed-list{display:grid!important;grid-template-rows:repeat(5,72px);gap:7px;flex:1;padding:9px}
+        .weekly-fixed-slot{min-height:0;height:72px;border:0;background:transparent;border-radius:13px;padding:0;display:flex;flex-direction:column;gap:5px;overflow:auto;scrollbar-width:thin}
+        .weekly-fixed-slot.has-event{border:0;background:transparent}
+        .weekly-fixed-slot .weekly-fixed-item{margin:0;padding:8px 9px;border-radius:11px;min-height:72px;height:72px;justify-content:center;flex:0 0 72px}
+        .weekly-fixed-slot .weekly-fixed-name{font-size:12px!important}
+        .weekly-fixed-slot .weekly-fixed-time{font-size:11px!important}
+        .weekly-fixed-slot-empty,.weekly-fixed-slot-label{display:none!important}
+        body.dark-mode .weekly-fixed-slot,body.dark-mode .weekly-fixed-slot.has-event{background:transparent;border:0}
+        @media(max-width:980px){.weekly-fixed-day{min-height:430px}}
+
     
 
         /* ---------- WEEKLY TIMETABLE FULL-WIDTH LAYOUT v8.4 ---------- */
@@ -1591,12 +1603,27 @@ function scheduleFixedEventsForWeek(anchorDate=calendarDate){
     }
     return days;
 }
+function fixedTimetableSlotIndex(start){
+    const raw=String(start||'').trim();
+    const m=raw.match(/^(\d{1,2})(?::(\d{2}))?/);
+    if(!m)return 4;
+    const minutes=Number(m[1])*60+Number(m[2]||0);
+    if(minutes<9*60)return 0;                 // Sáng ca 1
+    if(minutes<12*60)return 1;                // Sáng ca 2
+    if(minutes<15*60+30)return 2;             // Chiều ca 1
+    if(minutes<18*60+30)return 3;             // Chiều ca 2
+    return 4;                                  // Tối
+}
 function renderWeeklyFixedTimetable(){
     const days=scheduleFixedEventsForWeek(calendarDate);
     const total=days.reduce((s,d)=>s+d.events.length,0);
-    const start=days[0]?.date||startOfWeek(calendarDate), end=days[6]?.date||calendarDate;
     const labels=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
-    return `<section class="weekly-fixed-card"><div class="weekly-fixed-head"><div class="weekly-fixed-title">📅 Thời khóa biểu cố định trong tuần<span>Hiển thị gọn theo lịch cố định: chỉ tên lớp và khung giờ học.</span></div><span class="badge">${total} ca học/tuần</span></div><div class="weekly-fixed-grid">${days.map((day,i)=>`<div class="weekly-fixed-day"><div class="weekly-fixed-day-head"><b>${labels[i]}</b></div><div class="weekly-fixed-list">${day.events.length?day.events.map(e=>`<div class="weekly-fixed-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="viewClass('${esc(e.classKey)}')"><div class="weekly-fixed-name">${esc(e.className)}</div><div class="weekly-fixed-time">${esc(e.start||'Chưa rõ giờ')}${e.end?' – '+esc(e.end):''}</div></div>`).join(''):'<div class="weekly-fixed-empty">Không có lớp</div>'}</div></div>`).join('')}</div></section>`;
+    const renderItem=e=>`<div class="weekly-fixed-item" style="${colorVarsForClass(e.classKey,e.color)}" onclick="viewClass('${esc(e.classKey)}')"><div class="weekly-fixed-name">${esc(e.className)}</div><div class="weekly-fixed-time">${esc(e.start||'Chưa rõ giờ')}${e.end?' – '+esc(e.end):''}</div></div>`;
+    return `<section class="weekly-fixed-card"><div class="weekly-fixed-head"><div class="weekly-fixed-title">📅 Thời khóa biểu cố định trong tuần<span>Mỗi ngày chia 5 vị trí cố định: 2 ca sáng, 2 ca chiều và 1 ca tối; lịch học tự xếp đúng ô theo giờ bắt đầu.</span></div><span class="badge">${total} ca học/tuần</span></div><div class="weekly-fixed-grid">${days.map((day,i)=>{
+        const slots=Array.from({length:5},()=>[]);
+        day.events.forEach(e=>slots[fixedTimetableSlotIndex(e.start)].push(e));
+        return `<div class="weekly-fixed-day"><div class="weekly-fixed-day-head"><b>${labels[i]}</b></div><div class="weekly-fixed-list">${slots.map(events=>`<div class="weekly-fixed-slot ${events.length?'has-event':''}">${events.length?events.map(renderItem).join(''):''}</div>`).join('')}</div></div>`;
+    }).join('')}</div></section>`;
 }
 
 function scheduleRangeEvents(events){const today=ymd(new Date());return {today:events.filter(e=>e.date===today).length,upcoming:events.filter(e=>e.date>=today).length,done:events.filter(e=>e.status==='done').length,cancel:events.filter(e=>e.status==='cancel').length}}
