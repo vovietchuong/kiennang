@@ -634,6 +634,11 @@
         .busy-conflict-table th{background:#f8fafc;color:#475569;font-weight:950;position:sticky;top:0}
         .busy-conflict-table td b{color:#0b3b5c}.busy-conflict-scroll{overflow:auto;max-height:55vh;border:1px solid #e2e8f0;border-radius:14px}
         body.dark-mode .busy-conflict-table th{background:#0b1220;color:#cbd5e1}
+        .weekly-sync-status{display:inline-flex;width:max-content;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:950;background:#e0f2fe;color:#075985}
+        .weekly-sync-status.done{background:#dcfce7;color:#166534}.weekly-sync-status.cancel{background:#fee2e2;color:#991b1b}
+        .weekly-sync-room{font-size:10px;color:#64748b;font-weight:800}
+        .planner-completed-note{display:flex;align-items:center;gap:7px;width:max-content;max-width:100%;margin-top:7px;padding:6px 10px;border-radius:999px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;font-size:10.5px;font-weight:900}
+        body.dark-mode .planner-completed-note{background:#0b1220;border-color:#263244;color:#94a3b8}
 </style>
 </head>
 <body>
@@ -3701,6 +3706,217 @@ const __expiredOldNormalize=normalize;
 normalize=function(){
     __expiredOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.4',hideExpiredPlannedEvents:true};
+};
+
+/* ---------- UNIFIED SCHEDULE SOURCE v10.5 ---------- */
+const __syncExplicitFilteredCalendarEvents=filteredCalendarEvents;
+function syncScheduleRoomFromText(value){
+    const m=String(value||'').match(/phòng\s*([a-z0-9._-]+)/i);
+    return m?'Phòng '+m[1]:'';
+}
+function syncScheduleEventPriority(event){
+    const status=String(event?.status||'planned');
+    if(status==='done')return 500;
+    if(status==='cancel')return 450;
+    if(event?.type==='custom')return 350;
+    if(event?.type==='session')return 300;
+    if(event?.fromFixed||event?.type==='fixed')return 100;
+    return 200;
+}
+function syncScheduleQueryMatch(event){
+    const query=q();if(!query)return true;
+    return [event.className,event.classCode,event.title,event.date,event.start,event.end,event.room,event.note,event.status].join(' ').toLowerCase().includes(query);
+}
+function syncCanonicalEventsForDate(targetDate,explicitSource=null,respectCalendarFilters=false){
+    const date=targetDate instanceof Date?targetDate:new Date(String(targetDate)+'T12:00:00');
+    const key=ymd(date),today=ymd(new Date());
+    let explicit=(explicitSource||allCalendarEvents().filter(e=>!scheduleIsExpiredPlannedEvent(e,today))).filter(e=>e.date===key);
+    if(respectCalendarFilters){
+        if(calendarClassFilter!=='all')explicit=explicit.filter(e=>e.classKey===calendarClassFilter);
+        explicit=explicit.filter(syncScheduleQueryMatch);
+    }
+    let fixed=scheduleFixedEventsForDate(date).filter(e=>!scheduleIsExpiredPlannedEvent(e,today));
+    if(respectCalendarFilters){
+        if(calendarClassFilter!=='all')fixed=fixed.filter(e=>e.classKey===calendarClassFilter);
+        fixed=fixed.filter(syncScheduleQueryMatch);
+    }
+    const byClass=new Map();
+    [...explicit,...fixed].forEach(event=>{
+        if(!event?.classKey)return;
+        const row=byClass.get(event.classKey)||{explicit:[],fixed:[]};
+        if(event.fromFixed||event.type==='fixed')row.fixed.push(event);else row.explicit.push(event);
+        byClass.set(event.classKey,row);
+    });
+    const result=[];
+    byClass.forEach((row,classKey)=>{
+        const cls=data.classes[classKey];if(!cls)return;
+        const candidates=row.explicit.length?row.explicit:row.fixed;
+        if(!candidates.length)return;
+        const best=[...candidates].sort((a,b)=>syncScheduleEventPriority(b)-syncScheduleEventPriority(a)||String(a.start||'99:99').localeCompare(String(b.start||'99:99')))[0];
+        const timing=[...row.explicit,...row.fixed].find(e=>e.start)||{};
+        const merged={
+            ...best,
+            classKey,
+            className:cls.name||best.className||classKey,
+            classCode:cls.code||best.classCode||classKey,
+            cls,
+            start:best.start||timing.start||'',
+            end:best.end||timing.end||'',
+            room:best.room||timing.room||syncScheduleRoomFromText(cls.schedule),
+            color:best.color||cls.color||colorForClass(classKey),
+            status:best.status||'planned',
+            syncSource:best.type==='session'?'attendance':best.type==='custom'?'calendar':'fixed'
+        };
+        if(scheduleIsExpiredPlannedEvent(merged,today))return;
+        result.push(merged);
+    });
+    return result.sort((a,b)=>String(a.start||'99:99').localeCompare(String(b.start||'99:99'))||String(a.className||'').localeCompare(String(b.className||''),'vi'));
+}
+function syncVisibleCalendarDates(){
+    const dates=[];
+    if(calendarMode==='month'){
+        const first=new Date(calendarDate.getFullYear(),calendarDate.getMonth(),1);
+        let offset=first.getDay();offset=offset===0?6:offset-1;
+        const start=new Date(first);start.setDate(1-offset);
+        for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);dates.push(d)}
+    }else if(calendarMode==='week'){
+        const start=startOfWeek(calendarDate);for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);dates.push(d)}
+    }else{
+        const start=new Date(calendarDate.getFullYear(),calendarDate.getMonth(),calendarDate.getDate());
+        for(let i=0;i<14;i++){const d=new Date(start);d.setDate(start.getDate()+i);dates.push(d)}
+    }
+    return dates;
+}
+filteredCalendarEvents=function(){
+    const explicit=__syncExplicitFilteredCalendarEvents();
+    const visibleDates=syncVisibleCalendarDates(),visibleKeys=new Set(visibleDates.map(ymd));
+    const outside=explicit.filter(e=>!visibleKeys.has(e.date));
+    const inside=visibleDates.flatMap(date=>syncCanonicalEventsForDate(date,explicit,true));
+    return [...outside,...inside].sort((a,b)=>(a.date+' '+(a.start||'')).localeCompare(b.date+' '+(b.start||'')));
+};
+scheduleFixedEventsForWeek=function(anchorDate=calendarDate){
+    const start=startOfWeek(anchorDate||new Date()),explicit=__syncExplicitFilteredCalendarEvents(),days=[];
+    for(let i=0;i<7;i++){
+        const date=new Date(start);date.setDate(start.getDate()+i);
+        days.push({date,key:ymd(date),events:syncCanonicalEventsForDate(date,explicit,true)});
+    }
+    return days;
+};
+renderWeeklyFixedTimetable=function(){
+    const days=scheduleFixedEventsForWeek(calendarDate),total=days.reduce((sum,day)=>sum+day.events.length,0);
+    const labels=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
+    const renderItem=event=>{
+        const status=event.status||'planned',statusText=status==='done'?'Đã học':status==='cancel'?'Huỷ/nghỉ':'Dự kiến';
+        return `<div class="weekly-fixed-item" style="${colorVarsForClass(event.classKey,event.color)}" onclick="viewClass('${esc(event.classKey)}')"><div class="weekly-fixed-name">${esc(event.className)}</div><div class="weekly-fixed-time">${esc(event.start||'Chưa rõ giờ')}${event.end?' – '+esc(event.end):''}</div>${event.room?`<div class="weekly-sync-room">📍 ${esc(event.room)}</div>`:''}<span class="weekly-sync-status ${status==='done'?'done':status==='cancel'?'cancel':''}">${statusText}</span></div>`;
+    };
+    return `<section class="weekly-fixed-card"><div class="weekly-fixed-head"><div class="weekly-fixed-title">📅 Thời khóa biểu cố định trong tuần<span>Đồng bộ cùng Bảng điều khiển hôm nay và Thời khóa biểu Pro · một lớp chỉ hiển thị một lần trong ngày.</span></div><span class="badge">${total} ca học/tuần</span></div><div class="weekly-fixed-grid">${days.map((day,i)=>{const slots=Array.from({length:5},()=>[]);day.events.forEach(e=>slots[fixedTimetableSlotIndex(e.start)].push(e));return `<div class="weekly-fixed-day"><div class="weekly-fixed-day-head"><b>${labels[i]}</b></div><div class="weekly-fixed-list">${slots.map(events=>`<div class="weekly-fixed-slot ${events.length?'has-event':''}">${events.length?events.map(renderItem).join(''):''}</div>`).join('')}</div></div>`}).join('')}</div></section>`;
+};
+uxTodayEvents=function(){
+    return syncCanonicalEventsForDate(new Date(),null,false);
+};
+ux65TodayClassEvents=function(){
+    return syncCanonicalEventsForDate(new Date(),null,false);
+};
+ux70TodayEvents=function(){
+    return syncCanonicalEventsForDate(new Date(),null,false);
+};
+ux70TomorrowEvents=function(){
+    const date=new Date();date.setDate(date.getDate()+1);
+    return syncCanonicalEventsForDate(date,null,false).slice(0,8);
+};
+scheduleTomorrowUpcomingEvents=function(){
+    const date=new Date();date.setDate(date.getDate()+1);
+    return syncCanonicalEventsForDate(date,null,true);
+};
+const __syncOldRenderSchedule=renderSchedule;
+renderSchedule=function(){
+    __syncOldRenderSchedule();
+    const sub=document.querySelector('.calendar-shell .calendar-sub');
+    if(sub)sub.textContent='Đồng bộ cùng lịch cố định và Dashboard hôm nay · ưu tiên Đã học, sau đó lịch cụ thể và lịch cố định · tự ẩn Dự kiến đã qua ngày';
+};
+const __syncOldNormalize=normalize;
+normalize=function(){
+    __syncOldNormalize();
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.5',unifiedScheduleSource:true};
+};
+
+/* ---------- EXCLUDE COMPLETED COURSES FROM PLANNER v10.6 ---------- */
+const __activeOnlyOldPlannerVisibleClasses=plannerVisibleClasses;
+plannerVisibleClasses=function(){
+    return __activeOnlyOldPlannerVisibleClasses().filter(([classKey,cls])=>!isCompletedCourse(cls)&&String(cls.courseStatus||'current')!=='completed');
+};
+function plannerCompletedClassEntries(){
+    return getVisibleClassEntries().filter(([classKey,cls])=>(canEditClass(cls)||isAdmin()||isSuperAdmin())&&isCompletedCourse(cls));
+}
+function plannerClassIsEligible(classKey){
+    const cls=data.classes?.[classKey];
+    return !!cls&&!isCompletedCourse(cls)&&String(cls.courseStatus||'current')!=='completed'&&(canEditClass(cls)||isAdmin()||isSuperAdmin());
+}
+plannerExistingEvents=function(){
+    const events=[];
+    for(const [classKey,cls] of plannerVisibleClasses()){
+        const classStudents=(cls.students||[]).filter(st=>isStudentAttendanceActive(st)).map(st=>String(st.name||'').trim().toLowerCase()).filter(Boolean);
+        (cls.calendarEvents||[]).forEach(event=>{
+            if(String(event.status||'planned')==='cancel')return;
+            events.push({...event,classKey,className:cls.name,teacherId:cls.teacherId,classStudents});
+        });
+    }
+    return events;
+};
+const __activeOnlyOldPlannerEnsureDefaults=plannerEnsureDefaults;
+plannerEnsureDefaults=function(){
+    const eligible=plannerVisibleClasses();
+    if(!plannerClassIsEligible(plannerState.classKey)){
+        plannerState.classKey=eligible[0]?.[0]||'';
+        plannerState.suggestions=[];
+        plannerState.alternatives=[];
+        plannerState.globalAlternatives=[];
+        plannerState.activeAlternative=0;
+        plannerState.activeGlobalAlternative=0;
+    }
+    __activeOnlyOldPlannerEnsureDefaults();
+};
+const __activeOnlyOldPlannerSetClass=plannerSetClass;
+plannerSetClass=function(classKey){
+    if(!plannerClassIsEligible(classKey))return showToast('Lớp này đã hoàn thành đợt học nên không còn tham gia xếp lịch','warn');
+    return __activeOnlyOldPlannerSetClass(classKey);
+};
+const __activeOnlyOldPlannerSaveSuggestions=plannerSaveSuggestions;
+plannerSaveSuggestions=function(){
+    if(!plannerClassIsEligible(plannerState.classKey)){
+        plannerInvalidateAllProposals();
+        renderPlanner();
+        return showToast('Không thể lưu: lớp đã hoàn thành đợt học','error');
+    }
+    return __activeOnlyOldPlannerSaveSuggestions();
+};
+const __activeOnlyOldGlobalPlannerSave=globalPlannerSave;
+globalPlannerSave=function(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    const completed=[...new Set((plan?.items||[]).map(item=>item.classKey).filter(classKey=>!plannerClassIsEligible(classKey)))];
+    if(completed.length){
+        const names=completed.map(classKey=>data.classes?.[classKey]?.name||classKey);
+        plannerInvalidateAllProposals();
+        renderPlanner();
+        showToast('Phương án đã hết hiệu lực vì có lớp vừa hoàn thành: '+names.join(', '),'error');
+        return;
+    }
+    return __activeOnlyOldGlobalPlannerSave();
+};
+const __activeOnlyOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    plannerEnsureDefaults();
+    __activeOnlyOldRenderPlanner();
+    const help=document.querySelector('.planner-controlbar .planner-help');
+    if(help&&!help.querySelector('.planner-completed-note')){
+        const hidden=plannerCompletedClassEntries().length;
+        help.insertAdjacentHTML('beforeend',`<span class="planner-completed-note">📦 Đã ẩn ${hidden} lớp hoàn thành · giáo viên được giải phóng khỏi lịch của các lớp này</span>`);
+    }
+};
+const __activeOnlyOldNormalize=normalize;
+normalize=function(){
+    __activeOnlyOldNormalize();
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.6',excludeCompletedCoursesFromPlanner:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
