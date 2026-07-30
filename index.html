@@ -355,6 +355,30 @@
         .pro-config-table th{background:#f8fafc;color:#475569;font-weight:950;position:sticky;top:0;z-index:1}
         .pro-config-table select{padding:7px 9px;border:1px solid #dbe4ee;border-radius:10px;background:#fff;font-weight:800;color:#334155}
         .pro-config-table .class-meta b{display:block;color:#0b3b5c}.pro-config-table .class-meta small{color:#64748b;font-weight:750}
+        .pro-class-days{display:flex;gap:4px;flex-wrap:wrap;min-width:245px}
+        .pro-class-day{display:inline-flex;align-items:center;gap:3px;border:1px solid #dbe4ee;border-radius:999px;padding:5px 7px;background:#f8fafc;color:#475569;font-size:10px;font-weight:900;cursor:pointer}
+        .pro-class-day:has(input:checked){background:#e0f2fe;border-color:#7dd3fc;color:#075985}
+        .pro-class-day input{width:auto;margin:0;accent-color:#0284c7}
+        .planner-day-owner{display:block;margin-top:3px;color:#0284c7;font-size:10px;font-weight:850;line-height:1.25}
+        .availability-btn{border:1px solid #7dd3fc;background:#e0f2fe;color:#075985;border-radius:11px;padding:7px 10px;font-size:11px;font-weight:950;cursor:pointer;white-space:nowrap}
+        .availability-mini{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px;max-width:260px}
+        .availability-mini span{font-size:9px;border-radius:999px;padding:3px 6px;background:#f1f5f9;color:#64748b;font-weight:900}
+        .availability-modal{max-width:1050px!important}
+        .availability-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+        .availability-head h2{margin:0!important}.availability-head p{margin:4px 0 0!important;color:#64748b;font-size:12px;font-weight:750}
+        .availability-tools{display:flex;gap:7px;flex-wrap:wrap}
+        .availability-grid{display:grid;grid-template-columns:110px repeat(7,minmax(90px,1fr));gap:1px;background:#dbe4ee;border:1px solid #dbe4ee;border-radius:16px;overflow:hidden;min-width:810px}
+        .availability-cell{background:#fff;min-height:60px;padding:7px;display:flex;align-items:center;justify-content:center;text-align:center}
+        .availability-cell.head{background:#f1f5f9;min-height:45px;color:#334155;font-weight:950;flex-direction:column;gap:3px}
+        .availability-cell.head button{border:0;background:transparent;color:#0284c7;font-size:9px;font-weight:900;cursor:pointer}
+        .availability-cell.slot-head{background:#f8fafc;color:#0b3b5c;font-weight:950;flex-direction:column;font-size:11px}
+        .availability-cell.slot-head small{font-size:9px;color:#64748b;margin-top:2px}
+        .availability-toggle{width:100%;height:46px;border:1px solid #e2e8f0;background:#f8fafc;color:#94a3b8;border-radius:10px;font-size:10px;font-weight:950;cursor:pointer}
+        .availability-toggle.on{background:#dcfce7;border-color:#86efac;color:#166534;box-shadow:inset 0 0 0 1px #86efac}
+        .availability-toggle:hover{transform:translateY(-1px);filter:brightness(.985)}
+        .availability-scroll{overflow:auto;border-radius:16px}
+        .availability-legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.availability-legend span{font-size:11px;font-weight:850;color:#475569}
+        .planner-slot.unavailable{background:#f8fafc;color:#94a3b8;border:1px dashed #dbe4ee;cursor:not-allowed;opacity:.78}
         .pro-room-control{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #dbeafe;border-radius:13px;padding:7px 10px;font-size:12px;font-weight:900;color:#334155}
         .pro-room-control select{padding:5px 8px;border:1px solid #bfdbfe;border-radius:9px;font-weight:900}
         .pro-quality-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin:12px 0}
@@ -371,6 +395,9 @@
         body.dark-mode .smart-day{background:#0b1220;border-color:#263244}body.dark-mode .smart-day-head{background:#10223a;color:#7dd3fc}
         body.dark-mode .global-planner-panel,body.dark-mode .global-plan-stat,body.dark-mode .global-day,body.dark-mode .pro-planner-config,body.dark-mode .pro-quality-card,body.dark-mode .pro-room-control{background:#111827;border-color:#263244;color:#cbd5e1}
         body.dark-mode .global-day-head{background:#10223a;color:#7dd3fc}
+        body.dark-mode .pro-class-day{background:#0b1220;border-color:#263244;color:#94a3b8}
+        body.dark-mode .availability-cell{background:#111827}body.dark-mode .availability-cell.head,body.dark-mode .availability-cell.slot-head{background:#0b1220;color:#cbd5e1}
+        body.dark-mode .availability-toggle{background:#0b1220;border-color:#263244}.dark-mode .availability-toggle.on{background:#123524;color:#86efac;border-color:#166534}
         @media(max-width:980px){.smart-plan-card{overflow-x:auto}}
         @media(max-width:720px){.global-plan-stats{grid-template-columns:repeat(2,1fr)}.global-planner-panel{overflow-x:auto}.pro-quality-grid{grid-template-columns:1fr}}
 @media print{body{background:#fff;padding:0}.header,.toolbar,.actions,.btn,.modal-overlay,.toast-container{display:none!important}.app{max-width:none}.detail-view,.panel,.class-card{box-shadow:none;border:none}.print-only{display:block}.data-table th{position:static}}
@@ -2902,7 +2929,7 @@ plannerGenerate=function(){
     plannerEnsureDefaults();
     const classKey=plannerState.classKey;
     if(!classKey)return showToast('Chưa có lớp để xếp lịch','warn');
-    if(!plannerState.allowedDays.length||!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ngày và 1 ca học','warn');
+    if(!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ca học','warn');
     const clean=[];
     plannerState.allowedDays.forEach(dayId=>plannerState.allowedSlots.forEach(slotId=>{
         const conflicts=plannerConflicts(classKey,dayId,slotId);
@@ -3168,7 +3195,7 @@ globalPlannerGenerate=function(){
     plannerEnsureDefaults();
     const entries=globalPlannerClasses();
     if(!entries.length)return showToast('Chưa có lớp được bật để xếp lịch','warn');
-    if(!plannerState.allowedDays.length||!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ngày và 1 ca học','warn');
+    if(!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ca học','warn');
     const solutions=[];
     for(let variant=0;variant<7;variant++){
         const rows=entries.map(([classKey,cls])=>({classKey,cls,combos:globalClassCombinations(classKey,cls,variant)}))
@@ -3226,7 +3253,7 @@ function proRoomControlHtml(){
 }
 globalPlannerPanelHtml=function(){
     const plans=plannerState.globalAlternatives||[],entries=globalPlannerClasses();
-    if(!plans.length)return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Trung tâm xếp lịch thông minh</h3><p>Cấu hình từng lớp, nhiều phòng song song và tối ưu theo giáo viên, học sinh, lịch bận, độ giãn cách.</p></div><div class="global-plan-actions">${proRoomControlHtml()}<button class="btn btn-blue" onclick="globalPlannerGenerate()">✨ Tạo phương án Pro</button></div></div>${proProfilesHtml()}<div class="global-plan-stats"><div class="global-plan-stat"><b>${entries.length}</b><span>Lớp được bật</span></div><div class="global-plan-stat"><b>${entries.reduce((s,[,c])=>s+globalPlannerNeed(c),0)}</b><span>Buổi cần xếp</span></div><div class="global-plan-stat"><b>${plannerState.roomCount}</b><span>Phòng đồng thời</span></div><div class="global-plan-stat"><b>${plannerState.allowedDays.length*plannerState.allowedSlots.length*plannerState.roomCount}</b><span>Sức chứa ca/tuần</span></div></div></section>`;
+    if(!plans.length)return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Trung tâm xếp lịch thông minh</h3><p>Cấu hình từng lớp, nhiều phòng song song và tối ưu theo giáo viên, học sinh, lịch bận, độ giãn cách.</p></div><div class="global-plan-actions">${proRoomControlHtml()}<button class="btn btn-blue" onclick="globalPlannerGenerate()">✨ Tạo phương án Pro</button></div></div>${proProfilesHtml()}<div class="global-plan-stats"><div class="global-plan-stat"><b>${entries.length}</b><span>Lớp được bật</span></div><div class="global-plan-stat"><b>${entries.reduce((s,[,c])=>s+globalPlannerNeed(c),0)}</b><span>Buổi cần xếp</span></div><div class="global-plan-stat"><b>${plannerState.roomCount}</b><span>Phòng đồng thời</span></div><div class="global-plan-stat"><b>${PLANNER_DAYS.length*plannerState.allowedSlots.length*plannerState.roomCount}</b><span>Sức chứa ca/tuần</span></div></div></section>`;
     const active=Math.min(plannerState.activeGlobalAlternative||0,plans.length-1),plan=plans[active];
     return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Trung tâm xếp lịch thông minh</h3><p>Đã phân tích ràng buộc và chấm điểm; thầy có thể so sánh, xuất hoặc lưu phương án đang chọn.</p></div><div class="global-plan-actions">${proRoomControlHtml()}<button class="btn btn-blue" onclick="globalPlannerGenerate()">↻ Tối ưu lại</button><button class="btn btn-soft" onclick="globalPlannerExport()">📊 Xuất Excel</button><button class="btn btn-soft" onclick="window.print()">🖨️ In</button><button class="btn btn-green" onclick="globalPlannerSave()">💾 Lưu phương án</button></div></div>${proProfilesHtml()}<div class="global-plan-stats"><div class="global-plan-stat"><b>${plan.scheduled}/${plan.total}</b><span>Lớp xếp được</span></div><div class="global-plan-stat"><b>${plan.items.length}</b><span>Tổng buổi/tuần</span></div><div class="global-plan-stat"><b>${plan.score}</b><span>Điểm tối ưu</span></div><div class="global-plan-stat"><b>${plannerState.roomCount}</b><span>Phòng sử dụng</span></div></div>${proQualityHtml(plan)}<div class="smart-plan-tabs" style="margin-bottom:12px">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="globalSelectPlan(${i})">Phương án ${i+1} · ${p.scheduled}/${p.total} lớp</button>`).join('')}</div>${globalPlanWeekHtml(plan)}${plan.unscheduled.length?`<div class="global-unscheduled">⚠️ Chưa xếp được: ${plan.unscheduled.map(k=>esc(data.classes[k]?.name||k)).join(', ')}. Hãy tăng số phòng, mở thêm ca hoặc đổi ưu tiên của lớp.</div>`:''}</section>`;
 };
@@ -3278,6 +3305,266 @@ normalize=function(){
     Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.0',roomCount:Math.min(5,Math.max(1,Number(data.schedulerSettings?.roomCount)||1)),proControlCenter:true};
     plannerState.roomCount=data.schedulerSettings.roomCount;
+};
+
+/* ---------- PER-CLASS AVAILABLE DAYS v10.1 ---------- */
+const __daysOldProfile=proPlannerProfile;
+proPlannerProfile=function(cls){
+    const p=__daysOldProfile(cls);
+    const valid=new Set(PLANNER_DAYS.map(d=>Number(d.id)));
+    p.allowedDays=Array.isArray(p.allowedDays)?[...new Set(p.allowedDays.map(Number).filter(x=>valid.has(x)))]:PLANNER_DAYS.map(d=>d.id);
+    if(!p.allowedDays.length)p.allowedDays=PLANNER_DAYS.map(d=>d.id);
+    return p;
+};
+function proPlannerDays(cls){return [...proPlannerProfile(cls).allowedDays]}
+function proPlannerSetClassDay(classKey,dayId,checked){
+    const cls=data.classes[classKey];if(!cls)return;
+    const p=proPlannerProfile(cls),id=Number(dayId);
+    if(!checked&&p.allowedDays.length<=1){showToast('Mỗi lớp cần có ít nhất 1 ngày có thể học','warn');return renderPlanner()}
+    p.allowedDays=checked?[...new Set([...p.allowedDays,id])]:p.allowedDays.filter(x=>Number(x)!==id);
+    p.allowedDays=PLANNER_DAYS.map(d=>d.id).filter(x=>p.allowedDays.includes(x));
+    if(plannerState.classKey===classKey)plannerState.allowedDays=[...p.allowedDays];
+    plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeGlobalAlternative=0;
+    cls.updatedAt=new Date().toISOString();saveData();renderPlanner();
+}
+plannerSetClass=function(v){
+    plannerState.classKey=v;
+    const cls=data.classes[v];
+    plannerState.allowedDays=cls?proPlannerDays(cls):PLANNER_DAYS.map(d=>d.id);
+    plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeAlternative=0;plannerState.activeGlobalAlternative=0;
+    renderPlanner();
+};
+plannerToggleDay=function(id,checked){
+    id=Number(id);
+    const cls=data.classes[plannerState.classKey];
+    if(!cls)return;
+    const p=proPlannerProfile(cls);
+    if(!checked&&p.allowedDays.length<=1){showToast('Mỗi lớp cần có ít nhất 1 ngày có thể học','warn');return renderPlanner()}
+    p.allowedDays=checked?[...new Set([...p.allowedDays,id])]:p.allowedDays.filter(x=>Number(x)!==id);
+    p.allowedDays=PLANNER_DAYS.map(d=>d.id).filter(x=>p.allowedDays.includes(x));
+    plannerState.allowedDays=[...p.allowedDays];
+    plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeAlternative=0;plannerState.activeGlobalAlternative=0;
+    cls.updatedAt=new Date().toISOString();saveData();renderPlanner();
+};
+const __daysOldProfilesHtml=proProfilesHtml;
+proProfilesHtml=function(){
+    const rows=plannerVisibleClasses().filter(([k,c])=>!isCompletedCourse(c)&&c.courseStatus!=='completed');
+    return `<details class="pro-planner-config" open><summary><span>⚙️ Cấu hình riêng cho từng lớp</span><span class="badge">${rows.length} lớp</span></summary><div class="pro-config-scroll"><table class="pro-config-table"><thead><tr><th>Xếp lịch</th><th>Lớp học</th><th>Giáo viên</th><th>Số buổi/tuần</th><th>Ngày có thể học</th><th>Ưu tiên ca</th><th>Học sinh</th></tr></thead><tbody>${rows.map(([k,cls])=>{const p=proPlannerProfile(cls);return `<tr><td><input type="checkbox" ${p.include?'checked':''} onchange="proPlannerSetProfile('${esc(k)}','include',this.checked)"></td><td class="class-meta"><b>${esc(cls.name||k)}</b><small>${esc(cls.code||k)}</small></td><td>${esc(cls.teacherName||cls.teacherEmail||'—')}</td><td><select onchange="proPlannerSetProfile('${esc(k)}','sessionsPerWeek',this.value)">${[1,2,3,4].map(n=>`<option value="${n}" ${p.sessionsPerWeek===n?'selected':''}>${n} buổi</option>`).join('')}</select></td><td><div class="pro-class-days">${PLANNER_DAYS.map(d=>`<label class="pro-class-day"><input type="checkbox" ${p.allowedDays.includes(d.id)?'checked':''} onchange="proPlannerSetClassDay('${esc(k)}',${d.id},this.checked)">${d.n}</label>`).join('')}</div></td><td><select onchange="proPlannerSetProfile('${esc(k)}','preference',this.value)"><option value="balanced" ${p.preference==='balanced'?'selected':''}>Cân bằng</option><option value="morning" ${p.preference==='morning'?'selected':''}>Ưu tiên sáng</option><option value="afternoon" ${p.preference==='afternoon'?'selected':''}>Ưu tiên chiều</option><option value="evening" ${p.preference==='evening'?'selected':''}>Ưu tiên tối</option></select></td><td>${cls.students?.filter(s=>isStudentAttendanceActive(s)).length||0}</td></tr>`}).join('')}</tbody></table></div></details>`;
+};
+const __daysOldGlobalCombinations=globalClassCombinations;
+globalClassCombinations=function(classKey,cls,variant){
+    const clean=[],classDays=proPlannerDays(cls);
+    classDays.forEach(dayId=>plannerState.allowedSlots.forEach(slotId=>{
+        if(!proGlobalCandidateConflicts(classKey,dayId,slotId).length)clean.push({classKey,dayId,slotId,date:plannerWeekDate(dayId),slot:plannerSlot(slotId)});
+    }));
+    const need=globalPlannerNeed(cls),out=[];
+    function walk(start,picked){
+        if(picked.length===need){const pref=picked.reduce((s,x)=>s+proPreferenceBonus(cls,x.slotId),0);out.push({items:picked,score:smartCombinationScore(picked)+pref});return}
+        for(let i=start;i<clean.length;i++){const c=clean[i];if(!plannerRespectSpacing(picked,c.dayId))continue;walk(i+1,[...picked,c]);if(out.length>900)return}
+    }
+    walk(0,[]);
+    return out.sort((a,b)=>b.score-a.score||(((a.items[0]?.dayId||0)+variant)%7)-(((b.items[0]?.dayId||0)+variant)%7)).slice(0,24);
+};
+const __daysOldPlanMetrics=proPlanMetrics;
+proPlanMetrics=function(plan){
+    const m=__daysOldPlanMetrics(plan);
+    const capacity=PLANNER_DAYS.length*plannerState.allowedSlots.length*plannerState.roomCount;
+    m.occupancy=capacity?Math.round(plan.items.length*100/capacity):0;
+    return m;
+};
+const __daysOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    const cls=data.classes[plannerState.classKey];
+    if(cls)plannerState.allowedDays=proPlannerDays(cls);
+    __daysOldRenderPlanner();
+    const field=document.querySelector('.planner-field-days');
+    const label=field?.querySelector(':scope > label');
+    if(label&&cls){
+        label.textContent='Ngày có thể học · '+(cls.name||plannerState.classKey);
+        label.insertAdjacentHTML('beforeend',`<span class="planner-day-owner">Lưu riêng cho lớp này · đang chọn ${plannerState.allowedDays.length}/7 ngày</span>`);
+    }
+};
+const __daysOldNormalize=normalize;
+normalize=function(){
+    __daysOldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.1',perClassAvailableDays:true};
+    const cls=data.classes?.[plannerState.classKey];if(cls)plannerState.allowedDays=proPlannerDays(cls);
+};
+
+/* ---------- PER-DAY / PER-SLOT AVAILABILITY MATRIX v10.2 ---------- */
+const __matrixOldProfile=proPlannerProfile;
+proPlannerProfile=function(cls){
+    const p=__matrixOldProfile(cls),slotIds=PLANNER_SLOTS.map(s=>s.id),dayIds=PLANNER_DAYS.map(d=>String(d.id));
+    if(!p.availableDaySlots||typeof p.availableDaySlots!=='object'){
+        p.availableDaySlots={};
+        PLANNER_DAYS.forEach(d=>p.availableDaySlots[String(d.id)]=p.allowedDays.includes(d.id)?[...slotIds]:[]);
+    }
+    const clean={};
+    dayIds.forEach(day=>clean[day]=[...new Set((Array.isArray(p.availableDaySlots[day])?p.availableDaySlots[day]:[]).filter(x=>slotIds.includes(x)))]);
+    if(!Object.values(clean).some(a=>a.length))clean[String(PLANNER_DAYS[0].id)]=[slotIds[0]];
+    p.availableDaySlots=clean;
+    p.allowedDays=PLANNER_DAYS.filter(d=>clean[String(d.id)].length).map(d=>d.id);
+    return p;
+};
+function proAvailability(cls){return proPlannerProfile(cls).availableDaySlots}
+function proIsAvailable(cls,dayId,slotId){return (proAvailability(cls)[String(Number(dayId))]||[]).includes(slotId)}
+function proAvailableCells(cls){
+    const out=[];PLANNER_DAYS.forEach(d=>PLANNER_SLOTS.forEach(s=>{if(proIsAvailable(cls,d.id,s.id))out.push({dayId:d.id,slotId:s.id})}));return out;
+}
+function proAvailableSlotUnion(cls){return PLANNER_SLOTS.filter(s=>PLANNER_DAYS.some(d=>proIsAvailable(cls,d.id,s.id))).map(s=>s.id)}
+function proAvailabilityCount(cls){return proAvailableCells(cls).length}
+function proAvailabilityResetPlans(){
+    plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeAlternative=0;plannerState.activeGlobalAlternative=0;
+}
+plannerSetClass=function(v){
+    plannerState.classKey=v;const cls=data.classes[v],p=cls?proPlannerProfile(cls):null;
+    plannerState.allowedDays=cls?proPlannerDays(cls):PLANNER_DAYS.map(d=>d.id);
+    plannerState.allowedSlots=cls?proAvailableSlotUnion(cls):PLANNER_SLOTS.map(s=>s.id);
+    plannerState.perWeek=p?.sessionsPerWeek||2;proAvailabilityResetPlans();renderPlanner();
+};
+plannerSetPerWeek=function(v){
+    plannerState.perWeek=Math.min(4,Math.max(1,Number(v)||2));
+    const cls=data.classes[plannerState.classKey];if(cls){const p=proPlannerProfile(cls);p.sessionsPerWeek=plannerState.perWeek;cls.sessionsPerWeek=plannerState.perWeek;cls.updatedAt=new Date().toISOString();saveData()}
+    proAvailabilityResetPlans();renderPlanner();
+};
+plannerToggleDay=function(dayId,checked){
+    const cls=data.classes[plannerState.classKey];if(!cls)return;
+    const p=proPlannerProfile(cls),key=String(Number(dayId));
+    if(!checked&&proAvailabilityCount(cls)<=(p.availableDaySlots[key]||[]).length)return showToast('Mỗi lớp cần còn ít nhất 1 ca có thể học','warn'),renderPlanner();
+    p.availableDaySlots[key]=checked?PLANNER_SLOTS.map(s=>s.id):[];
+    p.allowedDays=PLANNER_DAYS.filter(d=>p.availableDaySlots[String(d.id)].length).map(d=>d.id);
+    plannerState.allowedDays=[...p.allowedDays];plannerState.allowedSlots=proAvailableSlotUnion(cls);proAvailabilityResetPlans();
+    cls.updatedAt=new Date().toISOString();saveData();renderPlanner();
+};
+plannerToggleSlot=function(slotId,checked){
+    const cls=data.classes[plannerState.classKey];if(!cls)return;
+    const p=proPlannerProfile(cls),activeDays=proPlannerDays(cls);
+    if(!checked){
+        const removing=activeDays.filter(d=>(p.availableDaySlots[String(d)]||[]).includes(slotId)).length;
+        if(proAvailabilityCount(cls)<=removing)return showToast('Mỗi lớp cần còn ít nhất 1 ca có thể học','warn'),renderPlanner();
+    }
+    activeDays.forEach(dayId=>{const key=String(dayId),arr=p.availableDaySlots[key]||[];p.availableDaySlots[key]=checked?[...new Set([...arr,slotId])]:arr.filter(x=>x!==slotId)});
+    p.allowedDays=PLANNER_DAYS.filter(d=>p.availableDaySlots[String(d.id)].length).map(d=>d.id);
+    plannerState.allowedSlots=proAvailableSlotUnion(cls);plannerState.allowedDays=[...p.allowedDays];proAvailabilityResetPlans();
+    cls.updatedAt=new Date().toISOString();saveData();renderPlanner();
+};
+function proEnsureAvailabilityModal(){
+    if(document.getElementById('availabilityModal'))return;
+    document.body.insertAdjacentHTML('beforeend','<div class="modal-overlay" id="availabilityModal"><div class="modal availability-modal" id="availabilityModalBody"></div></div>');
+}
+function proAvailabilityModalHtml(){
+    const key=plannerState.availabilityClassKey,cls=data.classes[key];if(!cls)return '';
+    const p=proPlannerProfile(cls),count=proAvailabilityCount(cls);
+    let grid='<div class="availability-grid"><div class="availability-cell head">Ca / Ngày</div>'+PLANNER_DAYS.map(d=>`<div class="availability-cell head">${d.n}<button onclick="proAvailabilitySetDay(${d.id},true)">Chọn cả ngày</button></div>`).join('');
+    PLANNER_SLOTS.forEach(slot=>{
+        grid+=`<div class="availability-cell slot-head">${slot.label}<small>${slot.start}–${slot.end}</small><button class="btn btn-soft" style="padding:3px 6px;margin-top:4px;font-size:9px" onclick="proAvailabilitySetSlot('${slot.id}',true)">Chọn cả ca</button></div>`;
+        PLANNER_DAYS.forEach(day=>{const on=proIsAvailable(cls,day.id,slot.id);grid+=`<div class="availability-cell"><button class="availability-toggle ${on?'on':''}" onclick="proAvailabilityToggle(${day.id},'${slot.id}')">${on?'✓ Có thể học':'— Không học'}</button></div>`});
+    });
+    grid+='</div>';
+    return `<div class="availability-head"><div><h2>🗓️ Ngày và ca có thể học</h2><p><b>${esc(cls.name||key)}</b> · đã chọn ${count}/35 khung giờ. Bấm trực tiếp từng ô để bật hoặc tắt.</p></div><div class="availability-tools"><button class="btn btn-green" onclick="proAvailabilitySetAll(true)">✓ Chọn tất cả</button><button class="btn btn-soft" onclick="proAvailabilityKeepEvenDays()">T2 · T4 · T6</button><button class="btn btn-danger" onclick="proAvailabilitySetAll(false)">Bỏ chọn</button></div></div><div class="availability-legend"><span>🟢 Có thể xếp lịch</span><span>⚪ Không xếp lịch</span><span>💡 Nút đầu hàng/cột giúp chọn nhanh theo ngày hoặc ca</span></div><div class="availability-scroll">${grid}</div><div class="modal-actions" style="margin-top:14px"><button class="btn btn-blue" onclick="proCloseAvailability()">Hoàn tất</button></div>`;
+}
+function proOpenAvailability(classKey){
+    plannerState.availabilityClassKey=classKey;proEnsureAvailabilityModal();
+    document.getElementById('availabilityModalBody').innerHTML=proAvailabilityModalHtml();openModal('availabilityModal');
+}
+function proRefreshAvailabilityModal(){
+    const body=document.getElementById('availabilityModalBody');if(body)body.innerHTML=proAvailabilityModalHtml();
+}
+function proAvailabilityCommit(cls){
+    const p=proPlannerProfile(cls);p.allowedDays=PLANNER_DAYS.filter(d=>p.availableDaySlots[String(d.id)].length).map(d=>d.id);
+    if(plannerState.classKey===plannerState.availabilityClassKey){plannerState.allowedDays=[...p.allowedDays];plannerState.allowedSlots=proAvailableSlotUnion(cls)}
+    proAvailabilityResetPlans();cls.updatedAt=new Date().toISOString();saveData();proRefreshAvailabilityModal();
+}
+function proAvailabilityToggle(dayId,slotId){
+    const cls=data.classes[plannerState.availabilityClassKey];if(!cls)return;
+    const p=proPlannerProfile(cls),key=String(Number(dayId)),arr=p.availableDaySlots[key]||[],on=arr.includes(slotId);
+    if(on&&proAvailabilityCount(cls)<=1)return showToast('Mỗi lớp cần còn ít nhất 1 ca có thể học','warn');
+    p.availableDaySlots[key]=on?arr.filter(x=>x!==slotId):[...new Set([...arr,slotId])];proAvailabilityCommit(cls);
+}
+function proAvailabilitySetDay(dayId,checked){
+    const cls=data.classes[plannerState.availabilityClassKey];if(!cls)return;const p=proPlannerProfile(cls),key=String(Number(dayId));
+    if(!checked&&proAvailabilityCount(cls)<=(p.availableDaySlots[key]||[]).length)return showToast('Mỗi lớp cần còn ít nhất 1 ca có thể học','warn');
+    p.availableDaySlots[key]=checked?PLANNER_SLOTS.map(s=>s.id):[];proAvailabilityCommit(cls);
+}
+function proAvailabilitySetSlot(slotId,checked){
+    const cls=data.classes[plannerState.availabilityClassKey];if(!cls)return;const p=proPlannerProfile(cls);
+    PLANNER_DAYS.forEach(d=>{const key=String(d.id),arr=p.availableDaySlots[key]||[];p.availableDaySlots[key]=checked?[...new Set([...arr,slotId])]:arr.filter(x=>x!==slotId)});
+    if(!proAvailabilityCount(cls))p.availableDaySlots[String(PLANNER_DAYS[0].id)]=[PLANNER_SLOTS[0].id];proAvailabilityCommit(cls);
+}
+function proAvailabilitySetAll(checked){
+    const cls=data.classes[plannerState.availabilityClassKey];if(!cls)return;const p=proPlannerProfile(cls);
+    PLANNER_DAYS.forEach(d=>p.availableDaySlots[String(d.id)]=checked?PLANNER_SLOTS.map(s=>s.id):[]);
+    if(!checked){p.availableDaySlots[String(PLANNER_DAYS[0].id)]=[PLANNER_SLOTS[0].id];showToast('Đã giữ lại T2 · Sáng 1 để lớp luôn có ít nhất một lựa chọn','warn')}
+    proAvailabilityCommit(cls);
+}
+function proAvailabilityKeepEvenDays(){
+    const cls=data.classes[plannerState.availabilityClassKey];if(!cls)return;const p=proPlannerProfile(cls);
+    PLANNER_DAYS.forEach(d=>p.availableDaySlots[String(d.id)]=[1,3,5].includes(Number(d.id))?PLANNER_SLOTS.map(s=>s.id):[]);proAvailabilityCommit(cls);
+}
+function proCloseAvailability(){closeModal('availabilityModal');renderPlanner()}
+proPlannerSetClassDay=function(classKey,dayId,checked){
+    const cls=data.classes[classKey];if(!cls)return;const old=plannerState.availabilityClassKey;plannerState.availabilityClassKey=classKey;
+    const p=proPlannerProfile(cls),key=String(Number(dayId));
+    if(!checked&&proAvailabilityCount(cls)<=(p.availableDaySlots[key]||[]).length){plannerState.availabilityClassKey=old;return showToast('Mỗi lớp cần còn ít nhất 1 ca có thể học','warn'),renderPlanner()}
+    p.availableDaySlots[key]=checked?PLANNER_SLOTS.map(s=>s.id):[];p.allowedDays=PLANNER_DAYS.filter(d=>p.availableDaySlots[String(d.id)].length).map(d=>d.id);
+    if(plannerState.classKey===classKey){plannerState.allowedDays=[...p.allowedDays];plannerState.allowedSlots=proAvailableSlotUnion(cls)}
+    proAvailabilityResetPlans();cls.updatedAt=new Date().toISOString();saveData();plannerState.availabilityClassKey=old;renderPlanner();
+};
+proProfilesHtml=function(){
+    const rows=plannerVisibleClasses().filter(([k,c])=>!isCompletedCourse(c)&&c.courseStatus!=='completed');
+    return `<details class="pro-planner-config" open><summary><span>⚙️ Cấu hình riêng cho từng lớp</span><span class="badge">${rows.length} lớp</span></summary><div class="pro-config-scroll"><table class="pro-config-table"><thead><tr><th>Xếp lịch</th><th>Lớp học</th><th>Giáo viên</th><th>Số buổi/tuần</th><th>Ngày × ca có thể học</th><th>Ưu tiên ca</th><th>Học sinh</th></tr></thead><tbody>${rows.map(([k,cls])=>{const p=proPlannerProfile(cls),count=proAvailabilityCount(cls);return `<tr><td><input type="checkbox" ${p.include?'checked':''} onchange="proPlannerSetProfile('${esc(k)}','include',this.checked)"></td><td class="class-meta"><b>${esc(cls.name||k)}</b><small>${esc(cls.code||k)}</small></td><td>${esc(cls.teacherName||cls.teacherEmail||'—')}</td><td><select onchange="proPlannerSetProfile('${esc(k)}','sessionsPerWeek',this.value)">${[1,2,3,4].map(n=>`<option value="${n}" ${p.sessionsPerWeek===n?'selected':''}>${n} buổi</option>`).join('')}</select></td><td><button class="availability-btn" onclick="proOpenAvailability('${esc(k)}')">🗓️ Thiết lập ${count}/35 ca</button><div class="availability-mini">${PLANNER_DAYS.map(d=>`<span>${d.n}: ${(p.availableDaySlots[String(d.id)]||[]).length}</span>`).join('')}</div></td><td><select onchange="proPlannerSetProfile('${esc(k)}','preference',this.value)"><option value="balanced" ${p.preference==='balanced'?'selected':''}>Cân bằng</option><option value="morning" ${p.preference==='morning'?'selected':''}>Ưu tiên sáng</option><option value="afternoon" ${p.preference==='afternoon'?'selected':''}>Ưu tiên chiều</option><option value="evening" ${p.preference==='evening'?'selected':''}>Ưu tiên tối</option></select></td><td>${cls.students?.filter(s=>isStudentAttendanceActive(s)).length||0}</td></tr>`}).join('')}</tbody></table></div></details>`;
+};
+globalClassCombinations=function(classKey,cls,variant){
+    const clean=[];
+    proAvailableCells(cls).forEach(cell=>{if(!proGlobalCandidateConflicts(classKey,cell.dayId,cell.slotId).length)clean.push({classKey,dayId:cell.dayId,slotId:cell.slotId,date:plannerWeekDate(cell.dayId),slot:plannerSlot(cell.slotId)})});
+    const need=globalPlannerNeed(cls),out=[];
+    function walk(start,picked){
+        if(picked.length===need){const pref=picked.reduce((s,x)=>s+proPreferenceBonus(cls,x.slotId),0);out.push({items:picked,score:smartCombinationScore(picked)+pref});return}
+        for(let i=start;i<clean.length;i++){const c=clean[i];if(!plannerRespectSpacing(picked,c.dayId))continue;walk(i+1,[...picked,c]);if(out.length>900)return}
+    }
+    walk(0,[]);return out.sort((a,b)=>b.score-a.score||(((a.items[0]?.dayId||0)+variant)%7)-(((b.items[0]?.dayId||0)+variant)%7)).slice(0,24);
+};
+plannerGenerate=function(){
+    plannerEnsureDefaults();const classKey=plannerState.classKey,cls=data.classes[classKey];
+    if(!cls)return showToast('Chưa có lớp để xếp lịch','warn');
+    const clean=proAvailableCells(cls).map(x=>({...x,conflicts:plannerConflicts(classKey,x.dayId,x.slotId),date:plannerWeekDate(x.dayId),slot:plannerSlot(x.slotId)})).filter(x=>!x.conflicts.length);
+    const need=plannerState.perWeek,plans=[];
+    function walk(start,picked){if(picked.length===need){plans.push({items:picked.map(x=>({...x})),score:smartCombinationScore(picked),reasons:smartPlanReasons(picked)});return}for(let i=start;i<clean.length;i++){const c=clean[i];if(!plannerRespectSpacing(picked,c.dayId))continue;walk(i+1,[...picked,c])}}
+    walk(0,[]);plans.sort((a,b)=>b.score-a.score);plannerState.alternatives=plans.slice(0,3);plannerState.activeAlternative=0;plannerState.suggestions=(plannerState.alternatives[0]?.items||[]).map((x,i)=>({...x,id:'matrix_'+Date.now()+'_'+i}));renderPlanner();
+    showToast(plannerState.suggestions.length===need?'Đã tạo phương án đúng ma trận ngày × ca của lớp':'Không đủ khung giờ hợp lệ theo ma trận đã chọn','warn');
+};
+plannerGridHtml=function(){
+    const cls=data.classes[plannerState.classKey];let html='<div class="planner-grid"><div class="planner-cell head">Ca</div>'+PLANNER_DAYS.map(d=>`<div class="planner-cell head">${d.n}</div>`).join('');
+    PLANNER_SLOTS.forEach(slot=>{html+=`<div class="planner-cell time">${slot.label}<br><small>${slot.start}-${slot.end}</small></div>`;PLANNER_DAYS.forEach(day=>{
+        const allowed=proIsAvailable(cls,day.id,slot.id);if(!allowed){html+='<div class="planner-cell"><div class="planner-slot unavailable">Không học<small>Chưa bật ngày × ca</small></div></div>';return}
+        const conflicts=plannerConflicts(plannerState.classKey,day.id,slot.id),busyNames=plannerStudentBusyConflicts(cls,day.id,slot.id),picked=plannerState.suggestions.find(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id);
+        const clsName=picked?'pick':conflicts.length?(busyNames.length?'student-busy':'busy'):'free',txt=picked?'Đề xuất':conflicts.length?(busyNames.length?'HS bận':'Bận'):'Có thể học',detail=conflicts.slice(0,3).map(esc).join('<br>')||'Bấm để chọn';
+        html+=`<div class="planner-cell"><div class="planner-slot ${clsName}" onclick="plannerManualPick(${day.id},'${slot.id}')">${txt}<small>${detail}</small></div></div>`;
+    })});return html+'</div>';
+};
+const __matrixOldManualPick=plannerManualPick;
+plannerManualPick=function(dayId,slotId){
+    const cls=data.classes[plannerState.classKey];if(cls&&!proIsAvailable(cls,dayId,slotId))return showToast('Lớp này không thể học ở ngày và ca đã chọn','warn');
+    __matrixOldManualPick(dayId,slotId);
+};
+const __matrixOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    const cls=data.classes[plannerState.classKey];
+    if(cls){plannerState.allowedDays=proPlannerDays(cls);plannerState.allowedSlots=proAvailableSlotUnion(cls);plannerState.perWeek=proPlannerProfile(cls).sessionsPerWeek}
+    __matrixOldRenderPlanner();
+    if(!cls)return;
+    const dayLabel=document.querySelector('.planner-field-days > label');
+    if(dayLabel){dayLabel.textContent='Ngày có thể học · '+(cls.name||plannerState.classKey);dayLabel.insertAdjacentHTML('beforeend',`<span class="planner-day-owner">Bật/tắt cả ngày · chi tiết theo từng ca ở nút bên dưới</span>`)}
+    const dayField=document.querySelector('.planner-field-days');if(dayField&&!dayField.querySelector('.availability-btn'))dayField.insertAdjacentHTML('beforeend',`<button class="availability-btn" style="margin-top:7px" onclick="proOpenAvailability('${esc(plannerState.classKey)}')">🗓️ Chọn chi tiết ngày × ca (${proAvailabilityCount(cls)}/35)</button>`);
+    const slotInputs=document.querySelectorAll('.planner-field-slots input[type="checkbox"]');
+    PLANNER_SLOTS.forEach((slot,i)=>{const input=slotInputs[i];if(!input)return;const active=proPlannerDays(cls),count=active.filter(d=>proIsAvailable(cls,d,slot.id)).length;input.checked=count>0;input.indeterminate=count>0&&count<active.length;input.title=count+'/'+active.length+' ngày có thể học ca này'});
+};
+const __matrixOldNormalize=normalize;
+normalize=function(){
+    __matrixOldNormalize();Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.2',perDayPerSlotAvailability:true};
+    const cls=data.classes?.[plannerState.classKey];if(cls){plannerState.allowedDays=proPlannerDays(cls);plannerState.allowedSlots=proAvailableSlotUnion(cls)}
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
