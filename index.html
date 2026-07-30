@@ -3679,6 +3679,30 @@ normalize=function(){
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.3',busyScheduleFinalGuard:true};
 };
 
+/* ---------- HIDE EXPIRED PLANNED EVENTS v10.4 ---------- */
+function scheduleIsExpiredPlannedEvent(event,today=ymd(new Date())){
+    if(!event?.date||event.date>=today)return false;
+    return String(event.status||'planned')==='planned';
+}
+const __expiredOldFilteredCalendarEvents=filteredCalendarEvents;
+filteredCalendarEvents=function(){
+    const today=ymd(new Date());
+    return __expiredOldFilteredCalendarEvents().filter(event=>!scheduleIsExpiredPlannedEvent(event,today));
+};
+const __expiredOldRenderSchedule=renderSchedule;
+renderSchedule=function(){
+    __expiredOldRenderSchedule();
+    const sub=document.querySelector('.calendar-shell .calendar-sub');
+    if(sub)sub.textContent='Chỉ giữ lịch đã học của ngày đã qua · tự ẩn toàn bộ lớp còn trạng thái Dự kiến · ngày hôm nay và tương lai vẫn hiển thị';
+    const note=document.querySelector('.calendar-shell .schedule-compact-note');
+    if(note)note.textContent='✅ Thời khóa biểu tự động làm sạch: lịch Dự kiến của ngày đã qua không còn hiển thị ở chế độ Tháng, Tuần, Agenda và file CSV.';
+};
+const __expiredOldNormalize=normalize;
+normalize=function(){
+    __expiredOldNormalize();
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.4',hideExpiredPlannedEvents:true};
+};
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
 </script>
 <!-- UX 7.1 dashboard cleanup applied: gom điểm danh hôm nay vào một khối, ẩn thành phần trùng trên dashboard giáo viên. -->
