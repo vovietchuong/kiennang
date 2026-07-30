@@ -309,6 +309,70 @@
         body.dark-mode .planner-form-horizontal{background:#0b1220;border-color:#263244}body.dark-mode .planner-form-horizontal select,body.dark-mode .planner-checks-inline label{background:#111827!important;border-color:#263244!important}
         @media(max-width:1350px){.planner-bar-head{grid-template-columns:1fr}.planner-actions-horizontal{justify-content:flex-start!important;min-width:0}.planner-form-horizontal{grid-template-columns:repeat(3,minmax(220px,1fr))}.planner-field-days{grid-column:span 2}.planner-field-slots{grid-column:span 1}}
         @media(max-width:900px){.planner-form-horizontal{grid-template-columns:1fr}.planner-field-days,.planner-field-slots{grid-column:auto}.planner-shell.planner-horizontal .planner-grid{min-width:900px}}
+        /* ---------- SMART PLANNER MULTI-SOLUTION v9.0 ---------- */
+        .smart-plan-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
+        .smart-plan-summary{font-size:13px;color:#475569;font-weight:800}
+        .smart-plan-tabs{display:flex;gap:7px;flex-wrap:wrap}
+        .smart-plan-tab{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:8px 12px;font-weight:900;cursor:pointer}
+        .smart-plan-tab.active{background:#0b3b5c;color:#fff;border-color:#0b3b5c}
+        .smart-plan-card{border:1px solid #dbe4ee;border-radius:20px;padding:14px;background:linear-gradient(180deg,#f8fbff,#fff);box-shadow:0 6px 20px rgba(15,23,42,.06)}
+        .smart-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+        .smart-plan-title{font-size:17px;font-weight:950;color:#0b3b5c}
+        .smart-plan-title small{display:block;color:#64748b;font-size:12px;margin-top:3px;line-height:1.45}
+        .smart-plan-score{min-width:82px;text-align:center;border-radius:16px;padding:8px 10px;background:#dcfce7;color:#166534;font-weight:950}
+        .smart-plan-score small{display:block;font-size:10px;margin-top:2px}
+        .smart-week{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:9px;min-width:910px}
+        .smart-day{border:1px solid #e2e8f0;border-radius:15px;overflow:hidden;background:#f8fafc;min-height:390px}
+        .smart-day-head{text-align:center;padding:9px;background:#eef6ff;color:#0b3b5c;font-weight:950}
+        .smart-day-slots{display:grid;grid-template-rows:repeat(5,66px);gap:6px;padding:8px}
+        .smart-slot{border-radius:11px;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;border:1px dashed transparent;color:#94a3b8;font-size:11px;font-weight:800}
+        .smart-slot.selected{border-style:solid;border-color:var(--ev-soft,#bae6fd);border-left:5px solid var(--ev,#0b3b5c);background:var(--ev-bg,#e0f2fe);color:var(--ev,#075985);flex-direction:column}
+        .smart-slot.selected b{font-size:12px;line-height:1.2}.smart-slot.selected small{margin-top:3px;font-weight:800}
+        .smart-plan-reasons{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+        .smart-reason{border-radius:999px;padding:6px 10px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;font-size:11px;font-weight:900}
+        .smart-plan-empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;text-align:center;color:#64748b;font-weight:800;background:#f8fafc}
+        .global-planner-panel{margin:16px 0;border:1px solid #bfdbfe;border-radius:22px;padding:16px;background:linear-gradient(135deg,#eff6ff,#fff)}
+        .global-planner-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+        .global-planner-head h3{margin:0!important}.global-planner-head p{margin:4px 0 0;color:#64748b;font-size:12px;font-weight:750}
+        .global-plan-actions{display:flex;gap:8px;flex-wrap:wrap}
+        .global-plan-stats{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px;margin:12px 0}
+        .global-plan-stat{background:#fff;border:1px solid #dbeafe;border-radius:14px;padding:10px}.global-plan-stat b{display:block;color:#0b3b5c;font-size:20px}.global-plan-stat span{font-size:11px;color:#64748b;font-weight:850}
+        .global-week{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:9px;min-width:1080px}
+        .global-day{border:1px solid #dbe4ee;border-radius:16px;overflow:hidden;background:#f8fafc}
+        .global-day-head{text-align:center;padding:9px;background:#e0efff;color:#0b3b5c;font-weight:950}
+        .global-day-slots{display:grid;grid-template-rows:repeat(5,minmax(74px,auto));gap:6px;padding:8px}
+        .global-slot{border:1px dashed #d7e0ea;border-radius:11px;min-height:74px;padding:5px;display:flex;flex-direction:column;gap:4px}
+        .global-slot-label{font-size:9px;color:#94a3b8;font-weight:900;text-align:center}
+        .global-class-item{border:1px solid var(--ev-soft,#bae6fd);border-left:5px solid var(--ev,#0b3b5c);background:var(--ev-bg,#e0f2fe);border-radius:9px;padding:6px 7px;color:var(--ev,#075985)}
+        .global-class-item b{display:block;font-size:11.5px;line-height:1.2}.global-class-item small{display:block;font-size:9.5px;font-weight:800;margin-top:2px}
+        .global-unscheduled{margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:13px;padding:10px 12px;font-size:12px;font-weight:850}
+        .pro-planner-config{margin:12px 0;border:1px solid #dbe4ee;border-radius:17px;background:#fff;overflow:hidden}
+        .pro-planner-config summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:950;color:#0b3b5c;display:flex;justify-content:space-between;align-items:center}
+        .pro-planner-config summary::-webkit-details-marker{display:none}
+        .pro-config-scroll{overflow:auto;border-top:1px solid #e2e8f0}
+        .pro-config-table{width:100%;border-collapse:collapse;min-width:790px}
+        .pro-config-table th,.pro-config-table td{padding:9px 10px;border-bottom:1px solid #eef2f7;text-align:left;font-size:12px}
+        .pro-config-table th{background:#f8fafc;color:#475569;font-weight:950;position:sticky;top:0;z-index:1}
+        .pro-config-table select{padding:7px 9px;border:1px solid #dbe4ee;border-radius:10px;background:#fff;font-weight:800;color:#334155}
+        .pro-config-table .class-meta b{display:block;color:#0b3b5c}.pro-config-table .class-meta small{color:#64748b;font-weight:750}
+        .pro-room-control{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #dbeafe;border-radius:13px;padding:7px 10px;font-size:12px;font-weight:900;color:#334155}
+        .pro-room-control select{padding:5px 8px;border:1px solid #bfdbfe;border-radius:9px;font-weight:900}
+        .pro-quality-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin:12px 0}
+        .pro-quality-card{background:#fff;border:1px solid #dbeafe;border-radius:15px;padding:11px 12px}
+        .pro-quality-card h4{margin:0 0 8px;color:#0b3b5c;font-size:13px}
+        .pro-quality-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;font-weight:850;color:#475569;margin:6px 0}
+        .pro-quality-bar{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden}.pro-quality-bar i{display:block;height:100%;background:linear-gradient(90deg,#0ea5e9,#22c55e);border-radius:999px}
+        .pro-day-load{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;align-items:end;height:72px}
+        .pro-day-load div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:9px;font-weight:900;color:#64748b}
+        .pro-day-load i{display:block;width:100%;max-width:22px;min-height:4px;background:#38bdf8;border-radius:6px 6px 2px 2px;margin-bottom:4px}
+        .pro-validation{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.pro-validation span{font-size:10.5px;font-weight:900;border-radius:999px;padding:5px 9px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+        .pro-validation span.warn{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+        body.dark-mode .smart-plan-card,body.dark-mode .smart-plan-tab{background:#111827;border-color:#263244;color:#cbd5e1}
+        body.dark-mode .smart-day{background:#0b1220;border-color:#263244}body.dark-mode .smart-day-head{background:#10223a;color:#7dd3fc}
+        body.dark-mode .global-planner-panel,body.dark-mode .global-plan-stat,body.dark-mode .global-day,body.dark-mode .pro-planner-config,body.dark-mode .pro-quality-card,body.dark-mode .pro-room-control{background:#111827;border-color:#263244;color:#cbd5e1}
+        body.dark-mode .global-day-head{background:#10223a;color:#7dd3fc}
+        @media(max-width:980px){.smart-plan-card{overflow-x:auto}}
+        @media(max-width:720px){.global-plan-stats{grid-template-columns:repeat(2,1fr)}.global-planner-panel{overflow-x:auto}.pro-quality-grid{grid-template-columns:1fr}}
 @media print{body{background:#fff;padding:0}.header,.toolbar,.actions,.btn,.modal-overlay,.toast-container{display:none!important}.app{max-width:none}.detail-view,.panel,.class-card{box-shadow:none;border:none}.print-only{display:block}.data-table th{position:static}}
     
 
@@ -2780,6 +2844,440 @@ const __ux89OldNormalize=normalize;
 normalize=function(){
     __ux89OldNormalize();
     Object.values(data.classes||{}).forEach(cls=>ux89CleanStaleAttendanceSessions(cls));
+};
+
+/* ---------- SMART PLANNER MULTI-SOLUTION v9.0 ----------
+   Tạo nhiều phương án, loại xung đột cứng và chấm điểm độ tối ưu. */
+plannerState.alternatives=plannerState.alternatives||[];
+plannerState.activeAlternative=Number(plannerState.activeAlternative)||0;
+function smartPlannerReset(){plannerState.suggestions=[];plannerState.alternatives=[];plannerState.activeAlternative=0}
+const __smartOldSetClass=plannerSetClass;
+plannerSetClass=function(v){plannerState.classKey=v;smartPlannerReset();renderPlanner()};
+const __smartOldSetPerWeek=plannerSetPerWeek;
+plannerSetPerWeek=function(v){plannerState.perWeek=Number(v)||2;smartPlannerReset();renderPlanner()};
+const __smartOldSetRule=plannerSetRule;
+plannerSetRule=function(v){plannerState.rule=v;smartPlannerReset();renderPlanner()};
+const __smartOldToggleDay=plannerToggleDay;
+plannerToggleDay=function(id,checked){id=Number(id);plannerState.allowedDays=checked?[...new Set([...plannerState.allowedDays,id])]:plannerState.allowedDays.filter(x=>x!==id);smartPlannerReset();renderPlanner()};
+const __smartOldToggleSlot=plannerToggleSlot;
+plannerToggleSlot=function(id,checked){plannerState.allowedSlots=checked?[...new Set([...plannerState.allowedSlots,id])]:plannerState.allowedSlots.filter(x=>x!==id);smartPlannerReset();renderPlanner()};
+
+const __smartBaseConflicts=plannerConflicts;
+plannerConflicts=function(classKey,dayId,slotId){
+    const cls=data.classes[classKey],slot=plannerSlot(slotId),date=plannerWeekDate(dayId);
+    const conflicts=[...__smartBaseConflicts(classKey,dayId,slotId)];
+    if(typeof scheduleFixedEventsForDate==='function'){
+        const fixed=scheduleFixedEventsForDate(new Date(date+'T12:00:00'));
+        fixed.forEach(ev=>{
+            if(ev.classKey===classKey)return;
+            const start=ev.start||'00:00',end=ev.end||'23:59';
+            if(!plannerTimeOverlap(slot.start,slot.end,start,end))return;
+            const other=data.classes[ev.classKey]||{};
+            if(cls?.teacherId&&other.teacherId&&cls.teacherId===other.teacherId)conflicts.push('Trùng giáo viên: '+(ev.className||'lớp khác'));
+            else if(plannerStudentConflict(cls,{classStudents:plannerClassStudentNames(other)}))conflicts.push('Trùng học sinh với '+(ev.className||'lớp khác'));
+            else conflicts.push('Đã có lịch cố định: '+(ev.className||'lớp khác'));
+        });
+    }
+    return [...new Set(conflicts)];
+};
+function smartDayOrder(dayId){return PLANNER_DAYS.findIndex(d=>d.id===Number(dayId))}
+function smartCombinationScore(items){
+    let score=items.reduce((sum,x)=>sum+plannerCandidateScore(x.dayId,x.slotId,0),0);
+    const days=items.map(x=>smartDayOrder(x.dayId)).sort((a,b)=>a-b);
+    const gaps=[];for(let i=1;i<days.length;i++)gaps.push(days[i]-days[i-1]);
+    if(gaps.length){const ideal=6/(items.length||1);score+=gaps.reduce((s,g)=>s+Math.max(0,18-Math.abs(g-ideal)*6),0)}
+    const uniqueSlots=new Set(items.map(x=>x.slotId)).size;
+    score+=(items.length-uniqueSlots)*7;
+    score-=items.filter(x=>Number(x.dayId)===0).length*7;
+    return Math.round(score);
+}
+function smartPlanReasons(items){
+    const reasons=['Không trùng giáo viên/lớp/học sinh','Không xếp vào lịch bận đã khai báo'];
+    const days=items.map(x=>smartDayOrder(x.dayId)).sort((a,b)=>a-b);
+    if(days.length<2||days.every((d,i)=>!i||d-days[i-1]>1))reasons.push('Các buổi được giãn cách tốt');
+    if(new Set(items.map(x=>x.slotId)).size===1&&items.length>1)reasons.push('Khung giờ ổn định');
+    return reasons;
+}
+plannerGenerate=function(){
+    plannerEnsureDefaults();
+    const classKey=plannerState.classKey;
+    if(!classKey)return showToast('Chưa có lớp để xếp lịch','warn');
+    if(!plannerState.allowedDays.length||!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ngày và 1 ca học','warn');
+    const clean=[];
+    plannerState.allowedDays.forEach(dayId=>plannerState.allowedSlots.forEach(slotId=>{
+        const conflicts=plannerConflicts(classKey,dayId,slotId);
+        if(!conflicts.length)clean.push({dayId,slotId,conflicts:[],date:plannerWeekDate(dayId),slot:plannerSlot(slotId)});
+    }));
+    const need=plannerState.perWeek,plans=[];
+    function walk(start,picked){
+        if(picked.length===need){
+            const score=smartCombinationScore(picked);
+            plans.push({items:picked.map(x=>({...x})),score,reasons:smartPlanReasons(picked)});
+            return;
+        }
+        for(let i=start;i<clean.length;i++){
+            const c=clean[i];
+            if(!plannerRespectSpacing(picked,c.dayId))continue;
+            walk(i+1,[...picked,c]);
+        }
+    }
+    walk(0,[]);
+    plans.sort((a,b)=>b.score-a.score);
+    const seen=new Set();
+    plannerState.alternatives=plans.filter(p=>{const k=p.items.map(x=>x.dayId+'-'+x.slotId).sort().join('|');if(seen.has(k))return false;seen.add(k);return true}).slice(0,3);
+    plannerState.activeAlternative=0;
+    plannerState.suggestions=(plannerState.alternatives[0]?.items||[]).map((x,i)=>({...x,id:'smart_'+Date.now()+'_'+i}));
+    renderPlanner();
+    if(plannerState.suggestions.length===need)showToast('Đã tính và xếp hạng '+plannerState.alternatives.length+' phương án tối ưu');
+    else showToast('Không tìm được đủ ca sạch theo các điều kiện hiện tại. Hãy mở thêm ngày hoặc ca học.','warn');
+};
+function smartSelectPlan(index){
+    const plan=plannerState.alternatives[index];if(!plan)return;
+    plannerState.activeAlternative=index;
+    plannerState.suggestions=plan.items.map((x,i)=>({...x,id:'smart_select_'+Date.now()+'_'+i}));
+    renderPlanner();
+}
+function smartPlanWeekHtml(plan){
+    const cls=data.classes[plannerState.classKey]||{};
+    return `<div class="smart-week">${PLANNER_DAYS.map(day=>`<div class="smart-day"><div class="smart-day-head">${day.n}</div><div class="smart-day-slots">${PLANNER_SLOTS.map(slot=>{const hit=plan.items.find(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id);return hit?`<div class="smart-slot selected" style="${colorVarsForClass(plannerState.classKey,cls.color)}"><b>${esc(cls.name||'Lớp học')}</b><small>${slot.start}–${slot.end}</small></div>`:`<div class="smart-slot"></div>`}).join('')}</div></div>`).join('')}</div>`;
+}
+function smartPlannerResultHtml(){
+    const plans=plannerState.alternatives||[];
+    if(!plans.length)return `<div class="smart-plan-empty">Bấm <b>⚡ Tự động gợi ý</b> để hệ thống phân tích toàn bộ khung giờ và tạo tối đa 3 phương án tốt nhất.</div>`;
+    const active=Math.min(plannerState.activeAlternative||0,plans.length-1),plan=plans[active];
+    return `<div class="smart-plan-toolbar"><div class="smart-plan-summary">Đã so sánh các tổ hợp hợp lệ và chọn ${plans.length} phương án có điểm cao nhất.</div><div class="smart-plan-tabs">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="smartSelectPlan(${i})">Phương án ${i+1} · ${p.score} điểm</button>`).join('')}</div></div><div class="smart-plan-card"><div class="smart-plan-head"><div class="smart-plan-title">Phương án ${active+1}${active===0?' · Đề xuất tối ưu':''}<small>${plan.items.map(x=>plannerDayName(x.dayId)+' '+x.slot.start+'–'+x.slot.end).join(' · ')}</small></div><div class="smart-plan-score">${plan.score}<small>ĐIỂM TỐI ƯU</small></div></div>${smartPlanWeekHtml(plan)}<div class="smart-plan-reasons">${plan.reasons.map(x=>`<span class="smart-reason">✓ ${esc(x)}</span>`).join('')}</div></div>`;
+}
+const __smartOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    __smartOldRenderPlanner();
+    const heading=[...document.querySelectorAll('.planner-card h3')].find(h=>h.textContent.includes('Phương án đề xuất'));
+    const result=heading?.nextElementSibling;
+    if(result&&result.classList.contains('planner-result'))result.innerHTML=smartPlannerResultHtml();
+};
+const __smartOldManualPick=plannerManualPick;
+plannerManualPick=function(dayId,slotId){plannerState.alternatives=[];plannerState.activeAlternative=0;__smartOldManualPick(dayId,slotId)};
+const __smartOldNormalize=normalize;
+normalize=function(){__smartOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.0',multiSolutionOptimization:true}};
+
+/* ---------- GLOBAL ALL-CLASSES PLANNER v9.1 ---------- */
+plannerState.globalAlternatives=plannerState.globalAlternatives||[];
+plannerState.activeGlobalAlternative=Number(plannerState.activeGlobalAlternative)||0;
+function globalPlannerClasses(){
+    return plannerVisibleClasses().filter(([k,cls])=>!isCompletedCourse(cls)&&cls.courseStatus!=='completed');
+}
+function globalPlannerNeed(cls){
+    return Math.min(4,Math.max(1,Number(cls?.sessionsPerWeek||cls?.weeklySessions||cls?.lessonsPerWeek||plannerState.perWeek)||2));
+}
+function globalItemsConflict(a,b){
+    if(Number(a.dayId)!==Number(b.dayId)||a.slotId!==b.slotId)return false;
+    const ca=data.classes[a.classKey]||{},cb=data.classes[b.classKey]||{};
+    if(ca.teacherId&&cb.teacherId&&ca.teacherId===cb.teacherId)return true;
+    const names=new Set(plannerClassStudentNames(ca));
+    if(plannerClassStudentNames(cb).some(n=>names.has(n)))return true;
+    return true; // Mặc định một khung giờ dùng cho một lớp để tránh xung đột phòng chưa khai báo.
+}
+function globalClassCombinations(classKey,cls,variant){
+    const clean=[];
+    plannerState.allowedDays.forEach(dayId=>plannerState.allowedSlots.forEach(slotId=>{
+        if(!plannerConflicts(classKey,dayId,slotId).length)clean.push({classKey,dayId,slotId,date:plannerWeekDate(dayId),slot:plannerSlot(slotId)});
+    }));
+    const need=globalPlannerNeed(cls),out=[];
+    function walk(start,picked){
+        if(picked.length===need){out.push({items:picked,score:smartCombinationScore(picked)});return}
+        for(let i=start;i<clean.length;i++){
+            const c=clean[i];
+            if(!plannerRespectSpacing(picked,c.dayId))continue;
+            walk(i+1,[...picked,c]);
+            if(out.length>700)return;
+        }
+    }
+    walk(0,[]);
+    return out.sort((a,b)=>(b.score-a.score)+(((smartDayOrder(a.items[0]?.dayId)||0)+variant)%3-1)).slice(0,18);
+}
+function globalPlanScore(items,scheduled,total){
+    const base=items.reduce((s,x)=>s+plannerCandidateScore(x.dayId,x.slotId,0),0);
+    const usedDays=new Set(items.map(x=>x.dayId)).size;
+    return Math.round(base+scheduled*150+usedDays*4-(total-scheduled)*500);
+}
+function globalPlannerGenerate(){
+    plannerEnsureDefaults();
+    const entries=globalPlannerClasses();
+    if(!entries.length)return showToast('Chưa có lớp đang học để xếp lịch','warn');
+    if(!plannerState.allowedDays.length||!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ngày và 1 ca học','warn');
+    const solutions=[];
+    for(let variant=0;variant<5;variant++){
+        const rows=entries.map(([classKey,cls])=>({classKey,cls,combos:globalClassCombinations(classKey,cls,variant)}))
+            .sort((a,b)=>a.combos.length-b.combos.length||(b.cls.students?.length||0)-(a.cls.students?.length||0));
+        let nodes=0,best={items:[],scheduled:0,unscheduled:rows.map(r=>r.classKey)};
+        function dfs(index,items,scheduled,missed){
+            if(++nodes>45000)return;
+            if(index===rows.length){
+                if(scheduled>best.scheduled||(scheduled===best.scheduled&&globalPlanScore(items,scheduled,rows.length)>globalPlanScore(best.items,best.scheduled,rows.length)))best={items:[...items],scheduled,unscheduled:[...missed]};
+                return;
+            }
+            if(scheduled+(rows.length-index)<best.scheduled)return;
+            const row=rows[index],ordered=[...row.combos];
+            if(variant)ordered.sort((a,b)=>((a.items[0]?.dayId||0)+variant)%7-((b.items[0]?.dayId||0)+variant)%7||b.score-a.score);
+            for(const combo of ordered){
+                if(combo.items.some(x=>items.some(y=>globalItemsConflict(x,y))))continue;
+                dfs(index+1,[...items,...combo.items],scheduled+1,missed);
+            }
+            dfs(index+1,items,scheduled,[...missed,row.classKey]);
+        }
+        dfs(0,[],0,[]);
+        const signature=best.items.map(x=>x.classKey+'-'+x.dayId+'-'+x.slotId).sort().join('|');
+        if(!solutions.some(x=>x.signature===signature))solutions.push({...best,signature,score:globalPlanScore(best.items,best.scheduled,entries.length),total:entries.length});
+    }
+    plannerState.globalAlternatives=solutions.sort((a,b)=>b.scheduled-a.scheduled||b.score-a.score).slice(0,3);
+    plannerState.activeGlobalAlternative=0;
+    renderPlanner();
+    const best=plannerState.globalAlternatives[0];
+    showToast(best?.scheduled===best?.total?'Đã xếp đủ toàn bộ lớp và tạo các phương án so sánh':'Đã tạo phương án tốt nhất; còn '+(best?.unscheduled?.length||0)+' lớp chưa đủ khung giờ','warn');
+}
+function globalSelectPlan(index){plannerState.activeGlobalAlternative=index;renderPlanner()}
+function globalPlanWeekHtml(plan){
+    return `<div class="global-week">${PLANNER_DAYS.map(day=>`<div class="global-day"><div class="global-day-head">${day.n}</div><div class="global-day-slots">${PLANNER_SLOTS.map(slot=>{const rows=plan.items.filter(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id);return `<div class="global-slot"><div class="global-slot-label">${slot.label} · ${slot.start}–${slot.end}</div>${rows.map(x=>{const cls=data.classes[x.classKey]||{};return `<div class="global-class-item" style="${colorVarsForClass(x.classKey,cls.color)}"><b>${esc(cls.name||x.classKey)}</b><small>${esc(cls.teacherName||cls.teacherEmail||'Giáo viên')} · ${cls.students?.length||0} HS</small></div>`}).join('')}</div>`}).join('')}</div></div>`).join('')}</div>`;
+}
+function globalPlannerPanelHtml(){
+    const plans=plannerState.globalAlternatives||[],entries=globalPlannerClasses();
+    if(!plans.length)return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Phương án cho toàn bộ lớp</h3><p>Hiển thị tất cả lớp trên cùng thời khóa biểu; dùng số buổi/tuần đã lưu của từng lớp, nếu chưa có sẽ dùng lựa chọn hiện tại.</p></div><div class="global-plan-actions"><button class="btn btn-blue" onclick="globalPlannerGenerate()">✨ Xếp toàn bộ lớp</button></div></div><div class="global-plan-stats"><div class="global-plan-stat"><b>${entries.length}</b><span>Lớp đang học</span></div><div class="global-plan-stat"><b>${plannerState.allowedDays.length}</b><span>Ngày được phép</span></div><div class="global-plan-stat"><b>${plannerState.allowedSlots.length}</b><span>Ca được phép</span></div><div class="global-plan-stat"><b>0</b><span>Phương án đã tạo</span></div></div></section>`;
+    const active=Math.min(plannerState.activeGlobalAlternative||0,plans.length-1),plan=plans[active];
+    return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Phương án cho toàn bộ lớp</h3><p>Mỗi màu là một lớp; phương án đang chọn sẽ được lưu đồng loạt vào Lịch học.</p></div><div class="global-plan-actions"><button class="btn btn-blue" onclick="globalPlannerGenerate()">↻ Tính lại</button><button class="btn btn-green" onclick="globalPlannerSave()">💾 Lưu phương án này</button></div></div><div class="global-plan-stats"><div class="global-plan-stat"><b>${plan.scheduled}/${plan.total}</b><span>Lớp xếp được</span></div><div class="global-plan-stat"><b>${plan.items.length}</b><span>Tổng buổi/tuần</span></div><div class="global-plan-stat"><b>${plan.score}</b><span>Điểm tối ưu</span></div><div class="global-plan-stat"><b>${plans.length}</b><span>Phương án so sánh</span></div></div><div class="smart-plan-tabs" style="margin-bottom:12px">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="globalSelectPlan(${i})">Phương án ${i+1} · ${p.scheduled}/${p.total} lớp</button>`).join('')}</div>${globalPlanWeekHtml(plan)}${plan.unscheduled.length?`<div class="global-unscheduled">⚠️ Chưa xếp được: ${plan.unscheduled.map(k=>esc(data.classes[k]?.name||k)).join(', ')}. Thầy có thể mở thêm ngày/ca hoặc chọn quy tắc linh hoạt hơn.</div>`:''}</section>`;
+}
+function globalPlannerSave(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    if(!plan?.items?.length)return showToast('Chưa có phương án toàn bộ lớp để lưu','warn');
+    const grouped={};plan.items.forEach(x=>(grouped[x.classKey]||(grouped[x.classKey]=[])).push(x));
+    Object.entries(grouped).forEach(([classKey,items])=>{
+        const cls=data.classes[classKey];if(!cls)return;
+        cls.calendarEvents=(cls.calendarEvents||[]).filter(ev=>ev.source!=='planner-global');
+        items.forEach(x=>cls.calendarEvents.push({id:makeId('event','global-'+classKey+'-'+x.date+'-'+x.slot.start),classKey,classId:cls.id,classCode:cls.code,className:cls.name,teacherId:cls.teacherId,teacherName:cls.teacherName||getActiveUserName(),title:'Buổi học '+cls.name,date:x.date,start:x.slot.start,end:x.slot.end,room:'',type:'custom',source:'planner-global',status:'planned',color:cls.color||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));
+        cls.schedule=items.sort((a,b)=>smartDayOrder(a.dayId)-smartDayOrder(b.dayId)).map(x=>`${plannerDayName(x.dayId)} ${x.slot.start}-${x.slot.end}`).join(', ');
+        cls.updatedAt=new Date().toISOString();
+    });
+    logActivity?.('Xếp lịch toàn bộ lớp','Đã lưu '+Object.keys(grouped).length+' lớp','global-planner');
+    saveData();showToast('Đã lưu đồng loạt '+Object.keys(grouped).length+' lớp vào Lịch học');setView('schedule');
+}
+const __globalOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    __globalOldRenderPlanner();
+    const section=document.querySelector('.planner-shell section.planner-card');
+    if(section&&!section.querySelector('.global-planner-panel'))section.insertAdjacentHTML('afterbegin',globalPlannerPanelHtml());
+    const actions=document.querySelector('.planner-actions-horizontal');
+    if(actions&&!actions.querySelector('[onclick="globalPlannerGenerate()"]'))actions.insertAdjacentHTML('afterbegin','<button class="btn btn-soft" onclick="globalPlannerGenerate()">🏫 Xếp tất cả lớp</button>');
+};
+const __globalOldNormalize=normalize;
+normalize=function(){__globalOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.1',globalClassPlanning:true}};
+
+/* ---------- SCHEDULER PRO CONTROL CENTER v10.0 ---------- */
+plannerState.roomCount=Math.min(5,Math.max(1,Number(plannerState.roomCount||data.schedulerSettings?.roomCount)||1));
+function proPlannerProfile(cls){
+    cls.schedulerProfile=cls.schedulerProfile&&typeof cls.schedulerProfile==='object'?cls.schedulerProfile:{};
+    const p=cls.schedulerProfile;
+    p.include=p.include!==false;
+    p.sessionsPerWeek=Math.min(4,Math.max(1,Number(p.sessionsPerWeek||cls.sessionsPerWeek||cls.weeklySessions||plannerState.perWeek)||2));
+    p.preference=['balanced','morning','afternoon','evening'].includes(p.preference)?p.preference:'balanced';
+    return p;
+}
+function proPlannerSetProfile(classKey,field,value){
+    const cls=data.classes[classKey];if(!cls)return;
+    const p=proPlannerProfile(cls);
+    if(field==='include')p.include=value===true||value==='true';
+    else if(field==='sessionsPerWeek')p.sessionsPerWeek=Math.min(4,Math.max(1,Number(value)||2));
+    else if(field==='preference')p.preference=value;
+    cls.sessionsPerWeek=p.sessionsPerWeek;cls.updatedAt=new Date().toISOString();
+    plannerState.globalAlternatives=[];plannerState.activeGlobalAlternative=0;
+    saveData();renderPlanner();
+}
+function proPlannerSetRooms(value){
+    plannerState.roomCount=Math.min(5,Math.max(1,Number(value)||1));
+    data.schedulerSettings={...(data.schedulerSettings||{}),roomCount:plannerState.roomCount};
+    plannerState.globalAlternatives=[];plannerState.activeGlobalAlternative=0;
+    saveData();renderPlanner();
+}
+globalPlannerClasses=function(){
+    return plannerVisibleClasses().filter(([k,cls])=>!isCompletedCourse(cls)&&cls.courseStatus!=='completed'&&proPlannerProfile(cls).include!==false);
+};
+globalPlannerNeed=function(cls){return proPlannerProfile(cls).sessionsPerWeek};
+function proPreferenceBonus(cls,slotId){
+    const pref=proPlannerProfile(cls).preference;
+    if(pref==='morning')return slotId.startsWith('sang')?24:-8;
+    if(pref==='afternoon')return slotId.startsWith('chieu')?24:-8;
+    if(pref==='evening')return slotId==='toi'?28:-8;
+    return 0;
+}
+globalItemsConflict=function(a,b){
+    if(Number(a.dayId)!==Number(b.dayId)||a.slotId!==b.slotId)return false;
+    const ca=data.classes[a.classKey]||{},cb=data.classes[b.classKey]||{};
+    if(ca.teacherId&&cb.teacherId&&ca.teacherId===cb.teacherId)return true;
+    const names=new Set(plannerClassStudentNames(ca));
+    return plannerClassStudentNames(cb).some(n=>names.has(n));
+};
+function proComboFits(combo,items){
+    return combo.items.every(x=>{
+        const same=items.filter(y=>Number(y.dayId)===Number(x.dayId)&&y.slotId===x.slotId);
+        if(same.length>=plannerState.roomCount)return false;
+        return !same.some(y=>globalItemsConflict(x,y));
+    });
+}
+function proGlobalCandidateConflicts(classKey,dayId,slotId){
+    const cls=data.classes[classKey],slot=plannerSlot(slotId),date=plannerWeekDate(dayId);
+    const included=new Set(globalPlannerClasses().map(([k])=>k)),conflicts=[];
+    const busy=plannerStudentBusyConflicts(cls,dayId,slotId);
+    if(busy.length)conflicts.push('HS bận: '+busy.slice(0,3).join(', '));
+    plannerExistingEvents().forEach(ev=>{
+        if(ev.classKey===classKey||included.has(ev.classKey)||ev.date!==date)return;
+        if(!plannerTimeOverlap(slot.start,slot.end,ev.start||'00:00',ev.end||'23:59'))return;
+        const other=data.classes[ev.classKey]||{};
+        if(cls?.teacherId&&other.teacherId&&cls.teacherId===other.teacherId)conflicts.push('Trùng giáo viên: '+(ev.className||'lớp khác'));
+        else if(plannerStudentConflict(cls,ev))conflicts.push('Trùng học sinh: '+(ev.className||'lớp khác'));
+        else conflicts.push('Khung giờ đã có lớp ngoài phương án: '+(ev.className||'lớp khác'));
+    });
+    if(typeof scheduleFixedEventsForDate==='function')scheduleFixedEventsForDate(new Date(date+'T12:00:00')).forEach(ev=>{
+        if(ev.classKey===classKey||included.has(ev.classKey))return;
+        if(plannerTimeOverlap(slot.start,slot.end,ev.start||'00:00',ev.end||'23:59'))conflicts.push('Lịch cố định ngoài phương án: '+(ev.className||'lớp khác'));
+    });
+    return [...new Set(conflicts)];
+}
+globalClassCombinations=function(classKey,cls,variant){
+    const clean=[];
+    plannerState.allowedDays.forEach(dayId=>plannerState.allowedSlots.forEach(slotId=>{
+        if(!proGlobalCandidateConflicts(classKey,dayId,slotId).length)clean.push({classKey,dayId,slotId,date:plannerWeekDate(dayId),slot:plannerSlot(slotId)});
+    }));
+    const need=globalPlannerNeed(cls),out=[];
+    function walk(start,picked){
+        if(picked.length===need){
+            const pref=picked.reduce((s,x)=>s+proPreferenceBonus(cls,x.slotId),0);
+            out.push({items:picked,score:smartCombinationScore(picked)+pref});return;
+        }
+        for(let i=start;i<clean.length;i++){
+            const c=clean[i];if(!plannerRespectSpacing(picked,c.dayId))continue;
+            walk(i+1,[...picked,c]);if(out.length>900)return;
+        }
+    }
+    walk(0,[]);
+    return out.sort((a,b)=>b.score-a.score||(((a.items[0]?.dayId||0)+variant)%7)-(((b.items[0]?.dayId||0)+variant)%7)).slice(0,24);
+};
+function proAssignRooms(items){
+    const groups={};
+    items.forEach(x=>{const key=x.dayId+'|'+x.slotId;(groups[key]||(groups[key]=[])).push(x)});
+    Object.values(groups).forEach(rows=>rows.forEach((x,i)=>x.roomIndex=i+1));
+    return items;
+}
+globalPlannerGenerate=function(){
+    plannerEnsureDefaults();
+    const entries=globalPlannerClasses();
+    if(!entries.length)return showToast('Chưa có lớp được bật để xếp lịch','warn');
+    if(!plannerState.allowedDays.length||!plannerState.allowedSlots.length)return showToast('Cần chọn ít nhất 1 ngày và 1 ca học','warn');
+    const solutions=[];
+    for(let variant=0;variant<7;variant++){
+        const rows=entries.map(([classKey,cls])=>({classKey,cls,combos:globalClassCombinations(classKey,cls,variant)}))
+            .sort((a,b)=>a.combos.length-b.combos.length||globalPlannerNeed(b.cls)-globalPlannerNeed(a.cls)||(b.cls.students?.length||0)-(a.cls.students?.length||0));
+        let nodes=0,best={items:[],scheduled:0,unscheduled:rows.map(r=>r.classKey)};
+        function dfs(index,items,scheduled,missed){
+            if(++nodes>70000)return;
+            if(index===rows.length){
+                if(scheduled>best.scheduled||(scheduled===best.scheduled&&globalPlanScore(items,scheduled,rows.length)>globalPlanScore(best.items,best.scheduled,rows.length)))best={items:[...items],scheduled,unscheduled:[...missed]};
+                return;
+            }
+            if(scheduled+(rows.length-index)<best.scheduled)return;
+            const row=rows[index],ordered=[...row.combos];
+            if(variant)ordered.sort((a,b)=>(((a.items[0]?.dayId||0)+variant)%7)-(((b.items[0]?.dayId||0)+variant)%7)||b.score-a.score);
+            for(const combo of ordered){
+                if(!proComboFits(combo,items))continue;
+                dfs(index+1,[...items,...combo.items],scheduled+1,missed);
+            }
+            dfs(index+1,items,scheduled,[...missed,row.classKey]);
+        }
+        dfs(0,[],0,[]);
+        proAssignRooms(best.items);
+        const signature=best.items.map(x=>x.classKey+'-'+x.dayId+'-'+x.slotId+'-'+x.roomIndex).sort().join('|');
+        if(!solutions.some(x=>x.signature===signature))solutions.push({...best,signature,score:globalPlanScore(best.items,best.scheduled,entries.length),total:entries.length});
+    }
+    plannerState.globalAlternatives=solutions.sort((a,b)=>b.scheduled-a.scheduled||b.score-a.score).slice(0,3);
+    plannerState.activeGlobalAlternative=0;renderPlanner();
+    const best=plannerState.globalAlternatives[0];
+    showToast(best?.scheduled===best?.total?'Đã xếp đủ toàn bộ lớp với '+plannerState.roomCount+' phòng học':'Phương án tốt nhất còn '+(best?.unscheduled?.length||0)+' lớp chưa xếp được','warn');
+}
+function proPlanMetrics(plan){
+    const required=globalPlannerClasses().reduce((s,[,c])=>s+globalPlannerNeed(c),0);
+    const loads=PLANNER_DAYS.map(d=>plan.items.filter(x=>Number(x.dayId)===Number(d.id)).length);
+    const maxLoad=Math.max(1,...loads),capacity=plannerState.allowedDays.length*plannerState.allowedSlots.length*plannerState.roomCount;
+    const coverage=required?Math.round(plan.items.length*100/required):0;
+    const occupancy=capacity?Math.round(plan.items.length*100/capacity):0;
+    let resourceConflicts=0;
+    plan.items.forEach((x,i)=>plan.items.slice(i+1).forEach(y=>{if(globalItemsConflict(x,y))resourceConflicts++}));
+    const roomOverflow=plan.items.filter(x=>!x.roomIndex||x.roomIndex>plannerState.roomCount).length;
+    return {required,loads,maxLoad,coverage,occupancy,resourceConflicts,roomOverflow};
+}
+function proQualityHtml(plan){
+    const m=proPlanMetrics(plan);
+    return `<div class="pro-quality-grid"><div class="pro-quality-card"><h4>📊 Chất lượng phương án</h4><div class="pro-quality-row"><span>Đáp ứng số buổi</span><b>${m.coverage}%</b></div><div class="pro-quality-bar"><i style="width:${Math.min(100,m.coverage)}%"></i></div><div class="pro-quality-row"><span>Mức sử dụng phòng</span><b>${m.occupancy}%</b></div><div class="pro-quality-bar"><i style="width:${Math.min(100,m.occupancy)}%"></i></div><div class="pro-validation"><span class="${m.resourceConflicts?'warn':''}">${m.resourceConflicts?'⚠ '+m.resourceConflicts+' xung đột':'✓ Không trùng GV/HS'}</span><span class="${m.roomOverflow?'warn':''}">${m.roomOverflow?'⚠ Quá số phòng':'✓ Đúng số phòng'}</span><span class="${plan.unscheduled.length?'warn':''}">${plan.unscheduled.length?'⚠ '+plan.unscheduled.length+' lớp thiếu lịch':'✓ Đủ lớp'}</span></div></div><div class="pro-quality-card"><h4>⚖️ Phân bổ buổi theo ngày</h4><div class="pro-day-load">${m.loads.map((n,i)=>`<div><i style="height:${Math.max(4,Math.round(n*55/m.maxLoad))}px"></i><span>${PLANNER_DAYS[i].n}<br>${n}</span></div>`).join('')}</div></div></div>`;
+}
+function proProfilesHtml(){
+    const rows=plannerVisibleClasses().filter(([k,c])=>!isCompletedCourse(c)&&c.courseStatus!=='completed');
+    return `<details class="pro-planner-config"><summary><span>⚙️ Cấu hình riêng cho từng lớp</span><span class="badge">${rows.length} lớp</span></summary><div class="pro-config-scroll"><table class="pro-config-table"><thead><tr><th>Xếp lịch</th><th>Lớp học</th><th>Giáo viên</th><th>Số buổi/tuần</th><th>Ưu tiên ca</th><th>Học sinh</th></tr></thead><tbody>${rows.map(([k,cls])=>{const p=proPlannerProfile(cls);return `<tr><td><input type="checkbox" ${p.include?'checked':''} onchange="proPlannerSetProfile('${esc(k)}','include',this.checked)"></td><td class="class-meta"><b>${esc(cls.name||k)}</b><small>${esc(cls.code||k)}</small></td><td>${esc(cls.teacherName||cls.teacherEmail||'—')}</td><td><select onchange="proPlannerSetProfile('${esc(k)}','sessionsPerWeek',this.value)">${[1,2,3,4].map(n=>`<option value="${n}" ${p.sessionsPerWeek===n?'selected':''}>${n} buổi</option>`).join('')}</select></td><td><select onchange="proPlannerSetProfile('${esc(k)}','preference',this.value)"><option value="balanced" ${p.preference==='balanced'?'selected':''}>Cân bằng</option><option value="morning" ${p.preference==='morning'?'selected':''}>Ưu tiên sáng</option><option value="afternoon" ${p.preference==='afternoon'?'selected':''}>Ưu tiên chiều</option><option value="evening" ${p.preference==='evening'?'selected':''}>Ưu tiên tối</option></select></td><td>${cls.students?.filter(s=>isStudentAttendanceActive(s)).length||0}</td></tr>`}).join('')}</tbody></table></div></details>`;
+}
+globalPlanWeekHtml=function(plan){
+    return `<div class="global-week">${PLANNER_DAYS.map(day=>`<div class="global-day"><div class="global-day-head">${day.n}</div><div class="global-day-slots">${PLANNER_SLOTS.map(slot=>{const rows=plan.items.filter(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id).sort((a,b)=>(a.roomIndex||1)-(b.roomIndex||1));return `<div class="global-slot"><div class="global-slot-label">${slot.label} · ${slot.start}–${slot.end}</div>${rows.map(x=>{const cls=data.classes[x.classKey]||{};return `<div class="global-class-item" style="${colorVarsForClass(x.classKey,cls.color)}"><b>${esc(cls.name||x.classKey)}</b><small>Phòng ${x.roomIndex||1} · ${esc(cls.teacherName||cls.teacherEmail||'Giáo viên')}</small></div>`}).join('')}</div>`}).join('')}</div></div>`).join('')}</div>`;
+};
+function proRoomControlHtml(){
+    return `<label class="pro-room-control">🏢 Số phòng hoạt động đồng thời <select onchange="proPlannerSetRooms(this.value)">${[1,2,3,4,5].map(n=>`<option value="${n}" ${plannerState.roomCount===n?'selected':''}>${n} phòng</option>`).join('')}</select></label>`;
+}
+globalPlannerPanelHtml=function(){
+    const plans=plannerState.globalAlternatives||[],entries=globalPlannerClasses();
+    if(!plans.length)return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Trung tâm xếp lịch thông minh</h3><p>Cấu hình từng lớp, nhiều phòng song song và tối ưu theo giáo viên, học sinh, lịch bận, độ giãn cách.</p></div><div class="global-plan-actions">${proRoomControlHtml()}<button class="btn btn-blue" onclick="globalPlannerGenerate()">✨ Tạo phương án Pro</button></div></div>${proProfilesHtml()}<div class="global-plan-stats"><div class="global-plan-stat"><b>${entries.length}</b><span>Lớp được bật</span></div><div class="global-plan-stat"><b>${entries.reduce((s,[,c])=>s+globalPlannerNeed(c),0)}</b><span>Buổi cần xếp</span></div><div class="global-plan-stat"><b>${plannerState.roomCount}</b><span>Phòng đồng thời</span></div><div class="global-plan-stat"><b>${plannerState.allowedDays.length*plannerState.allowedSlots.length*plannerState.roomCount}</b><span>Sức chứa ca/tuần</span></div></div></section>`;
+    const active=Math.min(plannerState.activeGlobalAlternative||0,plans.length-1),plan=plans[active];
+    return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Trung tâm xếp lịch thông minh</h3><p>Đã phân tích ràng buộc và chấm điểm; thầy có thể so sánh, xuất hoặc lưu phương án đang chọn.</p></div><div class="global-plan-actions">${proRoomControlHtml()}<button class="btn btn-blue" onclick="globalPlannerGenerate()">↻ Tối ưu lại</button><button class="btn btn-soft" onclick="globalPlannerExport()">📊 Xuất Excel</button><button class="btn btn-soft" onclick="window.print()">🖨️ In</button><button class="btn btn-green" onclick="globalPlannerSave()">💾 Lưu phương án</button></div></div>${proProfilesHtml()}<div class="global-plan-stats"><div class="global-plan-stat"><b>${plan.scheduled}/${plan.total}</b><span>Lớp xếp được</span></div><div class="global-plan-stat"><b>${plan.items.length}</b><span>Tổng buổi/tuần</span></div><div class="global-plan-stat"><b>${plan.score}</b><span>Điểm tối ưu</span></div><div class="global-plan-stat"><b>${plannerState.roomCount}</b><span>Phòng sử dụng</span></div></div>${proQualityHtml(plan)}<div class="smart-plan-tabs" style="margin-bottom:12px">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="globalSelectPlan(${i})">Phương án ${i+1} · ${p.scheduled}/${p.total} lớp</button>`).join('')}</div>${globalPlanWeekHtml(plan)}${plan.unscheduled.length?`<div class="global-unscheduled">⚠️ Chưa xếp được: ${plan.unscheduled.map(k=>esc(data.classes[k]?.name||k)).join(', ')}. Hãy tăng số phòng, mở thêm ca hoặc đổi ưu tiên của lớp.</div>`:''}</section>`;
+};
+function proValidateBeforeSave(plan){
+    const m=proPlanMetrics(plan),errors=[];
+    if(m.resourceConflicts)errors.push(m.resourceConflicts+' xung đột giáo viên/học sinh');
+    if(m.roomOverflow)errors.push('có ca vượt quá số phòng');
+    return {ok:!errors.length,errors};
+}
+globalPlannerSave=function(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    if(!plan?.items?.length)return showToast('Chưa có phương án để lưu','warn');
+    const check=proValidateBeforeSave(plan);
+    if(!check.ok)return showToast('Chưa thể lưu: '+check.errors.join(', '),'error');
+    if(plan.unscheduled?.length&&!confirm('Phương án còn '+plan.unscheduled.length+' lớp chưa xếp được. Thầy vẫn muốn lưu phần lịch đã hoàn thành?'))return;
+    const grouped={};plan.items.forEach(x=>(grouped[x.classKey]||(grouped[x.classKey]=[])).push(x));
+    Object.entries(grouped).forEach(([classKey,items])=>{
+        const cls=data.classes[classKey];if(!cls)return;
+        cls.calendarEvents=(cls.calendarEvents||[]).filter(ev=>ev.source!=='planner-global');
+        items.forEach(x=>cls.calendarEvents.push({id:makeId('event','global-pro-'+classKey+'-'+x.date+'-'+x.slot.start),classKey,classId:cls.id,classCode:cls.code,className:cls.name,teacherId:cls.teacherId,teacherName:cls.teacherName||getActiveUserName(),title:'Buổi học '+cls.name,date:x.date,start:x.slot.start,end:x.slot.end,room:'Phòng '+(x.roomIndex||1),type:'custom',source:'planner-global',status:'planned',color:cls.color||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));
+        cls.schedule=items.sort((a,b)=>smartDayOrder(a.dayId)-smartDayOrder(b.dayId)).map(x=>`${plannerDayName(x.dayId)} ${x.slot.start}-${x.slot.end} · Phòng ${x.roomIndex||1}`).join(', ');
+        cls.updatedAt=new Date().toISOString();
+    });
+    logActivity?.('Xếp lịch Pro toàn trung tâm','Đã lưu '+Object.keys(grouped).length+' lớp','global-planner-pro');
+    saveData();showToast('Đã kiểm tra và lưu '+Object.keys(grouped).length+' lớp vào Lịch học');setView('schedule');
+};
+function globalPlannerExport(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    if(!plan?.items?.length)return showToast('Chưa có phương án để xuất','warn');
+    const rows=[...plan.items].sort((a,b)=>smartDayOrder(a.dayId)-smartDayOrder(b.dayId)||a.slot.start.localeCompare(b.slot.start)||(a.roomIndex||1)-(b.roomIndex||1)).map(x=>{const cls=data.classes[x.classKey]||{};return {'Thứ':plannerDayName(x.dayId),'Ngày tuần mẫu':x.date,'Bắt đầu':x.slot.start,'Kết thúc':x.slot.end,'Phòng':'Phòng '+(x.roomIndex||1),'Lớp':cls.name||x.classKey,'Mã lớp':cls.code||x.classKey,'Giáo viên':cls.teacherName||cls.teacherEmail||'','Số học sinh':cls.students?.filter(s=>isStudentAttendanceActive(s)).length||0}});
+    if(typeof XLSX!=='undefined'){
+        const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:8},{wch:14},{wch:10},{wch:10},{wch:10},{wch:24},{wch:14},{wch:24},{wch:12}];
+        const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Phương án xếp lịch');XLSX.writeFile(wb,'phuong-an-xep-lich-pro.xlsx');
+    }else{
+        const headers=Object.keys(rows[0]||{}),csv='\\ufeff'+[headers.join(','),...rows.map(r=>headers.map(h=>'\"'+String(r[h]??'').replace(/\"/g,'\"\"')+'\"').join(','))].join('\\n');
+        const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='phuong-an-xep-lich-pro.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    }
+    showToast('Đã xuất phương án xếp lịch');
+}
+const __proOldRenderPlanner=renderPlanner;
+renderPlanner=function(){
+    __proOldRenderPlanner();
+    const panel=document.querySelector('.global-planner-panel');
+    if(panel)panel.outerHTML=globalPlannerPanelHtml();
+};
+const __proOldNormalize=normalize;
+normalize=function(){
+    __proOldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.0',roomCount:Math.min(5,Math.max(1,Number(data.schedulerSettings?.roomCount)||1)),proControlCenter:true};
+    plannerState.roomCount=data.schedulerSettings.roomCount;
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
