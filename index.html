@@ -624,6 +624,16 @@
                 min-width:220px!important;
             }
         }
+        /* ---------- BUSY-SCHEDULE SAFETY AUDIT v10.3 ---------- */
+        .busy-audit-chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 10px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;font-size:11px;font-weight:950;margin-top:8px}
+        .busy-audit-chip.warn{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+        .busy-conflict-modal{max-width:900px!important}
+        .busy-conflict-summary{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:11px 13px;font-size:13px;font-weight:850;margin:10px 0 12px}
+        .busy-conflict-table{width:100%;border-collapse:collapse;min-width:680px}
+        .busy-conflict-table th,.busy-conflict-table td{padding:9px 10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:12px}
+        .busy-conflict-table th{background:#f8fafc;color:#475569;font-weight:950;position:sticky;top:0}
+        .busy-conflict-table td b{color:#0b3b5c}.busy-conflict-scroll{overflow:auto;max-height:55vh;border:1px solid #e2e8f0;border-radius:14px}
+        body.dark-mode .busy-conflict-table th{background:#0b1220;color:#cbd5e1}
 </style>
 </head>
 <body>
@@ -3565,6 +3575,108 @@ normalize=function(){
     __matrixOldNormalize();Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.2',perDayPerSlotAvailability:true};
     const cls=data.classes?.[plannerState.classKey];if(cls){plannerState.allowedDays=proPlannerDays(cls);plannerState.allowedSlots=proAvailableSlotUnion(cls)}
+};
+
+/* ---------- FINAL BUSY-SCHEDULE GUARD v10.3 ---------- */
+function plannerBusyFingerprint(){
+    const rows=[];
+    Object.entries(data.classes||{}).forEach(([classKey,cls])=>(cls.students||[]).forEach((st,index)=>{
+        const busy=(st.busySlots||[]).map(x=>plannerBusyKey(x.dayId,x.slotId)).sort();
+        rows.push([classKey,String(st.id??index),busy.join('|')].join('::'));
+    }));
+    return rows.sort().join('||');
+}
+function plannerInvalidateAllProposals(){
+    plannerState.suggestions=[];
+    plannerState.alternatives=[];
+    plannerState.globalAlternatives=[];
+    plannerState.activeAlternative=0;
+    plannerState.activeGlobalAlternative=0;
+    plannerState.busyScheduleChangedAt=new Date().toISOString();
+    data.schedulerSettings={...(data.schedulerSettings||{}),busyScheduleRevision:plannerState.busyScheduleChangedAt};
+}
+function plannerRunBusyMutation(action,args){
+    const before=plannerBusyFingerprint(),result=action(...args),after=plannerBusyFingerprint();
+    if(before!==after){
+        plannerInvalidateAllProposals();
+        saveData();
+        renderPlanner();
+        showToast('Lịch bận đã thay đổi · các phương án cũ đã được huỷ để tránh xếp nhầm','warn');
+    }
+    return result;
+}
+const __busySafeOldToggle=plannerToggleStudentBusy;
+plannerToggleStudentBusy=function(...args){return plannerRunBusyMutation(__busySafeOldToggle,args)};
+const __busySafeOldClear=plannerClearSelectedStudentBusy;
+plannerClearSelectedStudentBusy=function(...args){return plannerRunBusyMutation(__busySafeOldClear,args)};
+const __busySafeOldImport=plannerImportBusyText;
+plannerImportBusyText=function(...args){return plannerRunBusyMutation(__busySafeOldImport,args)};
+
+function plannerPlanBusyConflictDetails(plan){
+    const rows=[],seen=new Set();
+    (plan?.items||[]).forEach(item=>{
+        const cls=data.classes[item.classKey];if(!cls)return;
+        (cls.students||[]).filter(st=>isStudentAttendanceActive(st)).forEach((st,index)=>{
+            if(!plannerIsStudentBusy(st,item.dayId,item.slotId))return;
+            const key=[item.classKey,String(st.id??index),item.dayId,item.slotId].join('|');
+            if(seen.has(key))return;seen.add(key);
+            const slot=item.slot||plannerSlot(item.slotId);
+            rows.push({
+                classKey:item.classKey,
+                className:cls.name||item.classKey,
+                studentName:st.name||'Học sinh',
+                studentId:String(st.id??index),
+                dayId:Number(item.dayId),
+                dayName:plannerDayName(item.dayId),
+                slotId:item.slotId,
+                slotLabel:slot.label,
+                time:slot.start+'–'+slot.end,
+                room:'Phòng '+(item.roomIndex||1)
+            });
+        });
+    });
+    return rows.sort((a,b)=>smartDayOrder(a.dayId)-smartDayOrder(b.dayId)||a.time.localeCompare(b.time)||a.className.localeCompare(b.className,'vi'));
+}
+function plannerEnsureBusyConflictModal(){
+    if(document.getElementById('busyConflictModal'))return;
+    document.body.insertAdjacentHTML('beforeend','<div class="modal-overlay" id="busyConflictModal"><div class="modal busy-conflict-modal" id="busyConflictModalBody"></div></div>');
+}
+function plannerShowBusyConflictDetails(rows){
+    plannerEnsureBusyConflictModal();
+    const body=document.getElementById('busyConflictModalBody');
+    body.innerHTML=`<h2>⛔ Chưa thể lưu phương án</h2><div class="busy-conflict-summary">Phát hiện ${rows.length} trường hợp lịch học trùng với lịch bận đã khai báo. Hệ thống đã chặn lưu để bảo vệ phương án.</div><div class="busy-conflict-scroll"><table class="busy-conflict-table"><thead><tr><th>Lớp</th><th>Học sinh bận</th><th>Ngày</th><th>Ca học</th><th>Phòng</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.className)}</b></td><td>${esc(x.studentName)}</td><td>${esc(x.dayName)}</td><td>${esc(x.slotLabel)} · ${esc(x.time)}</td><td>${esc(x.room)}</td></tr>`).join('')}</tbody></table></div><div class="modal-actions" style="margin-top:14px"><button class="btn btn-gray" onclick="closeModal('busyConflictModal')">Đóng</button><button class="btn btn-blue" onclick="closeModal('busyConflictModal');setView('planner');globalPlannerGenerate()">Tính lại phương án</button></div>`;
+    openModal('busyConflictModal');
+}
+const __busySafeOldValidate=proValidateBeforeSave;
+proValidateBeforeSave=function(plan){
+    const result=__busySafeOldValidate(plan),busyConflicts=plannerPlanBusyConflictDetails(plan);
+    result.busyConflicts=busyConflicts;
+    if(busyConflicts.length){result.ok=false;result.errors.push(busyConflicts.length+' trường hợp trùng lịch bận học sinh')}
+    return result;
+};
+const __busySafeOldGlobalSave=globalPlannerSave;
+globalPlannerSave=function(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    const conflicts=plannerPlanBusyConflictDetails(plan);
+    if(conflicts.length){plannerShowBusyConflictDetails(conflicts);return showToast('Đã chặn lưu vì có học sinh bận','error')}
+    return __busySafeOldGlobalSave();
+};
+const __busySafeOldExport=globalPlannerExport;
+globalPlannerExport=function(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    const conflicts=plannerPlanBusyConflictDetails(plan);
+    if(conflicts.length){plannerShowBusyConflictDetails(conflicts);return showToast('Đã chặn xuất vì phương án còn trùng lịch bận','error')}
+    return __busySafeOldExport();
+};
+const __busySafeOldQuality=proQualityHtml;
+proQualityHtml=function(plan){
+    const conflicts=plannerPlanBusyConflictDetails(plan);
+    return __busySafeOldQuality(plan)+`<div class="busy-audit-chip ${conflicts.length?'warn':''}">${conflicts.length?'⚠ '+conflicts.length+' trường hợp trùng lịch bận':'✓ Đã kiểm tra lại lịch bận của toàn bộ học sinh'}</div>`;
+};
+const __busySafeOldNormalize=normalize;
+normalize=function(){
+    __busySafeOldNormalize();
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.3',busyScheduleFinalGuard:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
