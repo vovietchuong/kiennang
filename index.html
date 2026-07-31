@@ -712,6 +712,25 @@
         body.dark-mode .tuition-formula{color:#94a3b8}
         body.dark-mode .payment-auto-note{background:#052e2b;border-color:#166534;color:#bbf7d0}
         @media(max-width:760px){.debt-pro-kpis{grid-template-columns:repeat(2,1fr)}}
+
+        /* ---------- BATCH PAYMENT ENTRY v11.5 ---------- */
+        .batch-payment-modal{max-width:1040px!important}
+        .batch-payment-toolbar{display:grid;grid-template-columns:180px minmax(180px,1fr) auto auto;gap:10px;align-items:end;padding:13px;border:1px solid #dbeafe;background:#f8fbff;border-radius:16px;margin-bottom:12px}
+        .batch-payment-toolbar label{font-size:11px!important;margin-bottom:5px!important;color:#64748b!important}
+        .batch-payment-toolbar input,.batch-payment-toolbar select{margin:0!important}
+        .batch-payment-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:10px 0 12px}
+        .batch-payment-kpi{padding:10px 12px;border:1px solid #e2e8f0;background:#fff;border-radius:13px}
+        .batch-payment-kpi b{display:block;color:#0b3b5c;font-size:17px}
+        .batch-payment-kpi span{display:block;color:#64748b;font-size:10px;font-weight:850;margin-top:2px}
+        .batch-payment-table-wrap{max-height:52vh;overflow:auto;border:1px solid #e2e8f0;border-radius:14px}
+        .batch-payment-table{min-width:760px!important}
+        .batch-payment-table th{position:sticky;top:0;z-index:2}
+        .batch-payment-table input{min-width:150px;margin:0!important;padding:8px 10px!important;font-weight:850;color:#166534!important;background:#f0fdf4!important;border-color:#bbf7d0!important}
+        .batch-payment-input-wrap{display:flex;align-items:center;gap:6px}
+        .batch-payment-input-wrap .btn{padding:7px 9px;font-size:10px;white-space:nowrap}
+        .batch-payment-note{font-size:11px;color:#64748b;font-weight:750;line-height:1.45;margin:8px 0 0}
+        body.dark-mode .batch-payment-toolbar,body.dark-mode .batch-payment-kpi{background:#0b1220;border-color:#253044}
+        @media(max-width:760px){.batch-payment-toolbar{grid-template-columns:1fr 1fr}.batch-payment-toolbar .btn{width:100%}.batch-payment-summary{grid-template-columns:1fr}.batch-payment-modal{padding:20px 14px!important}}
 </style>
 </head>
 <body>
@@ -4547,7 +4566,7 @@ renderDetailView=function(className){
         summary+=`<td style="text-align:center">${count}/${activeStudents.length}</td>`;
     }
     summary+=`<td class="tuition-due-cell"><b>${money(totalDue)}</b><span class="tuition-formula">Tổng phải đóng đang hiển thị</span></td><td></td></tr>`;
-    mainContent.innerHTML=`<div class="detail-view attendance-clean-view"><div class="detail-header"><div><h2>📘 ${esc(cls.name||className)} <span class="class-code">Mã: ${esc(cls.code||className)}</span><span class="course-chip ${cls.courseStatus==='completed'?'old':'current'}">${courseLabel(cls)}</span>${privateClassChip(cls)}<small>${students.length} học sinh · ${cls.sessions} buổi · ${esc(cls.schedule||'Chưa có lịch học')} · Mức ${money(infoClass.rate)}/buổi (${infoClass.classSize} HS đang học)</small></h2></div><div class="actions" style="border:none;padding:0"><button class="btn btn-gray" onclick="goBack()">← Quay lại</button>${canEditClass(cls)?`<button class="btn btn-green" onclick="openAddStudentModal('${esc(className)}')">➕ Thêm HS</button><button class="btn btn-warn" onclick="openCreateClassModal('${esc(className)}')">✏️ Sửa lớp</button><button class="btn btn-blue" onclick="openNewCourseModal('${esc(className)}')">🔁 Tạo đợt mới</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(className)}')">🗑️ Xoá lớp</button>`:''}`:''}</div></div>${getAbsentSummaryHtml(cls).replace('absent-box','attendance-summary-bar')}<div class="table-scroll"><table class="data-table attendance-table"><thead><tr>${header}</tr></thead><tbody>${rows}${summary}</tbody></table></div></div>`;
+    mainContent.innerHTML=`<div class="detail-view attendance-clean-view"><div class="detail-header"><div><h2>📘 ${esc(cls.name||className)} <span class="class-code">Mã: ${esc(cls.code||className)}</span><span class="course-chip ${cls.courseStatus==='completed'?'old':'current'}">${courseLabel(cls)}</span>${privateClassChip(cls)}<small>${students.length} học sinh · ${cls.sessions} buổi · ${esc(cls.schedule||'Chưa có lịch học')} · Mức ${money(infoClass.rate)}/buổi (${infoClass.classSize} HS đang học)</small></h2></div><div class="actions" style="border:none;padding:0"><button class="btn btn-gray" onclick="goBack()">← Quay lại</button>${canEditClass(cls)?`<button class="btn btn-green" onclick="openAddStudentModal('${esc(className)}')">➕ Thêm HS</button><button class="btn btn-blue" onclick="openBatchPaymentModal('${esc(className)}')">💵 Nhập tiền cả lớp</button><button class="btn btn-warn" onclick="openCreateClassModal('${esc(className)}')">✏️ Sửa lớp</button><button class="btn btn-blue" onclick="openNewCourseModal('${esc(className)}')">🔁 Tạo đợt mới</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(className)}')">🗑️ Xoá lớp</button>`:''}`:''}</div></div>${getAbsentSummaryHtml(cls).replace('absent-box','attendance-summary-bar')}<div class="table-scroll"><table class="data-table attendance-table"><thead><tr>${header}</tr></thead><tbody>${rows}${summary}</tbody></table></div></div>`;
 };
 
 renderDebts=function(){
@@ -5033,6 +5052,127 @@ normalize=function(){
     tuitionHydrateTransferLinks();tuitionApplyAll();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.4',transferTuitionCarryForward:true,transferTuitionFirstToLastPresent:true};
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.4',automaticTuitionByAttendance:true,transferTuitionCarryForward:true,transferTuitionFirstToLastPresent:true};
+};
+
+/* ---------- BATCH PAYMENT ENTRY v11.5 ----------
+   Nhập nhanh tổng đã đóng cho toàn bộ học sinh trong một lớp. */
+let batchPaymentClassKey='';
+function batchPaymentStudents(cls){
+    return sortedStudentsOf(cls).filter(st=>!tuitionIsArchivedTransferSource(st));
+}
+function ensureBatchPaymentModal(){
+    let overlay=document.getElementById('batchPaymentModal');
+    if(overlay)return overlay;
+    overlay=document.createElement('div');
+    overlay.id='batchPaymentModal';
+    overlay.className='modal-overlay';
+    overlay.innerHTML=`<div class="modal batch-payment-modal">
+        <h2>💵 Nhập nhanh tiền cả lớp</h2>
+        <p class="sub" id="batchPaymentSub">Cập nhật tổng số tiền đã đóng của từng học sinh trong một lần.</p>
+        <div class="batch-payment-toolbar">
+            <div><label>Cách áp dụng</label><select id="batchPaymentMode"><option value="set">Đặt tổng đã đóng</option><option value="add">Cộng thêm khoản thu</option></select></div>
+            <div><label>Số tiền dùng chung</label><input id="batchCommonAmount" type="number" min="0" step="10000" inputmode="numeric" placeholder="Ví dụ: 500000" /></div>
+            <button class="btn btn-blue" type="button" onclick="batchApplyCommonAmount()">Áp dụng cả lớp</button>
+            <button class="btn btn-green" type="button" onclick="batchFillAllDue()">Điền đủ phải đóng</button>
+        </div>
+        <div class="batch-payment-summary">
+            <div class="batch-payment-kpi"><b id="batchDueTotal">0đ</b><span>Tổng phải đóng</span></div>
+            <div class="batch-payment-kpi"><b id="batchPaidTotal">0đ</b><span>Tổng đã đóng sau cập nhật</span></div>
+            <div class="batch-payment-kpi"><b id="batchDebtTotal">0đ</b><span>Tổng còn nợ sau cập nhật</span></div>
+        </div>
+        <div class="batch-payment-table-wrap"><table class="data-table batch-payment-table">
+            <thead><tr><th>Học sinh</th><th>Phải đóng</th><th>Đã đóng hiện tại</th><th>Tổng đã đóng mới</th><th>Còn nợ mới</th></tr></thead>
+            <tbody id="batchPaymentRows"></tbody>
+        </table></div>
+        <p class="batch-payment-note">“Đặt tổng đã đóng” thay số tiền hiện tại; “Cộng thêm khoản thu” cộng số tiền dùng chung vào số đã đóng. Bản ghi học sinh đã chuyển sang lớp khác không nhập tại lớp cũ.</p>
+        <div class="modal-actions"><button class="btn btn-gray" type="button" onclick="closeModal('batchPaymentModal')">Huỷ</button><button class="btn btn-blue" type="button" onclick="saveBatchPayments()">Lưu toàn bộ</button></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+function batchPaymentInputs(){
+    return Array.from(document.querySelectorAll('#batchPaymentRows .batch-payment-input'));
+}
+function updateBatchPaymentSummary(){
+    let due=0,paid=0,debt=0;
+    batchPaymentInputs().forEach(input=>{
+        const rowDue=Math.max(0,Number(input.dataset.due)||0);
+        const rowPaid=Math.max(0,Number(input.value)||0);
+        due+=rowDue;paid+=rowPaid;debt+=Math.max(0,rowDue-rowPaid);
+        const debtCell=input.closest('tr')?.querySelector('.batch-row-debt');
+        if(debtCell)debtCell.textContent=money(Math.max(0,rowDue-rowPaid));
+    });
+    const dueEl=document.getElementById('batchDueTotal'),paidEl=document.getElementById('batchPaidTotal'),debtEl=document.getElementById('batchDebtTotal');
+    if(dueEl)dueEl.textContent=money(due);
+    if(paidEl)paidEl.textContent=money(paid);
+    if(debtEl)debtEl.textContent=money(debt);
+}
+function batchApplyCommonAmount(){
+    const common=document.getElementById('batchCommonAmount');
+    if(!common||String(common.value).trim()==='')return showToast('Vui lòng nhập số tiền dùng chung','warn');
+    const amount=Math.max(0,Number(common.value)||0);
+    const mode=document.getElementById('batchPaymentMode')?.value||'set';
+    batchPaymentInputs().forEach(input=>{
+        const current=Math.max(0,Number(input.value)||0);
+        input.value=mode==='add'?current+amount:amount;
+    });
+    updateBatchPaymentSummary();
+}
+function batchFillAllDue(){
+    batchPaymentInputs().forEach(input=>{input.value=Math.max(0,Number(input.dataset.due)||0)});
+    updateBatchPaymentSummary();
+}
+function batchFillRowDue(button){
+    const input=button?.closest('tr')?.querySelector('.batch-payment-input');
+    if(!input)return;
+    input.value=Math.max(0,Number(input.dataset.due)||0);
+    updateBatchPaymentSummary();
+}
+function openBatchPaymentModal(className){
+    const cls=data.classes?.[className];
+    if(!cls)return showToast('Không tìm thấy lớp học','error');
+    if(!canEditClass(cls))return showToast('Vai trò hiện tại không được cập nhật học phí lớp này','error');
+    batchPaymentClassKey=className;
+    tuitionApplyClass(cls);
+    ensureBatchPaymentModal();
+    const students=batchPaymentStudents(cls);
+    const sub=document.getElementById('batchPaymentSub');
+    if(sub)sub.textContent=(cls.name||className)+' · '+(cls.code||className)+' · '+students.length+' học sinh có thể cập nhật';
+    const common=document.getElementById('batchCommonAmount');if(common)common.value='';
+    const mode=document.getElementById('batchPaymentMode');if(mode)mode.value='set';
+    const rows=document.getElementById('batchPaymentRows');
+    rows.innerHTML=students.map(st=>{
+        const info=tuitionInfo(st,cls);
+        const paid=Math.max(0,Number(st.paid)||0);
+        const debt=Math.max(0,info.due-paid);
+        const transfer=info.carryDue?`<div class="subtext">Gồm ${money(info.carryDue)} từ lớp cũ</div>`:'';
+        return `<tr><td><b>${esc(st.name||'Học sinh')}</b><div class="subtext">${studentStatusLabel(st)}${st.parentPhone?' · PH: '+esc(st.parentPhone):''}</div></td><td class="tuition-due-cell"><b>${money(info.due)}</b>${transfer}</td><td class="money"><b>${money(paid)}</b></td><td><div class="batch-payment-input-wrap"><input class="batch-payment-input" data-student-id="${esc(st.id)}" data-due="${info.due}" type="number" min="0" step="10000" inputmode="numeric" value="${paid}" oninput="updateBatchPaymentSummary()" /><button class="btn btn-green" type="button" onclick="batchFillRowDue(this)">Đủ</button></div></td><td class="debt"><b class="batch-row-debt">${money(debt)}</b></td></tr>`;
+    }).join('')||`<tr class="empty-row"><td colspan="5">Không có học sinh để nhập tiền.</td></tr>`;
+    updateBatchPaymentSummary();
+    openModal('batchPaymentModal');
+}
+function saveBatchPayments(){
+    const cls=data.classes?.[batchPaymentClassKey];
+    if(!cls||!canEditClass(cls))return showToast('Không thể cập nhật học phí lớp này','error');
+    let changed=0;
+    batchPaymentInputs().forEach(input=>{
+        const st=(cls.students||[]).find(x=>String(x.id)===String(input.dataset.studentId));
+        if(!st||tuitionIsArchivedTransferSource(st))return;
+        const nextPaid=Math.max(0,Number(input.value)||0);
+        if(nextPaid!==Math.max(0,Number(st.paid)||0))changed++;
+        st.paid=nextPaid;st.updatedAt=new Date().toISOString();
+    });
+    tuitionApplyClass(cls);cls.updatedAt=new Date().toISOString();
+    saveData();closeModal('batchPaymentModal');
+    logActivity('Nhập tiền cả lớp',`${cls.name||batchPaymentClassKey} · cập nhật ${changed} học sinh`,batchPaymentClassKey,'batch-payment');
+    showToast(changed?`Đã cập nhật tiền cho ${changed} học sinh`:'Không có số tiền nào thay đổi');
+    render();
+}
+const __batchPaymentOldNormalize=normalize;
+normalize=function(){
+    __batchPaymentOldNormalize();
+    data.meta={...(data.meta||{}),tuitionPricingVersion:'11.5',batchPaymentEntry:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.5',batchPaymentEntry:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
