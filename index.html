@@ -639,6 +639,59 @@
         .weekly-sync-room{font-size:10px;color:#64748b;font-weight:800}
         .planner-completed-note{display:flex;align-items:center;gap:7px;width:max-content;max-width:100%;margin-top:7px;padding:6px 10px;border-radius:999px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;font-size:10.5px;font-weight:900}
         body.dark-mode .planner-completed-note{background:#0b1220;border-color:#263244;color:#94a3b8}
+
+        /* ---------- FLEXIBLE WEEKLY CALENDAR v11.0 ---------- */
+        .weekly-fixed-card.fixed-calendar-pro{padding:0;overflow:hidden}
+        .fixed-calendar-pro .weekly-fixed-head{padding:18px 20px 14px;margin:0;border-bottom:1px solid var(--ux-line,#e2e8f0);align-items:center}
+        .fixed-calendar-pro .weekly-fixed-title span{max-width:820px}
+        .fixed-calendar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+        .fixed-calendar-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #dbeafe;background:#eff6ff;color:#1e40af;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:900}
+        .fixed-calendar-help{display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:850}
+        .fixed-calendar-help span{display:inline-flex;align-items:center;gap:5px}
+        .fixed-week-scroll{overflow:auto;background:#fff;scrollbar-width:thin}
+        .fixed-week-header,.fixed-week-body{display:grid;grid-template-columns:72px repeat(7,minmax(132px,1fr));min-width:1050px}
+        .fixed-week-header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #cbd5e1}
+        .fixed-week-corner{padding:11px 6px;text-align:center;background:#f8fafc;color:#64748b;font-size:10px;font-weight:900;border-right:1px solid #e2e8f0}
+        .fixed-day-head{padding:9px 8px;text-align:center;border-right:1px solid #e2e8f0;color:#334155;font-size:12px;font-weight:950;background:#fff}
+        .fixed-day-head:last-child{border-right:0}
+        .fixed-day-head small{display:block;margin-top:2px;color:#94a3b8;font-size:10px;font-weight:800}
+        .fixed-day-head.today{background:#eff6ff;color:#075985;box-shadow:inset 0 -3px #0284c7}
+        .fixed-week-body{position:relative}
+        .fixed-time-axis{position:relative;height:var(--fixed-week-height);background:#f8fafc;border-right:1px solid #cbd5e1}
+        .fixed-time-label{position:absolute;right:8px;transform:translateY(-50%);color:#64748b;font-size:10px;font-weight:850;white-space:nowrap}
+        .fixed-day-column{position:relative;height:var(--fixed-week-height);border-right:1px solid #e2e8f0;background-color:#fff;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 11px,#f1f5f9 11px,#f1f5f9 12px),repeating-linear-gradient(to bottom,transparent 0,transparent 47px,#cbd5e1 47px,#cbd5e1 48px);user-select:none}
+        .fixed-day-column:last-child{border-right:0}
+        .fixed-day-column.today{background-color:#fbfdff}
+        .fixed-day-column:hover{background-color:#f8fbff}
+        .fixed-day-column.fixed-drop-target{background-color:#eff6ff;box-shadow:inset 0 0 0 2px #38bdf8}
+        .fixed-now-line{position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:9;pointer-events:none}
+        .fixed-now-line:before{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:#ef4444;left:-4px;top:-3px}
+        .fixed-week-event{position:absolute;top:var(--fixed-event-top,0px);height:var(--fixed-event-height,48px);left:var(--fixed-event-left,3px);width:var(--fixed-event-width,calc(100% - 6px));z-index:10;min-height:25px;border:1px solid var(--ev-soft,#bae6fd);border-left:5px solid var(--ev,#0b3b5c);background:linear-gradient(135deg,var(--ev-bg,#e0f2fe),#fff);color:var(--ev,#075985);border-radius:8px;padding:5px 6px 8px;overflow:hidden;box-shadow:0 2px 7px rgba(15,23,42,.12);cursor:grab;touch-action:none;transition:box-shadow .15s,filter .15s}
+        .fixed-week-event:hover,.fixed-week-event:focus{z-index:20;filter:brightness(.985);box-shadow:0 8px 18px rgba(15,23,42,.18);outline:2px solid color-mix(in srgb,var(--ev,#0284c7) 32%,transparent);outline-offset:1px}
+        .fixed-week-event.fixed-readonly{cursor:pointer}
+        .fixed-week-event.fixed-dragging{opacity:.35;cursor:grabbing}
+        .fixed-event-name{font-size:11px;font-weight:950;line-height:1.16;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .fixed-event-time{font-size:10px;font-weight:900;line-height:1.2;margin-top:2px}
+        .fixed-event-room{font-size:9px;font-weight:800;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+        .fixed-resize-handle{position:absolute;left:5px;right:3px;bottom:0;height:7px;cursor:ns-resize}
+        .fixed-resize-handle:after{content:"";position:absolute;width:20px;height:2px;border-radius:999px;background:currentColor;opacity:.45;left:50%;bottom:2px;transform:translateX(-50%)}
+        .fixed-drag-ghost{position:fixed;z-index:99999;border:2px solid #0284c7;background:rgba(224,242,254,.94);color:#075985;border-radius:9px;padding:6px 8px;pointer-events:none;box-shadow:0 14px 36px rgba(15,23,42,.25);font-size:11px;font-weight:950;overflow:hidden}
+        .fixed-drag-ghost small{display:block;margin-top:3px;font-size:10px}
+        .fixed-schedule-modal{max-width:720px!important}
+        .fixed-modal-grid{display:grid;grid-template-columns:1.3fr .7fr 1fr 1fr;gap:0 12px}
+        .fixed-modal-grid .fixed-field-room{grid-column:span 2}
+        .fixed-conflict-box:empty{display:none}
+        .fixed-conflict-box{margin:0 0 12px;padding:10px 12px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;border-radius:12px;font-size:12px;font-weight:850;line-height:1.45}
+        .fixed-allow-row{display:flex!important;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;margin:0 0 14px!important;font-size:12px!important;line-height:1.4}
+        .fixed-allow-row input{width:18px!important;height:18px!important;margin:0!important;accent-color:#0b3b5c;flex:0 0 auto}
+        body.dark-mode .fixed-week-scroll,body.dark-mode .fixed-week-header,body.dark-mode .fixed-day-head{background:#111827;color:#cbd5e1}
+        body.dark-mode .fixed-week-corner,body.dark-mode .fixed-calendar-help,body.dark-mode .fixed-time-axis{background:#0b1220;color:#94a3b8;border-color:#263244}
+        body.dark-mode .fixed-day-column{background-color:#111827;border-color:#263244;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 11px,#172033 11px,#172033 12px),repeating-linear-gradient(to bottom,transparent 0,transparent 47px,#334155 47px,#334155 48px)}
+        body.dark-mode .fixed-day-column.today,body.dark-mode .fixed-day-column:hover{background-color:#102039}
+        body.dark-mode .fixed-week-event{background:linear-gradient(135deg,rgba(15,23,42,.96),#111827);color:#7dd3fc;border-color:#334155}
+        @media(max-width:768px){.fixed-calendar-pro .weekly-fixed-head{align-items:flex-start}.fixed-calendar-actions{justify-content:flex-start}.fixed-modal-grid{grid-template-columns:1fr 1fr}.fixed-modal-grid .fixed-field-class{grid-column:span 2}.fixed-week-header,.fixed-week-body{grid-template-columns:60px repeat(7,minmax(118px,1fr));min-width:900px}}
+        @media(max-width:520px){.fixed-modal-grid{grid-template-columns:1fr}.fixed-modal-grid .fixed-field-class,.fixed-modal-grid .fixed-field-room{grid-column:auto}.fixed-calendar-help{padding:9px 14px}}
+        @media print{.fixed-calendar-actions,.fixed-calendar-help,.fixed-resize-handle{display:none!important}.fixed-week-scroll{overflow:visible}.fixed-week-header,.fixed-week-body{min-width:0;grid-template-columns:50px repeat(7,1fr)}.fixed-week-event{box-shadow:none}}
 </style>
 </head>
 <body>
@@ -3917,6 +3970,444 @@ const __activeOnlyOldNormalize=normalize;
 normalize=function(){
     __activeOnlyOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.6',excludeCompletedCoursesFromPlanner:true};
+};
+
+/* ---------- FLEXIBLE WEEKLY CALENDAR v11.0 ----------
+   Lịch cố định dạng timeline, kéo-thả/đổi độ dài theo bước 15 phút,
+   đồng bộ ngược về chuỗi cls.schedule để giữ tương thích dữ liệu cũ. */
+const FIXED_WEEK_START=5*60+30;
+const FIXED_WEEK_END=22*60+30;
+const FIXED_WEEK_STEP=15;
+const FIXED_WEEK_PX_PER_MIN=.8;
+const FIXED_WEEK_HEIGHT=(FIXED_WEEK_END-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN;
+const FIXED_DAY_ORDER=[1,2,3,4,5,6,0];
+const FIXED_DAY_LABELS={1:'Thứ 2',2:'Thứ 3',3:'Thứ 4',4:'Thứ 5',5:'Thứ 6',6:'Thứ 7',0:'Chủ nhật'};
+let fixedPointerState=null;
+let fixedSuppressClickUntil=0;
+
+function fixedTimeToMinutes(value){
+    const match=String(value||'').trim().match(/^(\d{1,2})(?::(\d{1,2}))?$/);
+    if(!match)return NaN;
+    const hour=Number(match[1]),minute=Number(match[2]||0);
+    if(hour<0||hour>23||minute<0||minute>59)return NaN;
+    return hour*60+minute;
+}
+function fixedMinutesToTime(value){
+    const minute=Math.max(0,Math.min(23*60+59,Math.round(Number(value)||0)));
+    return String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+}
+function fixedSnapMinutes(value){return Math.round(Number(value)/FIXED_WEEK_STEP)*FIXED_WEEK_STEP}
+function fixedClamp(value,min,max){return Math.max(min,Math.min(max,value))}
+function fixedValidRange(start,end){
+    const a=fixedTimeToMinutes(start),b=fixedTimeToMinutes(end);
+    return Number.isFinite(a)&&Number.isFinite(b)&&b>a;
+}
+function fixedNormalizeItem(item,index=0){
+    const dayId=FIXED_DAY_ORDER.includes(Number(item?.dayId))?Number(item.dayId):1;
+    let start=fixedTimeToMinutes(item?.start),end=fixedTimeToMinutes(item?.end);
+    if(!Number.isFinite(start))start=8*60;
+    if(!Number.isFinite(end)||end<=start)end=Math.min(start+120,23*60+45);
+    start=fixedSnapMinutes(start);end=Math.max(start+30,fixedSnapMinutes(end));
+    return {
+        id:String(item?.id||('fixed_'+dayId+'_'+fixedMinutesToTime(start).replace(':','')+'_'+index)),
+        dayId,
+        start:fixedMinutesToTime(start),
+        end:fixedMinutesToTime(end),
+        room:String(item?.room||'').trim(),
+        note:String(item?.note||'').trim(),
+        createdAt:item?.createdAt||new Date().toISOString(),
+        updatedAt:item?.updatedAt||new Date().toISOString()
+    };
+}
+function fixedParseLegacySchedule(schedule){
+    const text=String(schedule||'').trim(),items=[];
+    if(!text)return items;
+    FIXED_DAY_ORDER.forEach(dayId=>{
+        if(!scheduleHasFixedClassOnDow(text,dayId))return;
+        const range=scheduleExtractFixedTimeRange(text,dayId);
+        if(!range||!fixedValidRange(range.start,range.end))return;
+        const segment=text.split(/[;\n]+/).find(part=>scheduleHasFixedClassOnDow(part,dayId))||'';
+        const room=(segment.match(/phòng\s*([a-z0-9._-]+)/i)||[])[1];
+        items.push(fixedNormalizeItem({
+            id:'legacy_'+dayId+'_'+String(range.start).replace(':',''),
+            dayId,start:range.start,end:range.end,
+            room:room?'Phòng '+room:'',
+            note:'Chuyển từ lịch cố định cũ'
+        },items.length));
+    });
+    return items;
+}
+function fixedEnsureClassSchedule(cls){
+    if(!cls)return [];
+    if(!Array.isArray(cls.fixedScheduleEvents))cls.fixedScheduleEvents=fixedParseLegacySchedule(cls.schedule);
+    const seen=new Set();
+    cls.fixedScheduleEvents=cls.fixedScheduleEvents.map((item,index)=>{
+        const normalized=fixedNormalizeItem(item,index);
+        if(item&&typeof item==='object'){Object.assign(item,normalized);return item}
+        return normalized;
+    }).filter(item=>{
+        if(seen.has(item.id))item.id=item.id+'_'+Math.random().toString(36).slice(2,6);
+        seen.add(item.id);return true;
+    });
+    return cls.fixedScheduleEvents;
+}
+function fixedClassScheduleText(cls){
+    return fixedEnsureClassSchedule(cls).slice().sort((a,b)=>FIXED_DAY_ORDER.indexOf(a.dayId)-FIXED_DAY_ORDER.indexOf(b.dayId)||a.start.localeCompare(b.start)).map(item=>{
+        const room=item.room?' · '+item.room:'';
+        return (item.dayId===0?'CN':'T'+(item.dayId+1))+' '+item.start+'-'+item.end+room;
+    }).join('; ');
+}
+function fixedSyncClassScheduleText(cls){
+    if(!cls)return;
+    cls.schedule=fixedClassScheduleText(cls);
+    cls.updatedAt=new Date().toISOString();
+}
+function fixedRemoveFuturePlannerEvents(cls){
+    const today=ymd(new Date());
+    cls.calendarEvents=(cls.calendarEvents||[]).filter(event=>{
+        const source=String(event.source||'');
+        return !(event.date>=today&&String(event.status||'planned')==='planned'&&(source==='planner'||source==='planner-global'));
+    });
+}
+function fixedScheduleFindRef(classKey,eventId){
+    const cls=data.classes?.[classKey];if(!cls)return null;
+    const item=fixedEnsureClassSchedule(cls).find(event=>String(event.id)===String(eventId));
+    return item?{classKey,cls,item}:null;
+}
+function fixedScheduleEditableClasses(){
+    return plannerVisibleClasses().filter(([,cls])=>!isCompletedCourse(cls)&&String(cls.courseStatus||'current')!=='completed');
+}
+
+const __flexOldFixedEventsForDate=scheduleFixedEventsForDate;
+scheduleFixedEventsForDate=function(targetDate){
+    const day=ymd(targetDate),dayId=targetDate.getDay(),structuredKeys=new Set(),result=[];
+    for(const [classKey,cls] of getVisibleActiveClassEntries()){
+        const items=fixedEnsureClassSchedule(cls);
+        if(items.length)structuredKeys.add(classKey);
+        items.filter(item=>Number(item.dayId)===Number(dayId)).forEach(item=>result.push({
+            id:'fixed-'+classKey+'-'+item.id+'-'+day,
+            fixedEventId:item.id,
+            classKey,className:cls.name||classKey,classCode:cls.code||classKey,
+            title:'Lịch cố định',date:day,start:item.start,end:item.end,
+            room:item.room||'',note:item.note||cls.schedule||'',type:'fixed',
+            readonly:true,status:'planned',fromFixed:true,
+            color:cls.color||colorForClass(classKey),cls
+        }));
+    }
+    __flexOldFixedEventsForDate(targetDate).filter(event=>!structuredKeys.has(event.classKey)).forEach(event=>result.push(event));
+    return result.sort((a,b)=>String(a.start||'99:99').localeCompare(String(b.start||'99:99'))||String(a.className||'').localeCompare(String(b.className||''),'vi'));
+};
+scheduleFixedEventsForWeek=function(anchorDate=calendarDate){
+    const start=startOfWeek(anchorDate||new Date()),query=q(),days=[];
+    for(let i=0;i<7;i++){
+        const date=new Date(start);date.setDate(start.getDate()+i);
+        let events=scheduleFixedEventsForDate(date);
+        if(calendarClassFilter!=='all')events=events.filter(event=>event.classKey===calendarClassFilter);
+        if(query)events=events.filter(syncScheduleQueryMatch);
+        days.push({date,key:ymd(date),events});
+    }
+    return days;
+};
+function fixedLayoutDayEvents(events){
+    const rows=events.map(event=>({...event,_start:fixedTimeToMinutes(event.start),_end:fixedTimeToMinutes(event.end)}))
+        .filter(event=>Number.isFinite(event._start)&&Number.isFinite(event._end)&&event._end>event._start)
+        .sort((a,b)=>a._start-b._start||a._end-b._end);
+    let cursor=0;
+    while(cursor<rows.length){
+        let end=rows[cursor]._end,last=cursor+1;
+        while(last<rows.length&&rows[last]._start<end){end=Math.max(end,rows[last]._end);last++}
+        const cluster=rows.slice(cursor,last),laneEnds=[];
+        cluster.forEach(event=>{
+            let lane=laneEnds.findIndex(laneEnd=>laneEnd<=event._start);
+            if(lane<0){lane=laneEnds.length;laneEnds.push(event._end)}else laneEnds[lane]=event._end;
+            event._lane=lane;
+        });
+        cluster.forEach(event=>event._laneCount=Math.max(1,laneEnds.length));
+        cursor=last;
+    }
+    return rows;
+}
+function fixedRenderTimelineEvent(event){
+    const editable=!isStudent()&&canEditClass(data.classes?.[event.classKey]);
+    const start=fixedClamp(event._start,FIXED_WEEK_START,FIXED_WEEK_END-30);
+    const end=fixedClamp(event._end,FIXED_WEEK_START+30,FIXED_WEEK_END);
+    const top=(start-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN;
+    const height=Math.max(25,(end-start)*FIXED_WEEK_PX_PER_MIN);
+    const width=100/event._laneCount,left=event._lane*width;
+    const eventLeft=`calc(${left}% + 3px)`,eventWidth=`calc(${width}% - 6px)`;
+    // colorVarsForClass không có dấu ";" ở cuối. Tách rõ từng khai báo để
+    // thuộc tính top không bị nuốt vào biến --ev-soft khiến mọi lớp dồn lên đầu.
+    const style=`${colorVarsForClass(event.classKey,event.color)};--fixed-event-top:${top}px;--fixed-event-height:${height}px;--fixed-event-left:${eventLeft};--fixed-event-width:${eventWidth};top:${top}px;height:${height}px;left:${eventLeft};width:${eventWidth};`;
+    const room=event.room?`<div class="fixed-event-room">📍 ${esc(event.room)}</div>`:'';
+    const attrs=editable
+        ?`onpointerdown="fixedPointerStart(event)" onkeydown="fixedEventKey(event)" tabindex="0"`
+        :`onclick="fixedReadonlyEventClick(event)" onkeydown="fixedReadonlyEventKey(event)" tabindex="0"`;
+    return `<div class="fixed-week-event ${editable?'':'fixed-readonly'}" style="${style}" data-class-key="${esc(event.classKey)}" data-event-id="${esc(event.fixedEventId||'')}" data-day-id="${Number(new Date(event.date+'T12:00:00').getDay())}" data-start="${esc(event.start)}" data-end="${esc(event.end)}" data-top-px="${top}" ${attrs} role="button" aria-label="${esc(event.className+' '+event.start+' đến '+event.end)}"><div class="fixed-event-name">${esc(event.className)}</div><div class="fixed-event-time">${esc(event.start)}–${esc(event.end)}</div>${room}${editable?'<span class="fixed-resize-handle" title="Kéo để đổi giờ kết thúc"></span>':''}</div>`;
+}
+function fixedNowLineHtml(day){
+    const now=new Date(),minutes=now.getHours()*60+now.getMinutes();
+    if(ymd(now)!==day.key||minutes<FIXED_WEEK_START||minutes>FIXED_WEEK_END)return '';
+    return `<div class="fixed-now-line" style="top:${(minutes-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN}px"></div>`;
+}
+renderWeeklyFixedTimetable=function(){
+    fixedScheduleEnsureModal();
+    const days=scheduleFixedEventsForWeek(calendarDate),total=days.reduce((sum,day)=>sum+day.events.length,0),today=ymd(new Date());
+    const editableClasses=fixedScheduleEditableClasses();
+    const labels=[];
+    for(let minute=FIXED_WEEK_START;minute<=FIXED_WEEK_END;minute+=60)labels.push(`<span class="fixed-time-label" style="top:${(minute-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN}px">${fixedMinutesToTime(minute)}</span>`);
+    const headers=days.map(day=>`<div class="fixed-day-head ${day.key===today?'today':''}">${FIXED_DAY_LABELS[day.date.getDay()]}<small>${String(day.date.getDate()).padStart(2,'0')}/${String(day.date.getMonth()+1).padStart(2,'0')}</small></div>`).join('');
+    const columns=days.map(day=>`<div class="fixed-day-column ${day.key===today?'today':''}" data-day-id="${day.date.getDay()}" ondblclick="fixedDayDoubleClick(event)">${fixedNowLineHtml(day)}${fixedLayoutDayEvents(day.events).map(fixedRenderTimelineEvent).join('')}</div>`).join('');
+    const addButton=!isStudent()&&editableClasses.length?'<button class="btn btn-blue" onclick="openFixedScheduleModal()">➕ Thêm lịch cố định</button>':'';
+    return `<section class="weekly-fixed-card fixed-calendar-pro"><div class="weekly-fixed-head"><div class="weekly-fixed-title">📅 Lịch cố định kéo–thả<span>Lịch lặp hằng tuần theo giờ thực tế; không còn bị giới hạn bởi Ca 1/Ca 2. Mỗi thay đổi tự đồng bộ với Dashboard hôm nay và Thời khóa biểu Pro.</span></div><div class="fixed-calendar-actions"><span class="fixed-calendar-chip">${total} buổi/tuần</span><button class="btn btn-soft" onclick="fixedScheduleScrollToNow()">⏱ Giờ hiện tại</button>${addButton}</div></div><div class="fixed-calendar-help"><span>↕ Kéo lớp để đổi giờ</span><span>↔ Kéo sang ngày khác</span><span>↕ Kéo mép dưới để đổi thời lượng</span><span>＋ Nhấp đúp ô trống để thêm</span><span>🕒 Bước thời gian 15 phút</span></div><div class="fixed-week-scroll" id="fixedWeekScroll"><div class="fixed-week-header"><div class="fixed-week-corner">GMT+7</div>${headers}</div><div class="fixed-week-body" style="--fixed-week-height:${FIXED_WEEK_HEIGHT}px"><div class="fixed-time-axis">${labels.join('')}</div>${columns}</div></div></section>`;
+};
+function fixedScheduleScrollToNow(){
+    const scroller=document.getElementById('fixedWeekScroll');if(!scroller)return;
+    const now=new Date(),minutes=now.getHours()*60+now.getMinutes();
+    const target=minutes>=FIXED_WEEK_START&&minutes<=FIXED_WEEK_END?minutes:8*60;
+    scroller.scrollTo({top:Math.max(0,(target-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN-130),behavior:'smooth'});
+}
+
+function fixedScheduleEnsureModal(){
+    if(document.getElementById('fixedScheduleModal'))return;
+    document.body.insertAdjacentHTML('beforeend',`<div class="modal-overlay" id="fixedScheduleModal"><div class="modal fixed-schedule-modal"><h2 id="fixedScheduleModalTitle">Thêm lịch cố định</h2><p class="sub">Chọn chính xác giờ bắt đầu và kết thúc; lịch sẽ lặp lại vào ngày này mỗi tuần.</p><input type="hidden" id="fixedOriginalClassInput"><input type="hidden" id="fixedEventIdInput"><div class="fixed-modal-grid"><div class="fixed-field-class"><label>Lớp học</label><select id="fixedClassInput" onchange="fixedModalClearConflict()"></select></div><div><label>Ngày học</label><select id="fixedDayInput" onchange="fixedModalClearConflict()">${FIXED_DAY_ORDER.map(dayId=>`<option value="${dayId}">${FIXED_DAY_LABELS[dayId]}</option>`).join('')}</select></div><div><label>Bắt đầu</label><input type="time" id="fixedStartInput" step="900" onchange="fixedModalClearConflict()"></div><div><label>Kết thúc</label><input type="time" id="fixedEndInput" step="900" onchange="fixedModalClearConflict()"></div><div class="fixed-field-room"><label>Phòng học (không bắt buộc)</label><input id="fixedRoomInput" placeholder="Ví dụ: Phòng 1"></div><div class="fixed-field-room"><label>Ghi chú</label><input id="fixedNoteInput" placeholder="Ví dụ: Học sớm hơn 15 phút"></div></div><div class="fixed-conflict-box" id="fixedConflictBox"></div><label class="fixed-allow-row"><input type="checkbox" id="fixedAllowConflictInput"><span>Cho phép lưu dù có cảnh báo trùng lịch. Chỉ nên bật khi đã xác nhận có giáo viên/phòng thay thế.</span></label><div class="modal-actions"><button class="btn btn-danger" id="fixedDeleteBtn" onclick="deleteFixedScheduleEvent()">Xoá</button><button class="btn btn-gray" onclick="closeModal('fixedScheduleModal')">Huỷ</button><button class="btn btn-blue" onclick="saveFixedScheduleEvent()">Lưu lịch cố định</button></div></div></div>`);
+}
+function fixedFillClassOptions(selected=''){
+    const select=document.getElementById('fixedClassInput');
+    const rows=fixedScheduleEditableClasses();
+    if(select)select.innerHTML=rows.map(([key,cls])=>`<option value="${esc(key)}" ${key===selected?'selected':''}>${esc(cls.name||key)} · ${esc(cls.code||key)}</option>`).join('');
+}
+function fixedModalClearConflict(){
+    const box=document.getElementById('fixedConflictBox');if(box)box.innerHTML='';
+    const allow=document.getElementById('fixedAllowConflictInput');if(allow)allow.checked=false;
+}
+function openFixedScheduleModal(classKey='',eventId='',dayId=null,start=''){
+    fixedScheduleEnsureModal();
+    const editing=classKey&&eventId?fixedScheduleFindRef(classKey,eventId):null;
+    if(editing&&!canEditClass(editing.cls))return showToast('Thầy/Cô không có quyền sửa lịch của lớp này','error');
+    const preferred=editing?.classKey||(classKey&&data.classes[classKey]?classKey:(calendarClassFilter!=='all'?calendarClassFilter:''))||fixedScheduleEditableClasses()[0]?.[0]||'';
+    if(!preferred)return showToast('Chưa có lớp đang học để tạo lịch cố định','warn');
+    fixedFillClassOptions(preferred);
+    document.getElementById('fixedOriginalClassInput').value=editing?.classKey||'';
+    document.getElementById('fixedEventIdInput').value=editing?.item.id||'';
+    document.getElementById('fixedDayInput').value=String(editing?.item.dayId??(dayId==null?1:Number(dayId)));
+    const startValue=editing?.item.start||start||'08:00';
+    document.getElementById('fixedStartInput').value=startValue;
+    document.getElementById('fixedEndInput').value=editing?.item.end||fixedMinutesToTime(Math.min(fixedTimeToMinutes(startValue)+120,FIXED_WEEK_END));
+    document.getElementById('fixedRoomInput').value=editing?.item.room||'';
+    document.getElementById('fixedNoteInput').value=editing?.item.note||'';
+    document.getElementById('fixedScheduleModalTitle').textContent=editing?'Sửa lịch cố định':'Thêm lịch cố định';
+    document.getElementById('fixedDeleteBtn').style.display=editing?'inline-block':'none';
+    fixedModalClearConflict();openModal('fixedScheduleModal');
+}
+function fixedFindConflicts(candidate,exclude=null){
+    const targetClass=data.classes?.[candidate.classKey],conflicts=[];
+    if(!targetClass)return conflicts;
+    const targetStudents=new Set(plannerClassStudentNames(targetClass));
+    for(const [classKey,cls] of getVisibleActiveClassEntries()){
+        for(const item of fixedEnsureClassSchedule(cls)){
+            if(exclude&&classKey===exclude.classKey&&String(item.id)===String(exclude.eventId))continue;
+            if(Number(item.dayId)!==Number(candidate.dayId))continue;
+            if(classKey===candidate.classKey){conflicts.push('Lớp '+(cls.name||classKey)+' đã có lịch trong ngày ('+item.start+'–'+item.end+')');continue}
+            if(!plannerTimeOverlap(candidate.start,candidate.end,item.start,item.end))continue;
+            if(targetClass.teacherId&&cls.teacherId&&targetClass.teacherId===cls.teacherId)conflicts.push('Trùng giáo viên với '+(cls.name||classKey)+' ('+item.start+'–'+item.end+')');
+            else if(plannerClassStudentNames(cls).some(name=>targetStudents.has(name)))conflicts.push('Trùng học sinh với '+(cls.name||classKey)+' ('+item.start+'–'+item.end+')');
+            else if(candidate.room&&item.room&&String(candidate.room).trim().toLowerCase()===String(item.room).trim().toLowerCase())conflicts.push('Trùng '+candidate.room+' với '+(cls.name||classKey));
+        }
+    }
+    return [...new Set(conflicts)];
+}
+function saveFixedScheduleEvent(){
+    const classKey=document.getElementById('fixedClassInput').value;
+    const cls=data.classes?.[classKey];if(!cls||!canEditClass(cls))return showToast('Không thể sửa lịch của lớp đã chọn','error');
+    const originalClass=document.getElementById('fixedOriginalClassInput').value;
+    const eventId=document.getElementById('fixedEventIdInput').value;
+    const start=document.getElementById('fixedStartInput').value,end=document.getElementById('fixedEndInput').value;
+    if(!fixedValidRange(start,end))return showToast('Giờ kết thúc phải muộn hơn giờ bắt đầu','error');
+    const duration=fixedTimeToMinutes(end)-fixedTimeToMinutes(start);
+    if(duration<30)return showToast('Một buổi học cần dài ít nhất 30 phút','warn');
+    const candidate={classKey,dayId:Number(document.getElementById('fixedDayInput').value),start,end,room:document.getElementById('fixedRoomInput').value.trim(),note:document.getElementById('fixedNoteInput').value.trim()};
+    const conflicts=fixedFindConflicts(candidate,eventId?{classKey:originalClass,eventId}:null);
+    const hardConflicts=conflicts.filter(message=>/^Lớp .* đã có lịch trong ngày/.test(message));
+    if(hardConflicts.length){
+        document.getElementById('fixedConflictBox').innerHTML='⛔ '+hardConflicts.map(esc).join('<br>⛔ ');
+        return showToast('Một lớp chỉ được có một lịch cố định trong cùng ngày','error');
+    }
+    if(conflicts.length&&!document.getElementById('fixedAllowConflictInput').checked){
+        document.getElementById('fixedConflictBox').innerHTML='⚠️ '+conflicts.map(esc).join('<br>⚠️ ');
+        return showToast('Lịch đang bị trùng. Hãy đổi giờ hoặc xác nhận cho phép trùng.','warn');
+    }
+    let item=null;
+    if(eventId&&originalClass){
+        const old=fixedScheduleFindRef(originalClass,eventId);
+        if(old){
+            if(originalClass===classKey)item=old.item;
+            else{old.cls.fixedScheduleEvents=old.cls.fixedScheduleEvents.filter(event=>String(event.id)!==String(eventId));fixedRemoveFuturePlannerEvents(old.cls);fixedSyncClassScheduleText(old.cls)}
+        }
+    }
+    if(!item){
+        item=fixedNormalizeItem({id:makeId('fixed',classKey+'-'+candidate.dayId+'-'+candidate.start),...candidate},fixedEnsureClassSchedule(cls).length);
+        fixedEnsureClassSchedule(cls).push(item);
+    }else Object.assign(item,candidate,{updatedAt:new Date().toISOString()});
+    fixedRemoveFuturePlannerEvents(cls);fixedSyncClassScheduleText(cls);
+    logActivity?.(eventId?'Sửa lịch cố định':'Tạo lịch cố định',(cls.name||classKey)+' · '+FIXED_DAY_LABELS[candidate.dayId]+' '+start+'-'+end,classKey);
+    saveData();closeModal('fixedScheduleModal');showToast(eventId?'Đã cập nhật lịch cố định':'Đã thêm lịch cố định');render();
+}
+function deleteFixedScheduleEvent(){
+    const originalClass=document.getElementById('fixedOriginalClassInput').value,eventId=document.getElementById('fixedEventIdInput').value;
+    const ref=fixedScheduleFindRef(originalClass,eventId);if(!ref||!canEditClass(ref.cls))return;
+    ref.cls.fixedScheduleEvents=ref.cls.fixedScheduleEvents.filter(event=>String(event.id)!==String(eventId));
+    fixedRemoveFuturePlannerEvents(ref.cls);fixedSyncClassScheduleText(ref.cls);
+    logActivity?.('Xoá lịch cố định',(ref.cls.name||originalClass)+' · '+ref.item.start+'-'+ref.item.end,originalClass);
+    saveData();closeModal('fixedScheduleModal');showToast('Đã xoá lịch cố định','warn');render();
+}
+function fixedDayDoubleClick(event){
+    if(isStudent()||event.target.closest('.fixed-week-event'))return;
+    const column=event.currentTarget,minute=fixedMinutesFromPointer(column,event.clientY);
+    openFixedScheduleModal('', '', Number(column.dataset.dayId),fixedMinutesToTime(minute));
+}
+function fixedMinutesFromPointer(column,clientY){
+    const rect=column.getBoundingClientRect();
+    return fixedClamp(fixedSnapMinutes(FIXED_WEEK_START+(clientY-rect.top)/rect.height*(FIXED_WEEK_END-FIXED_WEEK_START)),FIXED_WEEK_START,FIXED_WEEK_END-30);
+}
+function fixedReadonlyEventClick(event){
+    if(Date.now()<fixedSuppressClickUntil)return;
+    const element=event.currentTarget;viewClass(element.dataset.classKey);
+}
+function fixedReadonlyEventKey(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();fixedReadonlyEventClick(event)}}
+function fixedEventKey(event){
+    const element=event.currentTarget;
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();openFixedScheduleModal(element.dataset.classKey,element.dataset.eventId);return}
+    if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;
+    const ref=fixedScheduleFindRef(element.dataset.classKey,element.dataset.eventId);if(!ref)return;
+    let dayId=ref.item.dayId,start=fixedTimeToMinutes(ref.item.start),end=fixedTimeToMinutes(ref.item.end);
+    if(event.key==='ArrowUp'||event.key==='ArrowDown'){const delta=event.key==='ArrowUp'?-15:15;start+=delta;end+=delta}
+    else{const index=FIXED_DAY_ORDER.indexOf(dayId)+(event.key==='ArrowLeft'?-1:1);dayId=FIXED_DAY_ORDER[(index+7)%7]}
+    event.preventDefault();fixedCommitRecurringMove(ref,dayId,start,end);
+}
+function fixedPointerStart(event){
+    if(event.button!==0)return;
+    const element=event.currentTarget,ref=fixedScheduleFindRef(element.dataset.classKey,element.dataset.eventId);
+    if(!ref||!canEditClass(ref.cls))return;
+    event.preventDefault();element.setPointerCapture?.(event.pointerId);
+    fixedPointerState={
+        pointerId:event.pointerId,element,ref,mode:event.target.closest('.fixed-resize-handle')?'resize':'move',
+        x:event.clientX,y:event.clientY,moved:false,previewDay:ref.item.dayId,
+        previewStart:fixedTimeToMinutes(ref.item.start),previewEnd:fixedTimeToMinutes(ref.item.end),
+        originalHeight:element.style.height
+    };
+}
+function fixedPointerMove(event){
+    const state=fixedPointerState;if(!state||event.pointerId!==state.pointerId)return;
+    if(!state.moved&&Math.hypot(event.clientX-state.x,event.clientY-state.y)<5)return;
+    state.moved=true;event.preventDefault();state.element.classList.add('fixed-dragging');
+    if(state.mode==='resize'){
+        const column=state.element.closest('.fixed-day-column');
+        const end=fixedClamp(fixedMinutesFromPointer(column,event.clientY),state.previewStart+30,FIXED_WEEK_END);
+        state.previewEnd=end;state.element.style.height=Math.max(25,(end-state.previewStart)*FIXED_WEEK_PX_PER_MIN)+'px';
+        const label=state.element.querySelector('.fixed-event-time');if(label)label.textContent=fixedMinutesToTime(state.previewStart)+'–'+fixedMinutesToTime(end);
+        return;
+    }
+    const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.fixed-day-column');
+    if(!target)return;
+    document.querySelectorAll('.fixed-day-column.fixed-drop-target').forEach(node=>node.classList.remove('fixed-drop-target'));
+    target.classList.add('fixed-drop-target');
+    const duration=fixedTimeToMinutes(state.ref.item.end)-fixedTimeToMinutes(state.ref.item.start);
+    let start=fixedMinutesFromPointer(target,event.clientY);
+    start=fixedClamp(start,FIXED_WEEK_START,FIXED_WEEK_END-duration);
+    state.previewDay=Number(target.dataset.dayId);state.previewStart=start;state.previewEnd=start+duration;
+    let ghost=document.getElementById('fixedDragGhost');
+    if(!ghost){document.body.insertAdjacentHTML('beforeend','<div class="fixed-drag-ghost" id="fixedDragGhost"></div>');ghost=document.getElementById('fixedDragGhost')}
+    const rect=target.getBoundingClientRect();
+    ghost.style.left=(rect.left+4)+'px';ghost.style.top=(rect.top+(start-FIXED_WEEK_START)*FIXED_WEEK_PX_PER_MIN)+'px';
+    ghost.style.width=Math.max(70,rect.width-8)+'px';ghost.style.height=Math.max(28,duration*FIXED_WEEK_PX_PER_MIN)+'px';
+    ghost.innerHTML=esc(state.ref.cls.name||state.ref.classKey)+`<small>${FIXED_DAY_LABELS[state.previewDay]} · ${fixedMinutesToTime(start)}–${fixedMinutesToTime(start+duration)}</small>`;
+}
+function fixedPointerEnd(event){
+    const state=fixedPointerState;if(!state||event.pointerId!==state.pointerId)return;
+    fixedPointerState=null;state.element.releasePointerCapture?.(event.pointerId);
+    document.getElementById('fixedDragGhost')?.remove();
+    document.querySelectorAll('.fixed-day-column.fixed-drop-target').forEach(node=>node.classList.remove('fixed-drop-target'));
+    state.element.classList.remove('fixed-dragging');
+    if(!state.moved){openFixedScheduleModal(state.ref.classKey,state.ref.item.id);return}
+    fixedSuppressClickUntil=Date.now()+500;
+    fixedCommitRecurringMove(state.ref,state.previewDay,state.previewStart,state.previewEnd);
+}
+function fixedPointerCancel(){
+    if(!fixedPointerState)return;
+    fixedPointerState.element.classList.remove('fixed-dragging');
+    fixedPointerState.element.style.height=fixedPointerState.originalHeight;
+    fixedPointerState=null;document.getElementById('fixedDragGhost')?.remove();
+    document.querySelectorAll('.fixed-day-column.fixed-drop-target').forEach(node=>node.classList.remove('fixed-drop-target'));
+    if(currentView==='schedule')renderSchedule();
+}
+function fixedCommitRecurringMove(ref,dayId,startMinute,endMinute){
+    startMinute=fixedClamp(fixedSnapMinutes(startMinute),FIXED_WEEK_START,FIXED_WEEK_END-30);
+    endMinute=fixedClamp(fixedSnapMinutes(endMinute),startMinute+30,FIXED_WEEK_END);
+    const candidate={classKey:ref.classKey,dayId:Number(dayId),start:fixedMinutesToTime(startMinute),end:fixedMinutesToTime(endMinute),room:ref.item.room||'',note:ref.item.note||''};
+    const conflicts=fixedFindConflicts(candidate,{classKey:ref.classKey,eventId:ref.item.id});
+    const hardConflicts=conflicts.filter(message=>/^Lớp .* đã có lịch trong ngày/.test(message));
+    if(hardConflicts.length){
+        showToast('Không thể chuyển: một lớp chỉ có một lịch cố định trong ngày','error');
+        if(currentView==='schedule')renderSchedule();
+        return;
+    }
+    if(conflicts.length&&!confirm('Lịch mới có cảnh báo:\n• '+conflicts.join('\n• ')+'\n\nVẫn lưu thay đổi này?')){
+        showToast('Đã giữ nguyên lịch cũ vì có xung đột','warn');if(currentView==='schedule')renderSchedule();return;
+    }
+    Object.assign(ref.item,candidate,{updatedAt:new Date().toISOString()});
+    fixedRemoveFuturePlannerEvents(ref.cls);fixedSyncClassScheduleText(ref.cls);
+    logActivity?.('Kéo thả lịch cố định',(ref.cls.name||ref.classKey)+' · '+FIXED_DAY_LABELS[candidate.dayId]+' '+candidate.start+'-'+candidate.end,ref.classKey);
+    saveData();showToast('Đã chuyển lịch đến '+FIXED_DAY_LABELS[candidate.dayId]+' · '+candidate.start+'–'+candidate.end);render();
+}
+document.addEventListener('pointermove',fixedPointerMove,{passive:false});
+document.addEventListener('pointerup',fixedPointerEnd);
+document.addEventListener('pointercancel',fixedPointerCancel);
+
+const __flexOldHandleEditClass=handleEditClass;
+handleEditClass=function(){
+    const cls=data.classes?.[editingClassName],nextSchedule=String(classScheduleInput?.value||'').trim();
+    if(cls&&nextSchedule!==String(cls.schedule||''))cls.fixedScheduleEvents=fixedParseLegacySchedule(nextSchedule);
+    return __flexOldHandleEditClass();
+};
+const __flexOldPlannerSaveSuggestions=plannerSaveSuggestions;
+plannerSaveSuggestions=function(){
+    const classKey=plannerState.classKey;
+    const captured=(plannerState.suggestions||[]).map(item=>({dayId:Number(item.dayId),start:(item.slot||plannerSlot(item.slotId)).start,end:(item.slot||plannerSlot(item.slotId)).end,room:''}));
+    const result=__flexOldPlannerSaveSuggestions();
+    if(captured.length&&currentView==='schedule'&&!(plannerState.suggestions||[]).length&&data.classes?.[classKey]){
+        const cls=data.classes[classKey];
+        cls.fixedScheduleEvents=captured.map((item,index)=>fixedNormalizeItem({id:makeId('fixed',classKey+'-'+item.dayId+'-'+item.start),...item},index));
+        fixedSyncClassScheduleText(cls);saveData();renderSchedule();
+    }
+    return result;
+};
+const __flexOldGlobalPlannerSave=globalPlannerSave;
+globalPlannerSave=function(){
+    const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
+    const captured=(plan?.items||[]).map(item=>({classKey:item.classKey,dayId:Number(item.dayId),start:item.slot.start,end:item.slot.end,room:'Phòng '+(item.roomIndex||1)}));
+    const result=__flexOldGlobalPlannerSave();
+    if(captured.length&&currentView==='schedule'){
+        const grouped={};captured.forEach(item=>(grouped[item.classKey]||(grouped[item.classKey]=[])).push(item));
+        Object.entries(grouped).forEach(([classKey,items])=>{
+            const cls=data.classes?.[classKey];if(!cls)return;
+            cls.fixedScheduleEvents=items.map((item,index)=>fixedNormalizeItem({id:makeId('fixed',classKey+'-'+item.dayId+'-'+item.start),...item},index));
+            fixedSyncClassScheduleText(cls);
+        });
+        saveData();renderSchedule();
+    }
+    return result;
+};
+const __flexOldFirestoreSnapshot=toFirestoreCollectionsSnapshot;
+toFirestoreCollectionsSnapshot=function(){
+    const snapshot=__flexOldFirestoreSnapshot();
+    (snapshot.classes||[]).forEach(row=>{row.fixedScheduleEvents=fixedEnsureClassSchedule(data.classes?.[row.classKey]).map(item=>({...item}))});
+    return snapshot;
+};
+const __flexOldNormalize=normalize;
+normalize=function(){
+    __flexOldNormalize();
+    Object.values(data.classes||{}).forEach(cls=>fixedEnsureClassSchedule(cls));
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.1',flexibleWeeklyCalendar:true,fixedTimelinePositionPatch:true,timeStepMinutes:15,weeklyCalendarStart:'05:30',weeklyCalendarEnd:'22:30'};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
