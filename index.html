@@ -941,7 +941,7 @@ function clearSearchIfBrowserAutofilledEmail(){
     // Nếu ô tìm kiếm bị tự điền đúng email tài khoản thì xoá để không làm ẩn toàn bộ lớp đã tạo.
     if(val && email && val===email){input.value=''}
 }
-async function init(){
+async function initBase(){
     loadData();
     setSyncBadge('syncing','Đang kiểm tra tài khoản');
     renderOnlineGate('Đang kiểm tra đăng nhập Firebase...');
@@ -973,7 +973,8 @@ function ensureUniqueClassCode(code,key){
 function classTitle(key){const cls=data.classes?.[key];return cls?.name||key||''}
 function classCode(key){const cls=data.classes?.[key];return cls?.code||cls?.id||key||''}
 function classOptionLabel(key){const cls=data.classes?.[key];return (cls?.name||key)+' · '+(cls?.code||cls?.id||key)+(isAnonymousClass(cls)?' · Ẩn danh':'')}
-function normalize(){
+/* Điểm vào ổn định: các bản nâng cấp chỉ thay implementation, không ghi đè tên hàm công khai. */
+function normalizeBase(){
     if(!data.classes)data.classes={};if(!data.meta)data.meta={};data.activityLog=Array.isArray(data.activityLog)?data.activityLog:[];data.meta.version=5.7;data.meta.mode='firestore-ready-classcode-course-terms';data.meta.updatedAt=data.meta.updatedAt||new Date().toISOString();
     let maxId=0; const oldEntries=Object.entries(data.classes); const rebuilt={};
     for(const [oldKey,cls0] of oldEntries){
@@ -985,6 +986,8 @@ function normalize(){
     }
     data.classes=rebuilt; nextStudentId=maxId+1;
 }
+let normalizeImplementation=normalizeBase;
+function normalize(){return normalizeImplementation()}
 function loadData(){
     // Online-only: không đọc dữ liệu lớp/học sinh từ localStorage.
     data={classes:{},meta:{version:6.1,mode:'online-firestore-rbac-course-terms',updatedAt:new Date().toISOString()}};
@@ -1283,8 +1286,8 @@ async function pushOnlineToFirestore(){try{if(!firestoreReady){await initFiresto
 function openFirestoreModal(){if(!isSuperAdmin())return showToast('Chức năng cấu hình hệ thống chỉ dành cho Super Admin','warn');const st=getFirestoreSettings();firestoreStatusInput.value=firestoreReady?'Đang kết nối Firestore online':'Chưa kết nối Firestore online';firestoreCenterInput.value=st.centerId||'kien-nang';firebaseConfigInput.value=JSON.stringify(st.firebaseConfig||DEFAULT_FIREBASE_CONFIG,null,2);openModal('firestoreModal')}
 async function saveFirestoreSettings(){try{const cfgText=firebaseConfigInput.value.trim();const firebaseConfig=parseFirebaseConfigText(cfgText);const centerId=firestoreCenterInput.value.trim()||'kien-nang';localStorage.setItem(FIRESTORE_SETTINGS_KEY,JSON.stringify({centerId,firebaseConfig}));localStorage.setItem(FIRESTORE_ENABLED_KEY,'1');if(firestoreUnsub)firestoreUnsub();firestoreReady=false;await initFirestoreIfEnabled();closeModal('firestoreModal');showToast('Đã lưu cấu hình online và kết nối Firestore');render()}catch(err){showToast('Cấu hình Firebase chưa đúng định dạng: '+err.message,'error')}}
 function disableFirestoreSync(){showToast('Bản này là online-only nên không thể tắt Firestore','warn')}
-function showToast(msg,type='success'){const c=document.getElementById('toastContainer'),t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(35px)';setTimeout(()=>t.remove(),250)},2800)}function openModal(id){document.getElementById(id).classList.add('active')}function closeModal(id){document.getElementById(id).classList.remove('active')}function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(x=>x.classList.remove('active'))}
-function setView(v){if(v==='admin'&&!isAdmin()){showToast('Chỉ Admin hoặc Super Admin mới mở được khu quản trị','warn');v='dashboard'}currentView=v;currentClass=null;render()}function markTabs(){['Dashboard','Debts','Schedule','Admin'].forEach(x=>{const el=document.getElementById('tab'+x);if(el)el.classList.remove('active')});updateAdminVisibility();if(currentView==='dashboard')tabDashboard.classList.add('active');if(currentView==='debts')tabDebts.classList.add('active');if(currentView==='schedule')tabSchedule.classList.add('active');if(currentView==='admin'&&document.getElementById('tabAdmin'))tabAdmin.classList.add('active')}
+function showToastBase(msg,type='success'){const c=document.getElementById('toastContainer'),t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(35px)';setTimeout(()=>t.remove(),250)},2800)}function openModal(id){document.getElementById(id).classList.add('active')}function closeModal(id){document.getElementById(id).classList.remove('active')}function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(x=>x.classList.remove('active'))}
+function setViewBase(v){if(v==='admin'&&!isAdmin()){showToast('Chỉ Admin hoặc Super Admin mới mở được khu quản trị','warn');v='dashboard'}currentView=v;currentClass=null;render()}function markTabsBase(){['Dashboard','Debts','Schedule','Admin'].forEach(x=>{const el=document.getElementById('tab'+x);if(el)el.classList.remove('active')});updateAdminVisibility();if(currentView==='dashboard')tabDashboard.classList.add('active');if(currentView==='debts')tabDebts.classList.add('active');if(currentView==='schedule')tabSchedule.classList.add('active');if(currentView==='admin'&&document.getElementById('tabAdmin'))tabAdmin.classList.add('active')}
 function getVisibleClassEntries(){
     return Object.entries(data.classes||{}).filter(([name,cls])=>canViewClass(cls));
 }
@@ -1299,8 +1302,22 @@ function renderOnlineGate(message){
 function renderLoginRequired(){
     renderOnlineGate('Thầy/Cô cần đăng nhập Email/Password. Trang sẽ không đọc hoặc lưu dữ liệu local.');
 }
-function render(){markTabs();updateStats();if(currentView==='detail'&&currentClass&&data.classes[currentClass]){if(!canViewClass(data.classes[currentClass])){currentView='dashboard';currentClass=null;renderOnlineGate('Lớp này đang ở chế độ ẩn danh hoặc thầy/cô không có quyền xem.');return}renderDetailView(currentClass)}else if(currentView==='debts')renderDebts();else if(currentView==='schedule')renderSchedule();else if(currentView==='admin')renderAdminDashboard();else renderDashboard()}
-function updateStats(){const classes=getVisibleActiveClassEntries().map(([k,c])=>c);const students=getAllStudents().filter(x=>!isCompletedCourse(x.cls));const revenue=students.reduce((a,x)=>a+(Number(x.s.paid)||0),0);const debt=students.reduce((a,x)=>a+debtOf(x.s),0);const sessions=classes.reduce((a,c)=>a+(Number(c.sessions)||0),0);statsGrid.innerHTML=`<div class="stat-card"><div class="num">${classes.length}</div><div class="label">Tổng số lớp</div></div><div class="stat-card"><div class="num">${students.length}</div><div class="label">Tổng học sinh</div></div><div class="stat-card"><div class="num">${sessions}</div><div class="label">Tổng buổi học</div></div><div class="stat-card"><div class="num money">${money(revenue)}</div><div class="label">Đã thu học phí</div></div><div class="stat-card"><div class="num debt">${money(debt)}</div><div class="label">Còn nợ</div></div>`}
+function renderBase(){markTabs();updateStats();if(currentView==='detail'&&currentClass&&data.classes[currentClass]){if(!canViewClass(data.classes[currentClass])){currentView='dashboard';currentClass=null;renderOnlineGate('Lớp này đang ở chế độ ẩn danh hoặc thầy/cô không có quyền xem.');return}renderDetailView(currentClass)}else if(currentView==='debts')renderDebts();else if(currentView==='schedule')renderSchedule();else if(currentView==='admin')renderAdminDashboard();else renderDashboard()}
+
+/* Vỏ ứng dụng ổn định: các lớp UX chỉ nối tiếp implementation hiện hành. */
+let initImplementation=initBase;
+async function init(...args){return initImplementation.apply(this,args)}
+let showToastImplementation=showToastBase;
+function showToast(...args){return showToastImplementation.apply(this,args)}
+let setViewImplementation=setViewBase;
+function setView(...args){return setViewImplementation.apply(this,args)}
+let markTabsImplementation=markTabsBase;
+function markTabs(...args){return markTabsImplementation.apply(this,args)}
+let renderImplementation=renderBase;
+function render(...args){return renderImplementation.apply(this,args)}
+let uxPostRenderImplementation=uxPostRenderBase;
+function uxPostRender(...args){return uxPostRenderImplementation.apply(this,args)}
+function updateStatsBase(){const classes=getVisibleActiveClassEntries().map(([k,c])=>c);const students=getAllStudents().filter(x=>!isCompletedCourse(x.cls));const revenue=students.reduce((a,x)=>a+(Number(x.s.paid)||0),0);const debt=students.reduce((a,x)=>a+debtOf(x.s),0);const sessions=classes.reduce((a,c)=>a+(Number(c.sessions)||0),0);statsGrid.innerHTML=`<div class="stat-card"><div class="num">${classes.length}</div><div class="label">Tổng số lớp</div></div><div class="stat-card"><div class="num">${students.length}</div><div class="label">Tổng học sinh</div></div><div class="stat-card"><div class="num">${sessions}</div><div class="label">Tổng buổi học</div></div><div class="stat-card"><div class="num money">${money(revenue)}</div><div class="label">Đã thu học phí</div></div><div class="stat-card"><div class="num debt">${money(debt)}</div><div class="label">Còn nợ</div></div>`}
 function classMatches(name,cls){const query=q();if(!query)return true;let text=(cls.name||name)+' '+(cls.code||'')+' '+name+' '+cls.schedule+' '+cls.students.map(s=>[s.name,s.phone,s.parentPhone,s.school,s.grade,s.note].join(' ')).join(' ');return text.toLowerCase().includes(query)}
 function getAttendedSessions(cls){let n=0;if(!cls.students.length)return 0;for(let i=1;i<=cls.sessions;i++){const k='B'+i;if(cls.students.some(s=>s.attendance[k]))n++}return n}
 function dashboardStatus(attended,total){
@@ -1485,7 +1502,7 @@ function openNewCourseModal(className){
     newCourseStudentPreview.innerHTML=students.length?students.slice(0,60).map(s=>`<span>${esc(s.name||'Học sinh')}</span>`).join('')+(students.length>60?`<div class="subtext">+${students.length-60} học sinh khác</div>`:''):'Chưa có học sinh đang học để sao chép.';
     openModal('newCourseModal');
 }
-function handleCreateNewCourse(){
+function handleCreateNewCourseBase(){
     const oldKey=newCourseSourceClass; const oldCls=data.classes[oldKey];
     if(!oldCls||!canEditClass(oldCls))return showToast('Không tìm thấy lớp nguồn hoặc không có quyền','error');
     const sessions=Math.max(1,Math.min(60,Number(newCourseSessionInput.value)||10));
@@ -1567,7 +1584,7 @@ function studentStatusChip(s){const st=s?.status||'active';return `<span class="
 function ensureAttendanceKeys(student,cls){student.attendance=student.attendance||{};for(let i=1;i<=Number(cls.sessions||0);i++){const k='B'+i;if(!Object.prototype.hasOwnProperty.call(student.attendance,k))student.attendance[k]=false;}return student.attendance}
 function cloneStudentForTransfer(s,fromClass,toClass,note){const now=new Date().toISOString();const copy=JSON.parse(JSON.stringify(s||{}));copy.id=nextStudentId++;copy.status='active';copy.attendance={};for(let i=1;i<=Number(toClass.sessions||0);i++)copy.attendance['B'+i]=false;copy.classId=toClass.id;copy.classKey=toClass.id||'';copy.classCode=toClass.code;copy.teacherId=toClass.teacherId||getActiveUserId();copy.transferredFrom={classKey:fromClass.id||'',className:fromClass.name||'',classCode:fromClass.code||'',studentId:s.id,at:now,note:note||''};copy.createdAt=now;copy.updatedAt=now;copy.note=[copy.note||'',note?('Chuyển từ '+(fromClass.name||'lớp cũ')+': '+note):('Chuyển từ '+(fromClass.name||'lớp cũ'))].filter(Boolean).join('\n');return copy}
 function openTransferStudentModal(className,id){const cls=data.classes[className];if(!canEditClass(cls))return showToast('Thầy không có quyền chuyển học sinh lớp này','error');const s=(cls.students||[]).find(x=>String(x.id)===String(id));if(!s)return showToast('Không tìm thấy học sinh','error');transferFromClassInput.value=className;transferStudentIdInput.value=s.id;transferStudentSub.textContent=(s.name||'Học sinh')+' · từ '+classTitle(className)+' · '+classCode(className);transferPreviewBox.innerHTML=`<b>${esc(s.name||'')}</b><br>Trường: ${esc(s.school||'—')} · Lớp: ${esc(s.grade||'—')}<br>SĐT: ${esc(s.phone||'—')} · PH: ${esc(s.parentPhone||'—')}<br>Học phí: ${money(s.tuition||0)} · Đã đóng: ${money(s.paid||0)}`;const opts=getVisibleActiveClassEntries().filter(([k,c])=>k!==className&&canEditClass(c)).map(([k,c])=>`<option value="${esc(k)}">${esc(classOptionLabel(k))}</option>`).join('');transferTargetClassInput.innerHTML=opts||'<option value="">Không có lớp phù hợp</option>';transferNoteInput.value='';openModal('transferStudentModal')}
-function handleTransferStudent(){const fromKey=transferFromClassInput.value,id=transferStudentIdInput.value,toKey=transferTargetClassInput.value,note=transferNoteInput.value.trim();const fromCls=data.classes[fromKey],toCls=data.classes[toKey];if(!fromCls||!toCls)return showToast('Chưa chọn đủ lớp chuyển','error');if(!canEditClass(fromCls)||!canEditClass(toCls))return showToast('Thầy không có quyền chuyển giữa hai lớp này','error');if(fromKey===toKey)return showToast('Lớp mới phải khác lớp cũ','warn');const s=(fromCls.students||[]).find(x=>String(x.id)===String(id));if(!s)return showToast('Không tìm thấy học sinh','error');const duplicate=(toCls.students||[]).find(x=>normalizeKey(x.name||'')===normalizeKey(s.name||'')&&((s.phone&&x.phone===s.phone)||(s.parentPhone&&x.parentPhone===s.parentPhone)));if(duplicate)return showToast('Lớp mới đã có học sinh trùng tên và số điện thoại/phụ huynh','warn');const newStudent=cloneStudentForTransfer(s,fromCls,toCls,note);toCls.students=toCls.students||[];toCls.students.push(newStudent);s.status='transferred';s.transferStatus='moved';s.transferredTo={classKey:toKey,className:toCls.name||toKey,classCode:toCls.code||'',studentId:newStudent.id,at:new Date().toISOString(),note};s.updatedAt=new Date().toISOString();s.note=[s.note||'',note?('Đã chuyển sang '+(toCls.name||toKey)+': '+note):('Đã chuyển sang '+(toCls.name||toKey))].filter(Boolean).join('\n');sortClassStudents(fromCls);sortClassStudents(toCls);fromCls.updatedAt=new Date().toISOString();toCls.updatedAt=new Date().toISOString();saveData();closeModal('transferStudentModal');logActivity('Chuyển học sinh',`${s.name||''} · ${fromCls.name||fromKey} → ${toCls.name||toKey}`,fromKey,s.id);showToast('Đã chuyển học sinh sang lớp mới và khóa điểm danh ở lớp cũ');render()}
+function handleTransferStudentBase(){const fromKey=transferFromClassInput.value,id=transferStudentIdInput.value,toKey=transferTargetClassInput.value,note=transferNoteInput.value.trim();const fromCls=data.classes[fromKey],toCls=data.classes[toKey];if(!fromCls||!toCls)return showToast('Chưa chọn đủ lớp chuyển','error');if(!canEditClass(fromCls)||!canEditClass(toCls))return showToast('Thầy không có quyền chuyển giữa hai lớp này','error');if(fromKey===toKey)return showToast('Lớp mới phải khác lớp cũ','warn');const s=(fromCls.students||[]).find(x=>String(x.id)===String(id));if(!s)return showToast('Không tìm thấy học sinh','error');const duplicate=(toCls.students||[]).find(x=>normalizeKey(x.name||'')===normalizeKey(s.name||'')&&((s.phone&&x.phone===s.phone)||(s.parentPhone&&x.parentPhone===s.parentPhone)));if(duplicate)return showToast('Lớp mới đã có học sinh trùng tên và số điện thoại/phụ huynh','warn');const newStudent=cloneStudentForTransfer(s,fromCls,toCls,note);toCls.students=toCls.students||[];toCls.students.push(newStudent);s.status='transferred';s.transferStatus='moved';s.transferredTo={classKey:toKey,className:toCls.name||toKey,classCode:toCls.code||'',studentId:newStudent.id,at:new Date().toISOString(),note};s.updatedAt=new Date().toISOString();s.note=[s.note||'',note?('Đã chuyển sang '+(toCls.name||toKey)+': '+note):('Đã chuyển sang '+(toCls.name||toKey))].filter(Boolean).join('\n');sortClassStudents(fromCls);sortClassStudents(toCls);fromCls.updatedAt=new Date().toISOString();toCls.updatedAt=new Date().toISOString();saveData();closeModal('transferStudentModal');logActivity('Chuyển học sinh',`${s.name||''} · ${fromCls.name||fromKey} → ${toCls.name||toKey}`,fromKey,s.id);showToast('Đã chuyển học sinh sang lớp mới và khóa điểm danh ở lớp cũ');render()}
 
 function openAddStudentModal(className,studentId=null){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được sửa học sinh lớp này','error');addingToClass=className;editingStudentId=studentId;const cls=data.classes[className];const s=studentId?cls.students.find(x=>x.id===studentId):null;studentModalTitle.textContent=s?'Sửa hồ sơ học sinh':'Thêm học sinh';studentIdInput.value=s?.id||'';studentNameInput.value=s?.name||'';studentGradeInput.value=s?.grade||'';studentPhoneInput.value=s?.phone||'';parentPhoneInput.value=s?.parentPhone||'';schoolInput.value=s?.school||'';tuitionInput.value=s?.tuition??cls.defaultFee??0;paidInput.value=s?.paid||0;statusInput.value=s?.status||'active';noteInput.value=s?.note||'';studentModalConfirm.onclick=handleSaveStudent;openModal('studentModal')}
 function handleSaveStudent(){const cls=data.classes[addingToClass];if(!canEditClass(cls))return showToast('Thầy không có quyền sửa học sinh lớp này','error');const name=studentNameInput.value.trim();if(!name)return showToast('Vui lòng nhập tên học sinh','error');const payload={name,grade:studentGradeInput.value.trim(),phone:studentPhoneInput.value.trim(),parentPhone:parentPhoneInput.value.trim(),school:schoolInput.value.trim(),tuition:Number(tuitionInput.value)||0,paid:Number(paidInput.value)||0,status:statusInput.value,note:noteInput.value.trim()};if(editingStudentId){const s=cls.students.find(x=>x.id==editingStudentId);Object.assign(s,payload,{updatedAt:new Date().toISOString()})}else{let att={};for(let i=1;i<=cls.sessions;i++)att['B'+i]=false;cls.students.push({id:nextStudentId++,...payload,attendance:att,attendanceStartSession:(typeof ux88NextAttendanceStartSession==='function'?ux88NextAttendanceStartSession(cls):1),paymentNote:'',classId:cls.id,classKey:addingToClass,classCode:cls.code,teacherId:cls.teacherId||getActiveUserId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}sortClassStudents(cls);cls.updatedAt=new Date().toISOString();saveData();closeModal('studentModal');logActivity(editingStudentId?'Sửa hồ sơ học sinh':'Thêm học sinh',name,addingToClass,editingStudentId||'');showToast('Đã lưu hồ sơ học sinh');render()}
@@ -1615,9 +1632,29 @@ function cleanupPlannedScheduleForAttendance(className,key){
     cls.calendarEvents=(cls.calendarEvents||[]).filter(ev=>!(ev.date===day&&(ev.status||'planned')==='planned'));
     return before-cls.calendarEvents.length;
 }
-function toggleAttendance(className,id,key){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');const cls=data.classes[className];const s=cls.students.find(x=>x.id===id);if(!s)return;if(!isStudentAttendanceActive(s))return showToast('Học sinh này đã tạm nghỉ/chuyển lớp nên không điểm danh ở lớp cũ','warn');s.attendance=s.attendance||{};s.attendance[key]=!s.attendance[key];const removed=cleanupPlannedScheduleForAttendance(className,key);cls.updatedAt=new Date().toISOString();saveData();render();logActivity('Điểm danh',key+' · '+(s.name||''),className,id);}
-function bulkSetAttendance(className,key,value){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');const cls=data.classes[className];const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));active.forEach(st=>{st.attendance=st.attendance||{};st.attendance[key]=!!value;st.updatedAt=new Date().toISOString()});cleanupPlannedScheduleForAttendance(className,key);cls.updatedAt=new Date().toISOString();saveData();render();logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');}
-function renderDebts(){const query=q();let items=getAllStudents().filter(x=>debtOf(x.s)>0||query);items=items.filter(x=>!query||[x.className,x.s.name,x.s.phone,x.s.parentPhone,x.s.school].join(' ').toLowerCase().includes(query));let rows=items.map(x=>`<tr><td><b>${esc(x.s.name)}</b><div class="subtext">${esc(x.className)} · ${esc(x.s.school||'')}</div></td><td>${esc(x.s.phone||'—')}<div class="subtext">PH: ${esc(x.s.parentPhone||'—')}</div></td><td>${money(x.s.tuition)}</td><td class="money"><b>${money(x.s.paid)}</b></td><td class="debt"><b>${money(debtOf(x.s))}</b></td><td>${esc(x.s.paymentNote||x.s.note||'')}</td><td>${canEditClass(x.cls)?`<button class="btn btn-green" onclick="openPaymentModal('${esc(x.classKey)}',${x.s.id})">💰 Cập nhật</button>`:'<span class="readonly-chip">Chỉ xem</span>'}</td></tr>`).join('')||`<tr class="empty-row"><td colspan="7">Không có công nợ.</td></tr>`;mainContent.innerHTML=`<div class="panel"><h2 style="color:#0b3b5c;margin-bottom:14px">💰 Bảng công nợ học phí</h2><div class="table-scroll"><table class="data-table"><thead><tr><th>Học sinh</th><th>Liên hệ</th><th>Học phí</th><th>Đã đóng</th><th>Còn nợ</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
+function toggleAttendanceBase(className,id,key){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');const cls=data.classes[className];const s=cls.students.find(x=>x.id===id);if(!s)return;if(!isStudentAttendanceActive(s))return showToast('Học sinh này đã tạm nghỉ/chuyển lớp nên không điểm danh ở lớp cũ','warn');s.attendance=s.attendance||{};s.attendance[key]=!s.attendance[key];const removed=cleanupPlannedScheduleForAttendance(className,key);cls.updatedAt=new Date().toISOString();saveData();render();logActivity('Điểm danh',key+' · '+(s.name||''),className,id);}
+function bulkSetAttendanceBase(className,key,value){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');const cls=data.classes[className];const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));active.forEach(st=>{st.attendance=st.attendance||{};st.attendance[key]=!!value;st.updatedAt=new Date().toISOString()});cleanupPlannedScheduleForAttendance(className,key);cls.updatedAt=new Date().toISOString();saveData();render();logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');}
+function renderDebtsBase(){const query=q();let items=getAllStudents().filter(x=>debtOf(x.s)>0||query);items=items.filter(x=>!query||[x.className,x.s.name,x.s.phone,x.s.parentPhone,x.s.school].join(' ').toLowerCase().includes(query));let rows=items.map(x=>`<tr><td><b>${esc(x.s.name)}</b><div class="subtext">${esc(x.className)} · ${esc(x.s.school||'')}</div></td><td>${esc(x.s.phone||'—')}<div class="subtext">PH: ${esc(x.s.parentPhone||'—')}</div></td><td>${money(x.s.tuition)}</td><td class="money"><b>${money(x.s.paid)}</b></td><td class="debt"><b>${money(debtOf(x.s))}</b></td><td>${esc(x.s.paymentNote||x.s.note||'')}</td><td>${canEditClass(x.cls)?`<button class="btn btn-green" onclick="openPaymentModal('${esc(x.classKey)}',${x.s.id})">💰 Cập nhật</button>`:'<span class="readonly-chip">Chỉ xem</span>'}</td></tr>`).join('')||`<tr class="empty-row"><td colspan="7">Không có công nợ.</td></tr>`;mainContent.innerHTML=`<div class="panel"><h2 style="color:#0b3b5c;margin-bottom:14px">💰 Bảng công nợ học phí</h2><div class="table-scroll"><table class="data-table"><thead><tr><th>Học sinh</th><th>Liên hệ</th><th>Học phí</th><th>Đã đóng</th><th>Còn nợ</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
+
+/* ---------- STABLE PUBLIC ENTRY POINTS v11.7 ----------
+   Tên hàm giao diện chỉ được khai báo một lần. Các lớp nâng cấp cũ nối vào biến
+   Implementation tương ứng để tránh ghi đè trực tiếp và dễ truy vết bảo trì. */
+let toggleAttendanceImplementation=toggleAttendanceBase;
+function toggleAttendance(...args){return toggleAttendanceImplementation.apply(this,args)}
+let bulkSetAttendanceImplementation=bulkSetAttendanceBase;
+function bulkSetAttendance(...args){return bulkSetAttendanceImplementation.apply(this,args)}
+let plannerSetClassImplementation=plannerSetClassBase;
+function plannerSetClass(...args){return plannerSetClassImplementation.apply(this,args)}
+let globalPlannerSaveImplementation=globalPlannerSaveBase;
+function globalPlannerSave(...args){return globalPlannerSaveImplementation.apply(this,args)}
+let handleCreateNewCourseImplementation=handleCreateNewCourseBase;
+function handleCreateNewCourse(...args){return handleCreateNewCourseImplementation.apply(this,args)}
+let handleTransferStudentImplementation=handleTransferStudentBase;
+function handleTransferStudent(...args){return handleTransferStudentImplementation.apply(this,args)}
+let renderDebtsImplementation=renderDebtsBase;
+function renderDebts(...args){return renderDebtsImplementation.apply(this,args)}
+let updateStatsImplementation=updateStatsBase;
+function updateStats(...args){return updateStatsImplementation.apply(this,args)}
 function pad2(n){return String(n).padStart(2,'0')}
 function ymd(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())}
 function parseDateLoose(v){if(!v)return null;v=String(v).trim();let m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);m=v.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);if(m){let y=m[3]?+m[3]:calendarDate.getFullYear();if(y<100)y+=2000;return new Date(y,+m[2]-1,+m[1])}return null}
@@ -2126,9 +2163,9 @@ function uxOpenCommand(){uxEnsureShell();document.getElementById('commandOverlay
 function uxRenderCommand(){const box=document.getElementById('commandResults');if(!box)return;const term=String(document.getElementById('commandInput')?.value||'').toLowerCase().trim();let rows=uxCommandIndex.filter(x=>!term || (x.title+' '+x.sub+' '+x.text).toLowerCase().includes(term));if(term.includes('chưa đóng')||term.includes('cong no')||term.includes('công nợ'))rows=uxCommandIndex.filter(x=>x.type==='Công nợ');rows=rows.slice(0,30);box.innerHTML=rows.map((r,i)=>`<div class="command-row ${i===0?'active':''}" data-i="${i}" onclick="uxRunCommand(${i})"><div><b>${esc(r.title)}</b><small>${esc(r.sub||'')}</small></div><span class="command-tag">${esc(r.type)}</span></div>`).join('')||'<div class="command-row"><div><b>Không tìm thấy</b><small>Thử tên lớp, tên học sinh hoặc từ khóa “chưa đóng”.</small></div></div>';box._rows=rows}
 function uxRunCommand(i){const rows=document.getElementById('commandResults')?._rows||[];const r=rows[i];if(!r)return;uxCloseCommand();setTimeout(()=>r.action(),50)}
 function uxCommandKey(e){if(e.key==='Enter'){e.preventDefault();uxRunCommand(0)}if(e.key==='Escape')uxCloseCommand()}
-function uxPostRender(){uxEnsureShell();uxBuildCommandIndex();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.today-card'))mc.insertAdjacentHTML('afterbegin',uxRenderTodayPanel());if(mc&&!mc.querySelector('.crm-grid'))mc.insertAdjacentHTML('afterbegin',renderCRMOverview())}}
-const __uxOldShowToast=showToast;showToast=function(msg,type='success'){uxAddNotification(msg,type);return __uxOldShowToast(msg,type)};
-const __uxOldRender=render;render=function(){__uxOldRender();uxPostRender()};
+function uxPostRenderBase(){uxEnsureShell();uxBuildCommandIndex();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.today-card'))mc.insertAdjacentHTML('afterbegin',uxRenderTodayPanel());if(mc&&!mc.querySelector('.crm-grid'))mc.insertAdjacentHTML('afterbegin',renderCRMOverview())}}
+const __uxOldShowToast=showToastImplementation;showToastImplementation=function(msg,type='success'){uxAddNotification(msg,type);return __uxOldShowToast(msg,type)};
+const __uxOldRender=renderImplementation;renderImplementation=function(){__uxOldRender();uxPostRender()};
 
 /* ---------- ATTENDANCE NEW COURSE DISPLAY FIX v8.10 ----------
    Sửa triệt để lỗi đợt mới vẫn báo "Vắng 26/26 ở B5":
@@ -2218,7 +2255,7 @@ todayRealAbsentList=function(ev){
     const absent=active.filter(st=>!(st.attendance&&st.attendance[key]===true));
     return {key,active,absent};
 };
-toggleAttendance=function(className,id,key){
+toggleAttendanceImplementation=function(className,id,key){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     const s=cls.students.find(x=>x.id===id); if(!s)return;
@@ -2231,7 +2268,7 @@ toggleAttendance=function(className,id,key){
     cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
     saveData(); render(); logActivity('Điểm danh',key+' · '+(s.name||''),className,id);
 };
-bulkSetAttendance=function(className,key,value){
+bulkSetAttendanceImplementation=function(className,key,value){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     const active=(cls.students||[]).filter(st=>isStudentAttendanceActive(st));
@@ -2241,8 +2278,8 @@ bulkSetAttendance=function(className,key,value){
     cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
     saveData(); render(); logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');
 };
-const __ux90OldNormalize=normalize;
-normalize=function(){
+const __ux90OldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __ux90OldNormalize();
     Object.values(data.classes||{}).forEach(cls=>ux90CleanEmptyMarkedSessions(cls));
 };
@@ -2266,9 +2303,9 @@ function renderV60Overview(){const students=v60AllStudents(), paid=v60PaidRate()
 function v60ExportParentCSV(){const rows=[['Lop','Hoc sinh','SDT HS','SDT PH','Chuyen can','Hoc phi','Da dong','Con no','AI nhan xet']];v60AllStudents().forEach(x=>rows.push([x.cls.name,x.s.name,x.s.phone||'',x.s.parentPhone||'',v60AttendanceRate(x.s)+'%',x.s.tuition||0,x.s.paid||0,debtOf(x.s),v60AIComment(x.s,x.cls).replace(/<[^>]*>/g,'')]));const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bao_cao_phu_huynh_giai_doan_6_0.csv';a.click();URL.revokeObjectURL(a.href);showToast('Đã xuất báo cáo phụ huynh CSV')}
 function v60CopyParentReport(){const row=v60PortalStudentRows().find(r=>r.key===v60SelectedStudentKey)||v60PortalStudentRows()[0];if(!row)return;const s=row.s,cls=row.cls;const text=`BÁO CÁO HỌC SINH\nHọc sinh: ${s.name}\nLớp: ${cls.name}\nChuyên cần: ${v60AttendanceRate(s)}%\nHọc phí còn lại: ${money(debtOf(s))}\nNhận xét: ${v60AIComment(s,cls).replace(/<[^>]*>/g,'')}`;navigator.clipboard?.writeText(text);showToast('Đã sao chép báo cáo để gửi phụ huynh')}
 function v60PrintPortal(){window.print()}
-const __v60OldMarkTabs=markTabs;markTabs=function(){__v60OldMarkTabs();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));if(currentView==='v60portal'){} };
-const __v60OldSetView=setView;setView=function(v){if(v==='v60portal'){currentView='v60portal';currentClass=null;render();return}return __v60OldSetView(v)};
-const __v60OldRender2=render;render=function(){if(currentView==='v60portal'){markTabs();updateStats();renderV60Portal();uxPostRender();return}__v60OldRender2();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.v60-grid'))mc.insertAdjacentHTML('afterbegin',renderV60Overview())}const top=document.getElementById('uxTopbar');if(top&&!top.querySelector('#v60PortalBtn'))top.insertAdjacentHTML('beforeend','<button class="ux-mode-btn" id="v60PortalBtn" onclick="openV60Portal()">🚀 Portal 6.0</button>')};
+const __v60OldMarkTabs=markTabsImplementation;markTabsImplementation=function(){__v60OldMarkTabs();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));if(currentView==='v60portal'){} };
+const __v60OldSetView=setViewImplementation;setViewImplementation=function(v){if(v==='v60portal'){currentView='v60portal';currentClass=null;render();return}return __v60OldSetView(v)};
+const __v60OldRender2=renderImplementation;renderImplementation=function(){if(currentView==='v60portal'){markTabs();updateStats();renderV60Portal();uxPostRender();return}__v60OldRender2();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.v60-grid'))mc.insertAdjacentHTML('afterbegin',renderV60Overview())}const top=document.getElementById('uxTopbar');if(top&&!top.querySelector('#v60PortalBtn'))top.insertAdjacentHTML('beforeend','<button class="ux-mode-btn" id="v60PortalBtn" onclick="openV60Portal()">🚀 Portal 6.0</button>')};
 
 
 
@@ -2285,8 +2322,8 @@ function ux61TopbarExtra(){const top=document.getElementById('uxTopbar');if(!top
 function ux61GoNextUnchecked(){if(currentView!=='detail'||!currentClass)return;const cls=data.classes[currentClass];if(!cls)return;for(let i=1;i<=Number(cls.sessions||0);i++){const key='B'+i;const active=(cls.students||[]).filter(s=>isStudentAttendanceActive(s));if(active.some(s=>!(s.attendance&&Object.prototype.hasOwnProperty.call(s.attendance,key)))){showToast('Gợi ý kiểm tra buổi '+key,'warn');return}}showToast('Các buổi đã có dữ liệu điểm danh')}
 function ux61BulkFromSelect(value){if(!value||currentView!=='detail'||!currentClass)return;bulkSetAttendance(currentClass,value,true)}
 function ux61DetailToolbar(){if(currentView!=='detail'||!currentClass||!data.classes[currentClass])return;const wrap=document.querySelector('.attendance-clean-view');if(!wrap||wrap.querySelector('.ux61-toolbar'))return;const cls=data.classes[currentClass];const active=(cls.students||[]).filter(s=>isStudentAttendanceActive(s));let marked=0,total=0;active.forEach(s=>{for(let i=1;i<=Number(cls.sessions||0);i++){total++;if(s.attendance&&s.attendance['B'+i])marked++}});const percent=total?Math.round(marked*100/total):0;const opts=Array.from({length:Number(cls.sessions||0)},(_,i)=>`<option value="B${i+1}">Chọn nhanh B${i+1}${cls.sessionDates?.[i]?' · '+esc(cls.sessionDates[i]):''}</option>`).join('');wrap.querySelector('.detail-header')?.insertAdjacentHTML('afterend',`<div class="ux61-toolbar"><div class="left"><span class="ux61-chip">👨‍🎓 ${active.length} học sinh</span><span class="ux61-chip">✅ ${marked}/${total} lượt · ${percent}%</span><span class="ux61-chip">💰 ${active.filter(s=>debtOf(s)>0).length} còn nợ</span></div><div class="right"><select class="ux61-session-pick" onchange="ux61BulkFromSelect(this.value);this.value='' "><option value="">✓ Chọn tất cả buổi...</option>${opts}</select><button class="ux61-btn" onclick="ux61GoNextUnchecked()">🔎 Kiểm tra thiếu</button><button class="ux61-btn green" onclick="printCurrent()">🖨️ In</button><button class="ux61-btn primary" onclick="openAddStudentModal('${esc(currentClass)}')">+ HS</button></div></div><div class="ux61-attendance-note">Mẹo: dùng nút chọn nhanh theo buổi để điểm danh cả lớp, hoặc Ctrl+K để tìm học sinh/lớp. Các thông báo không cần thiết khi điểm danh đã được giảm để tránh gián đoạn.</div>`)}
-const __ux61OldPost=uxPostRender;uxPostRender=function(){__ux61OldPost();ux61Apply();ux61TopbarExtra();ux61DetailToolbar();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.ux61-health'))mc.insertAdjacentHTML('afterbegin',ux61HealthPanel())}}
-const __ux61OldInit=init;init=function(){ux61Apply();__ux61OldInit()}
+const __ux61OldPost=uxPostRenderImplementation;uxPostRenderImplementation=function(){__ux61OldPost();ux61Apply();ux61TopbarExtra();ux61DetailToolbar();if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.ux61-health'))mc.insertAdjacentHTML('afterbegin',ux61HealthPanel())}}
+const __ux61OldInit=initImplementation;initImplementation=function(){ux61Apply();__ux61OldInit()}
 
 
 
@@ -2321,7 +2358,7 @@ function ux65Notifications(){const i=ux65Insights(), list=[]; if(i.today.length)
 function ux65RenderNotifications(){const list=ux65Notifications();const box=document.getElementById('ux65NotiList');if(box)box.innerHTML=list.map(x=>`<div class="ux65-noti-item ${x.type}"><b>${esc(x.t)}</b><small>${esc(x.s)}</small></div>`).join('');const c=document.getElementById('ux65NotiCount');if(c){c.style.display=list.length?'flex':'none';c.textContent=list.length}}
 function ux65DashboardPanel(){const i=ux65Insights();const next=i.today.map(ev=>`<div class="ux65-todo"><div><b>${esc(ev.cls?.name||ev.title||'Lịch học')}</b><small>${esc((ev.start||'')+(ev.end?' - '+ev.end:''))}${ev.room?' · '+esc(ev.room):''}${ev.fromFixed&&!ev.start?' · lịch cố định':''}</small></div><button class="btn btn-blue" onclick="viewClass('${esc(ev.classKey||'')}')">Điểm danh</button></div>`).join('')||`<div class="ux65-todo"><div><b>Chưa có lớp hôm nay</b><small>Thầy có thể tạo lịch học hoặc kiểm tra lịch cố định của lớp.</small></div><button class="btn btn-soft" onclick="setView('schedule')">Mở lịch</button></div>`;return `<section class="ux65-dashboard"><div class="ux65-today-main"><div class="ux65-card"><h2>🏠 Hôm nay cần xử lý</h2>${next}</div></div><div class="ux65-right-stack"><div class="ux65-card"><h3>📊 Tóm tắt nhanh</h3><div class="ux65-mini-kpi"><div><b>${i.today.length}</b><span>Lớp có lịch hôm nay</span></div><div><b>${i.active.length}</b><span>HS đang học</span></div><div><b>${i.debts.length}</b><span>Còn công nợ</span></div><div><b>${i.unchecked.length}</b><span>Cần điểm danh</span></div></div></div><div class="ux65-card"><h3>🔎 Tìm kiếm nhanh</h3><p class="subtext">Nhấn <b>Ctrl + K</b> để tìm lớp, học sinh, công nợ, lịch học.</p><button class="btn btn-blue" style="margin-top:10px" onclick="uxOpenCommand()">Mở tìm kiếm</button></div></div></section>`}
 function ux65PostRender(){ux65EnsureShell();ux65RenderNotifications();document.querySelectorAll('.ux65-nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.ux65-dashboard'))mc.insertAdjacentHTML('afterbegin',ux65DashboardPanel())}}
-const __ux65OldPost=uxPostRender;uxPostRender=function(){__ux65OldPost();ux65PostRender()}
+const __ux65OldPost=uxPostRenderImplementation;uxPostRenderImplementation=function(){__ux65OldPost();ux65PostRender()}
 
 
 
@@ -2340,7 +2377,7 @@ function ux70DashboardPanel(){const i=ux70Insights();const clsCount=getVisibleAc
 function ux70EnhanceClassCards(){document.querySelectorAll('.class-card.pro').forEach(card=>{if(card.querySelector('.ux70-quick-overlay'))return;const view=card.querySelector('.actions button[onclick^="viewClass"]');const add=card.querySelector('.actions button[onclick^="openAddStudentModal"]');const pay=card.querySelector('.money-line');let html='<div class="ux70-quick-overlay">';if(view)html+=`<button class="btn btn-blue" onclick="${view.getAttribute('onclick')}">✅ Điểm danh</button>`;if(add)html+=`<button class="btn btn-green" onclick="${add.getAttribute('onclick')}">+ HS</button>`;if(pay)html+=`<button class="btn btn-soft" onclick="setView('debts')">💰 Công nợ</button>`;html+='</div>';card.querySelector('.schedule-line')?.insertAdjacentHTML('afterend',html)})}
 function ux70EnsureBottomNav(){if(document.getElementById('ux70BottomNav'))return;document.body.insertAdjacentHTML('beforeend',`<nav class="ux70-bottom-nav" id="ux70BottomNav"><button data-view="dashboard" onclick="setView('dashboard')">🏠<br>Hôm nay</button><button data-view="schedule" onclick="setView('schedule')">📅<br>Lịch</button><button onclick="uxOpenTodayAttendance()">✅<br>Điểm danh</button><button data-view="debts" onclick="setView('debts')">💰<br>Phí</button><button onclick="uxOpenCommand()">🔎<br>Tìm</button></nav>`)}
 function ux70PostRender(){document.body.classList.add('ux70-ready','ux71-clean');ux70EnsureBottomNav();document.querySelectorAll('#ux70BottomNav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));if(currentView==='dashboard'){const mc=document.getElementById('mainContent');if(mc&&!mc.querySelector('.ux71-workspace'))mc.insertAdjacentHTML('afterbegin',ux70DashboardPanel());ux70EnhanceClassCards()}const brand=document.querySelector('.ux65-brand small');if(brand)brand.textContent=' Dashboard ';}
-const __ux70OldPost=uxPostRender;uxPostRender=function(){__ux70OldPost();ux70PostRender()}
+const __ux70OldPost=uxPostRenderImplementation;uxPostRenderImplementation=function(){__ux70OldPost();ux70PostRender()}
 
 
 
@@ -2359,7 +2396,7 @@ function plannerVisibleClasses(){return getVisibleClassEntries().filter(([k,c])=
 function plannerEnsureDefaults(){const arr=plannerVisibleClasses();if(!plannerState.classKey||!data.classes[plannerState.classKey])plannerState.classKey=arr[0]?.[0]||'';plannerState.perWeek=Math.min(4,Math.max(1,Number(plannerState.perWeek)||2));plannerState.allowedDays=plannerState.allowedDays?.length?plannerState.allowedDays:[1,2,3,4,5,6,0];plannerState.allowedSlots=plannerState.allowedSlots?.length?plannerState.allowedSlots:PLANNER_SLOTS.map(s=>s.id)}
 function plannerDayName(id){return PLANNER_DAYS.find(d=>d.id===Number(id))?.n||''}
 function plannerSlot(id){return PLANNER_SLOTS.find(s=>s.id===id)||PLANNER_SLOTS[0]}
-function plannerSetClass(v){plannerState.classKey=v;plannerState.suggestions=[];renderPlanner()}
+function plannerSetClassBase(v){plannerState.classKey=v;plannerState.suggestions=[];renderPlanner()}
 function plannerSetPerWeek(v){plannerState.perWeek=Number(v)||2;plannerState.suggestions=[];renderPlanner()}
 function plannerSetRule(v){plannerState.rule=v;plannerState.suggestions=[];renderPlanner()}
 function plannerToggleDay(id,checked){id=Number(id);plannerState.allowedDays=checked?[...new Set([...plannerState.allowedDays,id])]:plannerState.allowedDays.filter(x=>x!==id);plannerState.suggestions=[];renderPlanner()}
@@ -2380,11 +2417,13 @@ function plannerClearClassEvents(){const classKey=plannerState.classKey,cls=data
 function plannerGridHtml(){const cls=data.classes[plannerState.classKey];let html='<div class="planner-grid"><div class="planner-cell head">Ca</div>'+PLANNER_DAYS.map(d=>`<div class="planner-cell head">${d.n}</div>`).join('');PLANNER_SLOTS.forEach(slot=>{html+=`<div class="planner-cell time">${slot.label}<br><small>${slot.start}-${slot.end}</small></div>`;PLANNER_DAYS.forEach(day=>{const conflicts=plannerConflicts(plannerState.classKey,day.id,slot.id);const picked=plannerState.suggestions.find(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id);let clsName=picked?'pick':conflicts.length?'busy':'free';let txt=picked?'Đề xuất':conflicts.length?'Bận':'Trống';html+=`<div class="planner-cell"><div class="planner-slot ${clsName}" onclick="plannerManualPick(${day.id},'${slot.id}')">${txt}<small>${conflicts.slice(0,2).map(esc).join('<br>')||'Có thể xếp'}</small></div></div>`})});return html+'</div>'}
 function plannerManualPick(dayId,slotId){const exists=plannerState.suggestions.findIndex(x=>Number(x.dayId)===Number(dayId)&&x.slotId===slotId);if(exists>=0){plannerState.suggestions.splice(exists,1);renderPlanner();return}if(plannerState.suggestions.length>=plannerState.perWeek)return showToast('Đã đủ số buổi/tuần. Bấm vào ô đã chọn để bỏ chọn trước.','warn');if(!plannerRespectSpacing(plannerState.suggestions,dayId))return showToast('Ô này không phù hợp quy tắc khoảng cách đang chọn','warn');const conf=plannerConflicts(plannerState.classKey,dayId,slotId);const sl=plannerSlot(slotId);plannerState.suggestions.push({dayId,slotId,date:plannerWeekDate(dayId),slot:sl,conflicts:conf});renderPlanner()}
 function plannerClassStudentFilterHtml(cls){const students=(cls?.students||[]).filter(s=>isStudentAttendanceActive(s));const grades=[...new Set(students.map(s=>s.grade).filter(Boolean))];let shown=students;if(plannerState.studentFilter!=='all')shown=students.filter(s=>String(s.grade||'')===plannerState.studentFilter);return `<div class="planner-student-filter"><select onchange="plannerSetStudentFilter(this.value)"><option value="all">Tất cả học sinh của lớp</option>${grades.map(g=>`<option value="${esc(g)}" ${plannerState.studentFilter===g?'selected':''}>Khối/lớp: ${esc(g)}</option>`).join('')}</select><span class="badge">${shown.length}/${students.length} học sinh</span></div><div class="planner-student-list">${shown.slice(0,60).map(s=>`<span class="planner-student-chip">${esc(s.name||'HS')}</span>`).join('')||'<span class="subtext">Chưa có học sinh.</span>'}</div>`}
-function renderPlanner(){plannerEnsureDefaults();const classes=plannerVisibleClasses();const cls=data.classes[plannerState.classKey];const classOptions=classes.map(([k,c])=>`<option value="${esc(k)}" ${plannerState.classKey===k?'selected':''}>${esc(c.name||k)} · ${esc(c.code||k)}</option>`).join('');const existing=(cls?.calendarEvents||[]).filter(ev=>ev.source==='planner').length;const bad=plannerState.suggestions.filter(s=>s.conflicts&&s.conflicts.length).length;const suggestHtml=plannerState.suggestions.length?plannerState.suggestions.map((s,i)=>`<div class="planner-suggestion"><div><b>${plannerDayName(s.dayId)} · ${s.slot.start}-${s.slot.end}</b><div class="subtext">${s.date} ${s.conflicts?.length?' · '+s.conflicts.join('; '):' · Không phát hiện xung đột'}</div></div><button class="btn btn-danger" onclick="plannerState.suggestions.splice(${i},1);renderPlanner()">Bỏ</button></div>`).join(''):'<div class="subtext">Bấm “Tự động gợi ý” hoặc bấm trực tiếp vào ô trống trên bảng.</div>';mainContent.innerHTML=`<div class="planner-shell planner-horizontal"><aside class="planner-card planner-controlbar"><div class="planner-bar-head"><div><h2>🧩 Xếp lịch học</h2><div class="planner-help">Module tích hợp trực tiếp vào dữ liệu lớp hiện có. Lịch sau khi lưu sẽ xuất hiện ở mục <b>Lịch học</b> và Dashboard hôm nay.</div></div><div class="planner-actions planner-actions-horizontal"><button class="btn btn-blue" onclick="plannerGenerate()">⚡ Tự động gợi ý</button><button class="btn btn-green" onclick="plannerSaveSuggestions()">💾 Lưu lịch</button><button class="btn btn-danger" onclick="plannerClearClassEvents()">🧹 Xoá lịch tự xếp</button></div></div><div class="planner-form planner-form-horizontal"><div class="planner-field planner-field-class"><label>Chọn lớp</label><select onchange="plannerSetClass(this.value)">${classOptions||'<option>Chưa có lớp</option>'}</select></div><div class="planner-field planner-field-small"><label>Số buổi mỗi tuần</label><select onchange="plannerSetPerWeek(this.value)">${[1,2,3,4].map(n=>`<option value="${n}" ${plannerState.perWeek===n?'selected':''}>${n} buổi/tuần</option>`).join('')}</select></div><div class="planner-field planner-field-rule"><label>Quy tắc xếp</label><select onchange="plannerSetRule(this.value)"><option value="onePerDay" ${plannerState.rule==='onePerDay'?'selected':''}>Một lớp không học 2 buổi trong 1 ngày</option><option value="gapOneDay" ${plannerState.rule==='gapOneDay'?'selected':''}>Các buổi cách nhau ít nhất 1 ngày</option><option value="noConsecutive" ${plannerState.rule==='noConsecutive'?'selected':''}>Không học 2 ngày liên tiếp</option><option value="flex" ${plannerState.rule==='flex'?'selected':''}>Linh hoạt</option></select></div><div class="planner-field planner-field-days"><label>Ngày có thể học</label><div class="planner-checks planner-checks-inline">${PLANNER_DAYS.map(d=>`<label><input type="checkbox" ${plannerState.allowedDays.includes(d.id)?'checked':''} onchange="plannerToggleDay(${d.id},this.checked)">${d.n}</label>`).join('')}</div></div><div class="planner-field planner-field-slots"><label>Ca có thể học</label><div class="planner-checks planner-checks-inline">${PLANNER_SLOTS.map(sl=>`<label><input type="checkbox" ${plannerState.allowedSlots.includes(sl.id)?'checked':''} onchange="plannerToggleSlot('${sl.id}',this.checked)">${sl.label}</label>`).join('')}</div></div></div></aside><section class="planner-card"><div class="planner-kpis"><div class="planner-kpi"><b>${classes.length}</b><span>Lớp có thể xếp</span></div><div class="planner-kpi"><b>${cls?.students?.length||0}</b><span>Học sinh trong lớp</span></div><div class="planner-kpi"><b>${plannerState.suggestions.length}/${plannerState.perWeek}</b><span>Đã chọn</span></div><div class="planner-kpi"><b>${existing}</b><span>Lịch tự xếp đã lưu</span></div></div>${bad?`<div class="planner-warn">Có ${bad} đề xuất còn xung đột. Thầy nên đổi ca/ngày trước khi lưu.</div>`:`<div class="planner-ok">Đang ưu tiên: không trùng giáo viên, không trùng học sinh, và không để một lớp học 2 buổi trong cùng ngày.</div>`}<h3>👨‍🎓 Học sinh của lớp</h3>${plannerClassStudentFilterHtml(cls)}<h3 style="margin-top:14px">📅 Bảng khung giờ tuần này</h3>${plannerGridHtml()}<h3 style="margin-top:14px">✅ Phương án đề xuất</h3><div class="planner-result">${suggestHtml}</div></section></div>`}
+function renderPlannerBase(){plannerEnsureDefaults();const classes=plannerVisibleClasses();const cls=data.classes[plannerState.classKey];const classOptions=classes.map(([k,c])=>`<option value="${esc(k)}" ${plannerState.classKey===k?'selected':''}>${esc(c.name||k)} · ${esc(c.code||k)}</option>`).join('');const existing=(cls?.calendarEvents||[]).filter(ev=>ev.source==='planner').length;const bad=plannerState.suggestions.filter(s=>s.conflicts&&s.conflicts.length).length;const suggestHtml=plannerState.suggestions.length?plannerState.suggestions.map((s,i)=>`<div class="planner-suggestion"><div><b>${plannerDayName(s.dayId)} · ${s.slot.start}-${s.slot.end}</b><div class="subtext">${s.date} ${s.conflicts?.length?' · '+s.conflicts.join('; '):' · Không phát hiện xung đột'}</div></div><button class="btn btn-danger" onclick="plannerState.suggestions.splice(${i},1);renderPlanner()">Bỏ</button></div>`).join(''):'<div class="subtext">Bấm “Tự động gợi ý” hoặc bấm trực tiếp vào ô trống trên bảng.</div>';mainContent.innerHTML=`<div class="planner-shell planner-horizontal"><aside class="planner-card planner-controlbar"><div class="planner-bar-head"><div><h2>🧩 Xếp lịch học</h2><div class="planner-help">Module tích hợp trực tiếp vào dữ liệu lớp hiện có. Lịch sau khi lưu sẽ xuất hiện ở mục <b>Lịch học</b> và Dashboard hôm nay.</div></div><div class="planner-actions planner-actions-horizontal"><button class="btn btn-blue" onclick="plannerGenerate()">⚡ Tự động gợi ý</button><button class="btn btn-green" onclick="plannerSaveSuggestions()">💾 Lưu lịch</button><button class="btn btn-danger" onclick="plannerClearClassEvents()">🧹 Xoá lịch tự xếp</button></div></div><div class="planner-form planner-form-horizontal"><div class="planner-field planner-field-class"><label>Chọn lớp</label><select onchange="plannerSetClass(this.value)">${classOptions||'<option>Chưa có lớp</option>'}</select></div><div class="planner-field planner-field-small"><label>Số buổi mỗi tuần</label><select onchange="plannerSetPerWeek(this.value)">${[1,2,3,4].map(n=>`<option value="${n}" ${plannerState.perWeek===n?'selected':''}>${n} buổi/tuần</option>`).join('')}</select></div><div class="planner-field planner-field-rule"><label>Quy tắc xếp</label><select onchange="plannerSetRule(this.value)"><option value="onePerDay" ${plannerState.rule==='onePerDay'?'selected':''}>Một lớp không học 2 buổi trong 1 ngày</option><option value="gapOneDay" ${plannerState.rule==='gapOneDay'?'selected':''}>Các buổi cách nhau ít nhất 1 ngày</option><option value="noConsecutive" ${plannerState.rule==='noConsecutive'?'selected':''}>Không học 2 ngày liên tiếp</option><option value="flex" ${plannerState.rule==='flex'?'selected':''}>Linh hoạt</option></select></div><div class="planner-field planner-field-days"><label>Ngày có thể học</label><div class="planner-checks planner-checks-inline">${PLANNER_DAYS.map(d=>`<label><input type="checkbox" ${plannerState.allowedDays.includes(d.id)?'checked':''} onchange="plannerToggleDay(${d.id},this.checked)">${d.n}</label>`).join('')}</div></div><div class="planner-field planner-field-slots"><label>Ca có thể học</label><div class="planner-checks planner-checks-inline">${PLANNER_SLOTS.map(sl=>`<label><input type="checkbox" ${plannerState.allowedSlots.includes(sl.id)?'checked':''} onchange="plannerToggleSlot('${sl.id}',this.checked)">${sl.label}</label>`).join('')}</div></div></div></aside><section class="planner-card"><div class="planner-kpis"><div class="planner-kpi"><b>${classes.length}</b><span>Lớp có thể xếp</span></div><div class="planner-kpi"><b>${cls?.students?.length||0}</b><span>Học sinh trong lớp</span></div><div class="planner-kpi"><b>${plannerState.suggestions.length}/${plannerState.perWeek}</b><span>Đã chọn</span></div><div class="planner-kpi"><b>${existing}</b><span>Lịch tự xếp đã lưu</span></div></div>${bad?`<div class="planner-warn">Có ${bad} đề xuất còn xung đột. Thầy nên đổi ca/ngày trước khi lưu.</div>`:`<div class="planner-ok">Đang ưu tiên: không trùng giáo viên, không trùng học sinh, và không để một lớp học 2 buổi trong cùng ngày.</div>`}<h3>👨‍🎓 Học sinh của lớp</h3>${plannerClassStudentFilterHtml(cls)}<h3 style="margin-top:14px">📅 Bảng khung giờ tuần này</h3>${plannerGridHtml()}<h3 style="margin-top:14px">✅ Phương án đề xuất</h3><div class="planner-result">${suggestHtml}</div></section></div>`}
+let renderPlannerImplementation=renderPlannerBase;
+function renderPlanner(){return renderPlannerImplementation()}
 function plannerInstallNav(){if(!document.getElementById('tabPlanner')){const tab=document.getElementById('tabSchedule');tab?.insertAdjacentHTML('afterend',`<button class="btn tab" id="tabPlanner" onclick="setView('planner')">🧩 Xếp lịch</button>`)}document.querySelectorAll('.ux65-nav').forEach(nav=>{if(!nav.querySelector('[data-view="planner"]'))nav.querySelector('[data-view="schedule"]')?.insertAdjacentHTML('afterend',`<button data-view="planner" onclick="ux65Nav('planner')">🧩 Xếp lịch</button>`)});const bottom=document.getElementById('ux70BottomNav');if(bottom&&!bottom.querySelector('[data-view="planner"]'))bottom.querySelector('[data-view="schedule"]')?.insertAdjacentHTML('afterend',`<button data-view="planner" onclick="setView('planner')">🧩<br>Xếp</button>`)}
-const __plannerOldSetView=setView;setView=function(v){if(v==='planner'){currentView='planner';currentClass=null;render();return}return __plannerOldSetView(v)};
-const __plannerOldRender=render;render=function(){plannerInstallNav();if(currentView==='planner'){markTabs();updateStats();renderPlanner();uxPostRender?.();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tabPlanner')?.classList.add('active');document.querySelectorAll('[data-view="planner"]').forEach(b=>b.classList.add('active'));return}__plannerOldRender();plannerInstallNav();document.querySelectorAll('[data-view="planner"]').forEach(b=>b.classList.toggle('active',currentView==='planner'))};
-const __plannerOldNormalize=normalize;normalize=function(){__plannerOldNormalize();data.schedulerSettings=data.schedulerSettings||{version:'7.2',updatedAt:new Date().toISOString()}}
+const __plannerOldSetView=setViewImplementation;setViewImplementation=function(v){if(v==='planner'){currentView='planner';currentClass=null;render();return}return __plannerOldSetView(v)};
+const __plannerOldRender=renderImplementation;renderImplementation=function(){plannerInstallNav();if(currentView==='planner'){markTabs();updateStats();renderPlanner();uxPostRender?.();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tabPlanner')?.classList.add('active');document.querySelectorAll('[data-view="planner"]').forEach(b=>b.classList.add('active'));return}__plannerOldRender();plannerInstallNav();document.querySelectorAll('[data-view="planner"]').forEach(b=>b.classList.toggle('active',currentView==='planner'))};
+const __plannerOldNormalize=normalizeImplementation;normalizeImplementation=function(){__plannerOldNormalize();data.schedulerSettings=data.schedulerSettings||{version:'7.2',updatedAt:new Date().toISOString()}}
 
 
 /* ---------- NÂNG CẤP LỊCH BẬN HỌC SINH v7.3 ---------- */
@@ -2454,15 +2493,15 @@ plannerGridHtml=function(){
     const cls=data.classes[plannerState.classKey];let html='<div class="planner-grid"><div class="planner-cell head">Ca</div>'+PLANNER_DAYS.map(d=>`<div class="planner-cell head">${d.n}</div>`).join('');
     PLANNER_SLOTS.forEach(slot=>{html+=`<div class="planner-cell time">${slot.label}<br><small>${slot.start}-${slot.end}</small></div>`;PLANNER_DAYS.forEach(day=>{const conflicts=plannerConflicts(plannerState.classKey,day.id,slot.id);const busyNames=plannerStudentBusyConflicts(cls,day.id,slot.id);const picked=plannerState.suggestions.find(x=>Number(x.dayId)===Number(day.id)&&x.slotId===slot.id);let clsName=picked?'pick':conflicts.length?(busyNames.length?'student-busy':'busy'):'free';let txt=picked?'Đề xuất':conflicts.length?(busyNames.length?'HS bận':'Bận'):'Trống';const detail=conflicts.slice(0,3).map(esc).join('<br>')||'Có thể xếp';html+=`<div class="planner-cell"><div class="planner-slot ${clsName}" onclick="plannerManualPick(${day.id},'${slot.id}')">${txt}<small>${detail}</small></div></div>`})});return html+'</div>'
 };
-const __busyOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __busyOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     __busyOldRenderPlanner();
     const cls=data.classes[plannerState.classKey];
     const target=[...document.querySelectorAll('.planner-card h3')].find(h=>h.textContent.includes('📅 Bảng khung giờ tuần này'));
     if(target&&!document.querySelector('.busy-manager'))target.insertAdjacentHTML('beforebegin',plannerBusyManagerHtml(cls));
 };
-const __busyOldNormalize=normalize;
-normalize=function(){__busyOldNormalize();Object.values(data.classes||{}).forEach(cls=>(cls.students||[]).forEach(s=>{s.busySlots=Array.isArray(s.busySlots)?s.busySlots:[]}));data.schedulerSettings={...(data.schedulerSettings||{}),version:'7.3',busyStudentSchedule:true}};
+const __busyOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){__busyOldNormalize();Object.values(data.classes||{}).forEach(cls=>(cls.students||[]).forEach(s=>{s.busySlots=Array.isArray(s.busySlots)?s.busySlots:[]}));data.schedulerSettings={...(data.schedulerSettings||{}),version:'7.3',busyStudentSchedule:true}};
 
 
 
@@ -2519,20 +2558,20 @@ function todayRealStatusText(ev){
     if(!key)return 'chưa điểm danh';
     return `đã điểm danh ${key}`;
 }
-const __todayRealOldToggleAttendance=toggleAttendance;
-toggleAttendance=function(className,id,key){
+const __todayRealOldToggleAttendance=toggleAttendanceImplementation;
+toggleAttendanceImplementation=function(className,id,key){
     const cls=data.classes[className];
     if(cls)todayRealMarkSession(cls,key);
     return __todayRealOldToggleAttendance(className,id,key);
 };
-const __todayRealOldBulkSetAttendance=bulkSetAttendance;
-bulkSetAttendance=function(className,key,value){
+const __todayRealOldBulkSetAttendance=bulkSetAttendanceImplementation;
+bulkSetAttendanceImplementation=function(className,key,value){
     const cls=data.classes[className];
     if(cls)todayRealMarkSession(cls,key);
     return __todayRealOldBulkSetAttendance(className,key,value);
 };
-const __todayRealOldNormalize=normalize;
-normalize=function(){
+const __todayRealOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __todayRealOldNormalize();
     Object.values(data.classes||{}).forEach(cls=>{
         todayRealEnsureAttendanceSessions(cls);
@@ -2955,7 +2994,7 @@ todayRealMarkedKeyForEvent=function(ev){
     return '';
 };
 // Ghi đè lại 2 thao tác chính để metadata luôn là metadata mới, không bị nhầm với đợt cũ.
-toggleAttendance=function(className,id,key){
+toggleAttendanceImplementation=function(className,id,key){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     const s=cls.students.find(x=>x.id===id); if(!s)return;
@@ -2965,7 +3004,7 @@ toggleAttendance=function(className,id,key){
     cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
     saveData(); render(); logActivity('Điểm danh',key+' · '+(s.name||''),className,id);
 };
-bulkSetAttendance=function(className,key,value){
+bulkSetAttendanceImplementation=function(className,key,value){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     ux89MarkSession(cls,key,value?'bulk-present':'bulk-absent');
@@ -2974,8 +3013,8 @@ bulkSetAttendance=function(className,key,value){
     cleanupPlannedScheduleForAttendance(className,key); cls.updatedAt=new Date().toISOString();
     saveData(); render(); logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');
 };
-const __ux89OldNormalize=normalize;
-normalize=function(){
+const __ux89OldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __ux89OldNormalize();
     Object.values(data.classes||{}).forEach(cls=>ux89CleanStaleAttendanceSessions(cls));
 };
@@ -2985,8 +3024,8 @@ normalize=function(){
 plannerState.alternatives=plannerState.alternatives||[];
 plannerState.activeAlternative=Number(plannerState.activeAlternative)||0;
 function smartPlannerReset(){plannerState.suggestions=[];plannerState.alternatives=[];plannerState.activeAlternative=0}
-const __smartOldSetClass=plannerSetClass;
-plannerSetClass=function(v){plannerState.classKey=v;smartPlannerReset();renderPlanner()};
+const __smartOldSetClass=plannerSetClassImplementation;
+plannerSetClassImplementation=function(v){plannerState.classKey=v;smartPlannerReset();renderPlanner()};
 const __smartOldSetPerWeek=plannerSetPerWeek;
 plannerSetPerWeek=function(v){plannerState.perWeek=Number(v)||2;smartPlannerReset();renderPlanner()};
 const __smartOldSetRule=plannerSetRule;
@@ -3081,8 +3120,8 @@ function smartPlannerResultHtml(){
     const active=Math.min(plannerState.activeAlternative||0,plans.length-1),plan=plans[active];
     return `<div class="smart-plan-toolbar"><div class="smart-plan-summary">Đã so sánh các tổ hợp hợp lệ và chọn ${plans.length} phương án có điểm cao nhất.</div><div class="smart-plan-tabs">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="smartSelectPlan(${i})">Phương án ${i+1} · ${p.score} điểm</button>`).join('')}</div></div><div class="smart-plan-card"><div class="smart-plan-head"><div class="smart-plan-title">Phương án ${active+1}${active===0?' · Đề xuất tối ưu':''}<small>${plan.items.map(x=>plannerDayName(x.dayId)+' '+x.slot.start+'–'+x.slot.end).join(' · ')}</small></div><div class="smart-plan-score">${plan.score}<small>ĐIỂM TỐI ƯU</small></div></div>${smartPlanWeekHtml(plan)}<div class="smart-plan-reasons">${plan.reasons.map(x=>`<span class="smart-reason">✓ ${esc(x)}</span>`).join('')}</div></div>`;
 }
-const __smartOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __smartOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     __smartOldRenderPlanner();
     const heading=[...document.querySelectorAll('.planner-card h3')].find(h=>h.textContent.includes('Phương án đề xuất'));
     const result=heading?.nextElementSibling;
@@ -3090,8 +3129,8 @@ renderPlanner=function(){
 };
 const __smartOldManualPick=plannerManualPick;
 plannerManualPick=function(dayId,slotId){plannerState.alternatives=[];plannerState.activeAlternative=0;__smartOldManualPick(dayId,slotId)};
-const __smartOldNormalize=normalize;
-normalize=function(){__smartOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.0',multiSolutionOptimization:true}};
+const __smartOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){__smartOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.0',multiSolutionOptimization:true}};
 
 /* ---------- GLOBAL ALL-CLASSES PLANNER v9.1 ---------- */
 plannerState.globalAlternatives=plannerState.globalAlternatives||[];
@@ -3178,7 +3217,7 @@ function globalPlannerPanelHtml(){
     const active=Math.min(plannerState.activeGlobalAlternative||0,plans.length-1),plan=plans[active];
     return `<section class="global-planner-panel"><div class="global-planner-head"><div><h3>🏫 Phương án cho toàn bộ lớp</h3><p>Mỗi màu là một lớp; phương án đang chọn sẽ được lưu đồng loạt vào Lịch học.</p></div><div class="global-plan-actions"><button class="btn btn-blue" onclick="globalPlannerGenerate()">↻ Tính lại</button><button class="btn btn-green" onclick="globalPlannerSave()">💾 Lưu phương án này</button></div></div><div class="global-plan-stats"><div class="global-plan-stat"><b>${plan.scheduled}/${plan.total}</b><span>Lớp xếp được</span></div><div class="global-plan-stat"><b>${plan.items.length}</b><span>Tổng buổi/tuần</span></div><div class="global-plan-stat"><b>${plan.score}</b><span>Điểm tối ưu</span></div><div class="global-plan-stat"><b>${plans.length}</b><span>Phương án so sánh</span></div></div><div class="smart-plan-tabs" style="margin-bottom:12px">${plans.map((p,i)=>`<button class="smart-plan-tab ${i===active?'active':''}" onclick="globalSelectPlan(${i})">Phương án ${i+1} · ${p.scheduled}/${p.total} lớp</button>`).join('')}</div>${globalPlanWeekHtml(plan)}${plan.unscheduled.length?`<div class="global-unscheduled">⚠️ Chưa xếp được: ${plan.unscheduled.map(k=>esc(data.classes[k]?.name||k)).join(', ')}. Thầy có thể mở thêm ngày/ca hoặc chọn quy tắc linh hoạt hơn.</div>`:''}</section>`;
 }
-function globalPlannerSave(){
+function globalPlannerSaveBase(){
     const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
     if(!plan?.items?.length)return showToast('Chưa có phương án toàn bộ lớp để lưu','warn');
     const grouped={};plan.items.forEach(x=>(grouped[x.classKey]||(grouped[x.classKey]=[])).push(x));
@@ -3192,16 +3231,16 @@ function globalPlannerSave(){
     logActivity?.('Xếp lịch toàn bộ lớp','Đã lưu '+Object.keys(grouped).length+' lớp','global-planner');
     saveData();showToast('Đã lưu đồng loạt '+Object.keys(grouped).length+' lớp vào Lịch học');setView('schedule');
 }
-const __globalOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __globalOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     __globalOldRenderPlanner();
     const section=document.querySelector('.planner-shell section.planner-card');
     if(section&&!section.querySelector('.global-planner-panel'))section.insertAdjacentHTML('afterbegin',globalPlannerPanelHtml());
     const actions=document.querySelector('.planner-actions-horizontal');
     if(actions&&!actions.querySelector('[onclick="globalPlannerGenerate()"]'))actions.insertAdjacentHTML('afterbegin','<button class="btn btn-soft" onclick="globalPlannerGenerate()">🏫 Xếp tất cả lớp</button>');
 };
-const __globalOldNormalize=normalize;
-normalize=function(){__globalOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.1',globalClassPlanning:true}};
+const __globalOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){__globalOldNormalize();data.schedulerSettings={...(data.schedulerSettings||{}),version:'9.1',globalClassPlanning:true}};
 
 /* ---------- SCHEDULER PRO CONTROL CENTER v10.0 ---------- */
 plannerState.roomCount=Math.min(5,Math.max(1,Number(plannerState.roomCount||data.schedulerSettings?.roomCount)||1));
@@ -3370,7 +3409,7 @@ function proValidateBeforeSave(plan){
     if(m.roomOverflow)errors.push('có ca vượt quá số phòng');
     return {ok:!errors.length,errors};
 }
-globalPlannerSave=function(){
+globalPlannerSaveImplementation=function(){
     const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
     if(!plan?.items?.length)return showToast('Chưa có phương án để lưu','warn');
     const check=proValidateBeforeSave(plan);
@@ -3400,14 +3439,14 @@ function globalPlannerExport(){
     }
     showToast('Đã xuất phương án xếp lịch');
 }
-const __proOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __proOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     __proOldRenderPlanner();
     const panel=document.querySelector('.global-planner-panel');
     if(panel)panel.outerHTML=globalPlannerPanelHtml();
 };
-const __proOldNormalize=normalize;
-normalize=function(){
+const __proOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __proOldNormalize();
     Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.0',roomCount:Math.min(5,Math.max(1,Number(data.schedulerSettings?.roomCount)||1)),proControlCenter:true};
@@ -3434,7 +3473,7 @@ function proPlannerSetClassDay(classKey,dayId,checked){
     plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeGlobalAlternative=0;
     cls.updatedAt=new Date().toISOString();saveData();renderPlanner();
 }
-plannerSetClass=function(v){
+plannerSetClassImplementation=function(v){
     plannerState.classKey=v;
     const cls=data.classes[v];
     plannerState.allowedDays=cls?proPlannerDays(cls):PLANNER_DAYS.map(d=>d.id);
@@ -3479,8 +3518,8 @@ proPlanMetrics=function(plan){
     m.occupancy=capacity?Math.round(plan.items.length*100/capacity):0;
     return m;
 };
-const __daysOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __daysOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     const cls=data.classes[plannerState.classKey];
     if(cls)plannerState.allowedDays=proPlannerDays(cls);
     __daysOldRenderPlanner();
@@ -3491,8 +3530,8 @@ renderPlanner=function(){
         label.insertAdjacentHTML('beforeend',`<span class="planner-day-owner">Lưu riêng cho lớp này · đang chọn ${plannerState.allowedDays.length}/7 ngày</span>`);
     }
 };
-const __daysOldNormalize=normalize;
-normalize=function(){
+const __daysOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __daysOldNormalize();
     Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.1',perClassAvailableDays:true};
@@ -3524,7 +3563,7 @@ function proAvailabilityCount(cls){return proAvailableCells(cls).length}
 function proAvailabilityResetPlans(){
     plannerState.suggestions=[];plannerState.alternatives=[];plannerState.globalAlternatives=[];plannerState.activeAlternative=0;plannerState.activeGlobalAlternative=0;
 }
-plannerSetClass=function(v){
+plannerSetClassImplementation=function(v){
     plannerState.classKey=v;const cls=data.classes[v],p=cls?proPlannerProfile(cls):null;
     plannerState.allowedDays=cls?proPlannerDays(cls):PLANNER_DAYS.map(d=>d.id);
     plannerState.allowedSlots=cls?proAvailableSlotUnion(cls):PLANNER_SLOTS.map(s=>s.id);
@@ -3655,8 +3694,8 @@ plannerManualPick=function(dayId,slotId){
     const cls=data.classes[plannerState.classKey];if(cls&&!proIsAvailable(cls,dayId,slotId))return showToast('Lớp này không thể học ở ngày và ca đã chọn','warn');
     __matrixOldManualPick(dayId,slotId);
 };
-const __matrixOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __matrixOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     const cls=data.classes[plannerState.classKey];
     if(cls){plannerState.allowedDays=proPlannerDays(cls);plannerState.allowedSlots=proAvailableSlotUnion(cls);plannerState.perWeek=proPlannerProfile(cls).sessionsPerWeek}
     __matrixOldRenderPlanner();
@@ -3667,8 +3706,8 @@ renderPlanner=function(){
     const slotInputs=document.querySelectorAll('.planner-field-slots input[type="checkbox"]');
     PLANNER_SLOTS.forEach((slot,i)=>{const input=slotInputs[i];if(!input)return;const active=proPlannerDays(cls),count=active.filter(d=>proIsAvailable(cls,d,slot.id)).length;input.checked=count>0;input.indeterminate=count>0&&count<active.length;input.title=count+'/'+active.length+' ngày có thể học ca này'});
 };
-const __matrixOldNormalize=normalize;
-normalize=function(){
+const __matrixOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __matrixOldNormalize();Object.values(data.classes||{}).forEach(cls=>proPlannerProfile(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.2',perDayPerSlotAvailability:true};
     const cls=data.classes?.[plannerState.classKey];if(cls){plannerState.allowedDays=proPlannerDays(cls);plannerState.allowedSlots=proAvailableSlotUnion(cls)}
@@ -3751,8 +3790,8 @@ proValidateBeforeSave=function(plan){
     if(busyConflicts.length){result.ok=false;result.errors.push(busyConflicts.length+' trường hợp trùng lịch bận học sinh')}
     return result;
 };
-const __busySafeOldGlobalSave=globalPlannerSave;
-globalPlannerSave=function(){
+const __busySafeOldGlobalSave=globalPlannerSaveImplementation;
+globalPlannerSaveImplementation=function(){
     const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
     const conflicts=plannerPlanBusyConflictDetails(plan);
     if(conflicts.length){plannerShowBusyConflictDetails(conflicts);return showToast('Đã chặn lưu vì có học sinh bận','error')}
@@ -3770,8 +3809,8 @@ proQualityHtml=function(plan){
     const conflicts=plannerPlanBusyConflictDetails(plan);
     return __busySafeOldQuality(plan)+`<div class="busy-audit-chip ${conflicts.length?'warn':''}">${conflicts.length?'⚠ '+conflicts.length+' trường hợp trùng lịch bận':'✓ Đã kiểm tra lại lịch bận của toàn bộ học sinh'}</div>`;
 };
-const __busySafeOldNormalize=normalize;
-normalize=function(){
+const __busySafeOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __busySafeOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.3',busyScheduleFinalGuard:true};
 };
@@ -3794,8 +3833,8 @@ renderSchedule=function(){
     const note=document.querySelector('.calendar-shell .schedule-compact-note');
     if(note)note.textContent='✅ Thời khóa biểu tự động làm sạch: lịch Dự kiến của ngày đã qua không còn hiển thị ở chế độ Tháng, Tuần, Agenda và file CSV.';
 };
-const __expiredOldNormalize=normalize;
-normalize=function(){
+const __expiredOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __expiredOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.4',hideExpiredPlannedEvents:true};
 };
@@ -3926,8 +3965,8 @@ renderSchedule=function(){
     const sub=document.querySelector('.calendar-shell .calendar-sub');
     if(sub)sub.textContent='Đồng bộ cùng lịch cố định và Dashboard hôm nay · ưu tiên Đã học, sau đó lịch cụ thể và lịch cố định · tự ẩn Dự kiến đã qua ngày';
 };
-const __syncOldNormalize=normalize;
-normalize=function(){
+const __syncOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __syncOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.5',unifiedScheduleSource:true};
 };
@@ -3968,8 +4007,8 @@ plannerEnsureDefaults=function(){
     }
     __activeOnlyOldPlannerEnsureDefaults();
 };
-const __activeOnlyOldPlannerSetClass=plannerSetClass;
-plannerSetClass=function(classKey){
+const __activeOnlyOldPlannerSetClass=plannerSetClassImplementation;
+plannerSetClassImplementation=function(classKey){
     if(!plannerClassIsEligible(classKey))return showToast('Lớp này đã hoàn thành đợt học nên không còn tham gia xếp lịch','warn');
     return __activeOnlyOldPlannerSetClass(classKey);
 };
@@ -3982,8 +4021,8 @@ plannerSaveSuggestions=function(){
     }
     return __activeOnlyOldPlannerSaveSuggestions();
 };
-const __activeOnlyOldGlobalPlannerSave=globalPlannerSave;
-globalPlannerSave=function(){
+const __activeOnlyOldGlobalPlannerSave=globalPlannerSaveImplementation;
+globalPlannerSaveImplementation=function(){
     const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
     const completed=[...new Set((plan?.items||[]).map(item=>item.classKey).filter(classKey=>!plannerClassIsEligible(classKey)))];
     if(completed.length){
@@ -3995,8 +4034,8 @@ globalPlannerSave=function(){
     }
     return __activeOnlyOldGlobalPlannerSave();
 };
-const __activeOnlyOldRenderPlanner=renderPlanner;
-renderPlanner=function(){
+const __activeOnlyOldRenderPlanner=renderPlannerImplementation;
+renderPlannerImplementation=function(){
     plannerEnsureDefaults();
     __activeOnlyOldRenderPlanner();
     const help=document.querySelector('.planner-controlbar .planner-help');
@@ -4005,8 +4044,8 @@ renderPlanner=function(){
         help.insertAdjacentHTML('beforeend',`<span class="planner-completed-note">📦 Đã ẩn ${hidden} lớp hoàn thành · giáo viên được giải phóng khỏi lịch của các lớp này</span>`);
     }
 };
-const __activeOnlyOldNormalize=normalize;
-normalize=function(){
+const __activeOnlyOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __activeOnlyOldNormalize();
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'10.6',excludeCompletedCoursesFromPlanner:true};
 };
@@ -4420,8 +4459,8 @@ plannerSaveSuggestions=function(){
     }
     return result;
 };
-const __flexOldGlobalPlannerSave=globalPlannerSave;
-globalPlannerSave=function(){
+const __flexOldGlobalPlannerSave=globalPlannerSaveImplementation;
+globalPlannerSaveImplementation=function(){
     const plan=plannerState.globalAlternatives[plannerState.activeGlobalAlternative||0];
     const captured=(plan?.items||[]).map(item=>({classKey:item.classKey,dayId:Number(item.dayId),start:item.slot.start,end:item.slot.end,room:'Phòng '+(item.roomIndex||1)}));
     const result=__flexOldGlobalPlannerSave();
@@ -4442,8 +4481,8 @@ toFirestoreCollectionsSnapshot=function(){
     (snapshot.classes||[]).forEach(row=>{row.fixedScheduleEvents=fixedEnsureClassSchedule(data.classes?.[row.classKey]).map(item=>({...item}))});
     return snapshot;
 };
-const __flexOldNormalize=normalize;
-normalize=function(){
+const __flexOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __flexOldNormalize();
     Object.values(data.classes||{}).forEach(cls=>fixedEnsureClassSchedule(cls));
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.1',flexibleWeeklyCalendar:true,fixedTimelinePositionPatch:true,timeStepMinutes:15,weeklyCalendarStart:'05:30',weeklyCalendarEnd:'22:30'};
@@ -4569,7 +4608,7 @@ renderDetailView=function(className){
     mainContent.innerHTML=`<div class="detail-view attendance-clean-view"><div class="detail-header"><div><h2>📘 ${esc(cls.name||className)} <span class="class-code">Mã: ${esc(cls.code||className)}</span><span class="course-chip ${cls.courseStatus==='completed'?'old':'current'}">${courseLabel(cls)}</span>${privateClassChip(cls)}<small>${students.length} học sinh · ${cls.sessions} buổi · ${esc(cls.schedule||'Chưa có lịch học')} · Mức ${money(infoClass.rate)}/buổi (${infoClass.classSize} HS đang học)</small></h2></div><div class="actions" style="border:none;padding:0"><button class="btn btn-gray" onclick="goBack()">← Quay lại</button>${canEditClass(cls)?`<button class="btn btn-green" onclick="openAddStudentModal('${esc(className)}')">➕ Thêm HS</button><button class="btn btn-blue" onclick="openBatchPaymentModal('${esc(className)}')">💵 Nhập tiền cả lớp</button><button class="btn btn-warn" onclick="openCreateClassModal('${esc(className)}')">✏️ Sửa lớp</button><button class="btn btn-blue" onclick="openNewCourseModal('${esc(className)}')">🔁 Tạo đợt mới</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(className)}')">🗑️ Xoá lớp</button>`:''}`:''}</div></div>${getAbsentSummaryHtml(cls).replace('absent-box','attendance-summary-bar')}<div class="table-scroll"><table class="data-table attendance-table"><thead><tr>${header}</tr></thead><tbody>${rows}${summary}</tbody></table></div></div>`;
 };
 
-renderDebts=function(){
+renderDebtsImplementation=function(){
     tuitionApplyAll();
     const query=q();
     const all=getAllStudents().map(x=>{
@@ -4678,8 +4717,8 @@ openNewCourseModal=function(className){
     if(label)label.textContent='Học phí tự động / đợt mới';
 };
 
-const __tuitionOldCreateNewCourse=handleCreateNewCourse;
-handleCreateNewCourse=function(){
+const __tuitionOldCreateNewCourse=handleCreateNewCourseImplementation;
+handleCreateNewCourseImplementation=function(){
     const oldKey=newCourseSourceClass;
     __tuitionOldCreateNewCourse();
     const oldCls=data.classes?.[oldKey];
@@ -4689,8 +4728,8 @@ handleCreateNewCourse=function(){
         saveData();render();
     }
 };
-const __tuitionOldTransferStudent=handleTransferStudent;
-handleTransferStudent=function(){
+const __tuitionOldTransferStudent=handleTransferStudentImplementation;
+handleTransferStudentImplementation=function(){
     const fromKey=transferFromClassInput.value,toKey=transferTargetClassInput.value;
     __tuitionOldTransferStudent();
     if(data.classes?.[fromKey])tuitionApplyClass(data.classes[fromKey]);
@@ -4711,7 +4750,7 @@ confirmDeleteStudent=function(className,id){
     openModal('confirmModal');
 };
 
-toggleAttendance=function(className,id,key){
+toggleAttendanceImplementation=function(className,id,key){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     const st=cls.students.find(x=>String(x.id)===String(id));if(!st)return;
@@ -4721,7 +4760,7 @@ toggleAttendance=function(className,id,key){
     cleanupPlannedScheduleForAttendance(className,key);tuitionApplyClass(cls);cls.updatedAt=new Date().toISOString();
     saveData();render();logActivity('Điểm danh',key+' · '+(st.name||''),className,id);
 };
-bulkSetAttendance=function(className,key,value){
+bulkSetAttendanceImplementation=function(className,key,value){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Vai trò hiện tại không được điểm danh lớp này','error');
     ux89MarkSession(cls,key,value?'bulk-present':'bulk-absent');
@@ -4731,8 +4770,8 @@ bulkSetAttendance=function(className,key,value){
     saveData();render();logActivity(value?'Chọn tất cả điểm danh':'Bỏ chọn tất cả điểm danh',key,className,'bulk');
 };
 
-const __tuitionOldNormalize=normalize;
-normalize=function(){
+const __tuitionOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __tuitionOldNormalize();
     tuitionApplyAll();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.2'};
@@ -4941,7 +4980,7 @@ debtOf=function(st,cls=null){
     return Math.max(0,due-(Number(st?.paid)||0));
 };
 
-renderDebts=function(){
+renderDebtsImplementation=function(){
     tuitionApplyAll();
     const query=q();
     const all=getAllStudents().filter(x=>!tuitionIsArchivedTransferSource(x.s)&&!tuitionIsCourseDebtForwarded(x.s)).map(x=>{
@@ -5023,7 +5062,7 @@ openTransferStudentModal=function(className,id){
     const snap=tuitionBuildTransferSnapshot(st,cls,false);
     transferPreviewBox.insertAdjacentHTML('beforeend',`<div class="payment-auto-note" style="margin:10px 0 0">Khi chuyển lớp sẽ mang sang <b>${money(snap.totalDue)}</b>: ${snap.priorCarryDue?`các lớp trước ${money(snap.priorCarryDue)} + `:''}${snap.localBillableSessions} buổi từ B${snap.startSession||'—'} đến B${snap.endSession||'—'} × ${money(snap.rate)}.</div>`);
 };
-handleTransferStudent=function(){
+handleTransferStudentImplementation=function(){
     const fromKey=transferFromClassInput.value,id=transferStudentIdInput.value,toKey=transferTargetClassInput.value,note=transferNoteInput.value.trim();
     const fromCls=data.classes[fromKey],toCls=data.classes[toKey];
     if(!fromCls||!toCls)return showToast('Chưa chọn đủ lớp chuyển','error');
@@ -5058,7 +5097,7 @@ handleTransferStudent=function(){
     showToast('Đã chuyển học sinh và cộng '+money(snapshot.totalDue)+' từ lớp cũ vào lớp mới');render();
 };
 
-updateStats=function(){
+updateStatsImplementation=function(){
     const classes=getVisibleActiveClassEntries().map(([k,c])=>c);
     const students=getAllStudents().filter(x=>!isCompletedCourse(x.cls)&&!tuitionIsArchivedTransferSource(x.s));
     const revenue=students.reduce((sum,x)=>sum+(Number(x.s.paid)||0),0);
@@ -5067,8 +5106,8 @@ updateStats=function(){
     statsGrid.innerHTML=`<div class="stat-card"><div class="num">${classes.length}</div><div class="label">Tổng số lớp</div></div><div class="stat-card"><div class="num">${students.length}</div><div class="label">Tổng học sinh</div></div><div class="stat-card"><div class="num">${sessions}</div><div class="label">Tổng buổi học</div></div><div class="stat-card"><div class="num money">${money(revenue)}</div><div class="label">Đã thu học phí</div></div><div class="stat-card"><div class="num debt">${money(debt)}</div><div class="label">Còn nợ</div></div>`;
 };
 
-const __tuitionTransferOldNormalize=normalize;
-normalize=function(){
+const __tuitionTransferOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __tuitionTransferOldNormalize();
     tuitionHydrateTransferLinks();tuitionApplyAll();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.4',transferTuitionCarryForward:true,transferTuitionFirstToLastPresent:true};
@@ -5192,8 +5231,8 @@ function saveBatchPayments(){
     showToast(changed?`Đã cập nhật tiền cho ${changed} học sinh`:'Không có số tiền nào thay đổi');
     render();
 }
-const __batchPaymentOldNormalize=normalize;
-normalize=function(){
+const __batchPaymentOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __batchPaymentOldNormalize();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.5',batchPaymentEntry:true};
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.5',batchPaymentEntry:true};
@@ -5264,8 +5303,8 @@ openNewCourseModal=function(className){
     note.innerHTML=`Khi tạo đợt mới, hệ thống tự chuyển <b>${money(totalDebt)}</b> còn nợ của ${debtStudents.length} học sinh sang đợt sau. Số “đã đóng” của đợt mới bắt đầu từ 0 để không trừ tiền hai lần.`;
 };
 
-const __courseDebtOldCreateNewCourse=handleCreateNewCourse;
-handleCreateNewCourse=function(){
+const __courseDebtOldCreateNewCourse=handleCreateNewCourseImplementation;
+handleCreateNewCourseImplementation=function(){
     const oldKey=newCourseSourceClass,oldCls=data.classes?.[oldKey];
     if(!oldCls)return __courseDebtOldCreateNewCourse();
     const beforeKeys=new Set(Object.keys(data.classes||{}));
@@ -5295,8 +5334,8 @@ tuitionApplyAll=function(){
     courseDebtHydrateLinks();
     Object.values(data.classes||{}).forEach(tuitionApplyClass);
 };
-const __courseDebtOldNormalize=normalize;
-normalize=function(){
+const __courseDebtOldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
     __courseDebtOldNormalize();
     courseDebtHydrateLinks();tuitionApplyAll();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.6',courseDebtCarryForward:true};
