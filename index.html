@@ -4542,7 +4542,7 @@ renderDetailView=function(className){
     if(!students.length)rows=`<tr class="empty-row"><td colspan="${cls.sessions+4}">Chưa có học sinh hoặc không khớp tìm kiếm.</td></tr>`;
     for(const st of students){
         const info=tuitionInfo(st,cls);
-        if(!info.archivedTransferSource)totalDue+=info.due;
+        if(!info.archivedTransferSource&&!tuitionIsCourseDebtForwarded(st))totalDue+=info.due;
         const rowClass=isStudentAttendanceActive(st)?'':' class="student-paused-row"';
         let row=`<tr${rowClass}><td><div class="student-name long-name">${esc(st.name)}</div><div class="subtext student-profile-mini">${studentStatusChip(st)}${st.grade?' · Lớp '+esc(st.grade):''}${st.school?' · '+esc(st.school):''}${st.transferredTo?' · Sang '+esc(st.transferredTo.className||'lớp mới'):''}</div>${studentCRMMini(st)}</td><td>${esc(st.phone||'—')}<div class="subtext">PH: ${esc(st.parentPhone||'—')}</div></td>`;
         for(let i=1;i<=cls.sessions;i++){
@@ -4554,8 +4554,8 @@ renderDetailView=function(className){
         const dueHtml=(info.due>0||info.startSession)
             ?`<b>${money(info.due)}</b><span class="tuition-formula">${esc(tuitionFormulaText(info))}</span>`
             :`<span class="tuition-not-started">Chưa phát sinh</span><span class="tuition-formula">Tính từ buổi đầu có mặt</span>`;
-        const rowActions=canEditClass(cls)?(info.archivedTransferSource
-            ?`<span class="readonly-chip">Công nợ ở lớp mới</span> <button class="btn btn-blue" title="CRM học sinh" onclick="openStudentCRMModal('${esc(className)}',${st.id})">🎯</button> <button class="btn btn-danger" title="Xoá bản ghi cũ" onclick="confirmDeleteStudent('${esc(className)}',${st.id})">🗑️</button>`
+        const rowActions=canEditClass(cls)?(info.archivedTransferSource||tuitionIsCourseDebtForwarded(st)
+            ?`<span class="readonly-chip">${info.archivedTransferSource?'Công nợ ở lớp mới':'Nợ đã sang đợt sau'}</span> <button class="btn btn-blue" title="CRM học sinh" onclick="openStudentCRMModal('${esc(className)}',${st.id})">🎯</button> <button class="btn btn-danger" title="Xoá bản ghi cũ" onclick="confirmDeleteStudent('${esc(className)}',${st.id})">🗑️</button>`
             :`<button class="btn btn-warn" title="Sửa học sinh" onclick="openAddStudentModal('${esc(className)}',${st.id})">✏️</button> <button class="btn btn-green" title="Cập nhật thanh toán" onclick="openPaymentModal('${esc(className)}',${st.id})">💰</button> <button class="btn btn-blue" title="CRM học sinh" onclick="openStudentCRMModal('${esc(className)}',${st.id})">🎯</button> <button class="btn btn-soft" title="Chuyển lớp" onclick="openTransferStudentModal('${esc(className)}',${st.id})">🔁</button> <button class="btn btn-danger" title="Xoá học sinh" onclick="confirmDeleteStudent('${esc(className)}',${st.id})">🗑️</button>`):'<span class="readonly-chip">Chỉ xem</span>';
         rows+=row+`<td class="tuition-due-cell">${dueHtml}</td><td>${rowActions}</td></tr>`;
     }
@@ -4779,7 +4779,7 @@ function tuitionBuildTransferSnapshot(st,cls,migrated=false){
     const endSession=tuitionLastPresentSession(st,cls);
     const localBillableSessions=startSession&&endSession>=startSession?endSession-startSession+1:0;
     const localDue=localBillableSessions*rate;
-    const priorCarryDue=Math.max(0,Number(st?.transferCarryDue)||0);
+    const priorCarryDue=Math.max(0,Number(st?.transferCarryDue)||0)+Math.max(0,Number(st?.courseDebtCarryDue)||0);
     return {
         version:'transfer-tuition-v11.4',
         migrated:!!migrated,
@@ -4854,6 +4854,10 @@ function tuitionHydrateTransferLinks(){
     }
 }
 
+function tuitionIsCourseDebtForwarded(st){
+    return !!(st&&(st.courseDebtForwarded===true||st.courseDebtForwardedTo));
+}
+
 tuitionInfo=function(st,cls){
     const sessions=Math.max(0,Number(cls?.sessions)||0);
     if(tuitionIsArchivedTransferSource(st)){
@@ -4877,12 +4881,15 @@ tuitionInfo=function(st,cls){
     const startSession=continuing&&sessions?1:tuitionFirstPresentSession(st,cls);
     const billableSessions=startSession?Math.max(0,sessions-startSession+1):0;
     const localDue=billableSessions*rate;
-    const carryDue=Math.max(0,Number(st?.transferCarryDue)||0);
+    const transferCarryDue=Math.max(0,Number(st?.transferCarryDue)||0);
+    const courseDebtCarryDue=Math.max(0,Number(st?.courseDebtCarryDue)||0);
+    const carryDue=transferCarryDue+courseDebtCarryDue;
     return {
-        classSize,rate,sessions,startSession,billableSessions,localDue,carryDue,
+        classSize,rate,sessions,startSession,billableSessions,localDue,carryDue,transferCarryDue,courseDebtCarryDue,
         due:carryDue+localDue,
-        reason:carryDue?(startSession?'transfer-cumulative':'transfer-carry-only'):(continuing?'continuing':(startSession?'first-present':'not-started')),
-        archivedTransferSource:false
+        reason:carryDue?(startSession?'carry-cumulative':'carry-only'):(continuing?'continuing':(startSession?'first-present':'not-started')),
+        archivedTransferSource:false,
+        courseDebtForwardedSource:tuitionIsCourseDebtForwarded(st)
     };
 };
 tuitionFormulaText=function(info){
@@ -4892,7 +4899,11 @@ tuitionFormulaText=function(info){
     }
     if((Number(info?.carryDue)||0)>0){
         const local=info.startSession?`${info.billableSessions} buổi lớp mới × ${money(info.rate)}`:'lớp mới chưa phát sinh';
-        return `Lớp cũ ${money(info.carryDue)} + ${local} = ${money(info.due)}`;
+        const parts=[];
+        if(info.courseDebtCarryDue)parts.push(`Nợ đợt trước ${money(info.courseDebtCarryDue)}`);
+        if(info.transferCarryDue)parts.push(`Lớp chuyển đến ${money(info.transferCarryDue)}`);
+        if(!parts.length)parts.push(`Khoản cũ ${money(info.carryDue)}`);
+        return `${parts.join(' + ')} + ${local} = ${money(info.due)}`;
     }
     if(!info?.startSession)return 'Chưa phát sinh · tính từ buổi đầu có mặt';
     const start=info.reason==='continuing'?'Tiếp nối đợt trước, từ B1':'Từ B'+info.startSession;
@@ -4909,11 +4920,11 @@ tuitionApplyClass=function(cls){
         const info=tuitionInfo(st,cls);
         st.tuition=info.due;
         st.tuitionCalculation={
-            mode:'session-tier-transfer-v11.3',
+            mode:'session-tier-course-debt-v11.6',
             classSize:info.classSize,rate:info.rate,
             startSession:info.startSession,endSession:info.endSession||info.sessions,
             billableSessions:info.billableSessions,sessions:info.sessions,
-            localDue:info.localDue,carryDue:info.carryDue,
+            localDue:info.localDue,carryDue:info.carryDue,transferCarryDue:info.transferCarryDue||0,courseDebtCarryDue:info.courseDebtCarryDue||0,
             reason:info.reason,due:info.due,
             archivedTransferSource:!!info.archivedTransferSource
         };
@@ -4924,7 +4935,7 @@ tuitionApplyAll=function(){
     Object.values(data.classes||{}).forEach(tuitionApplyClass);
 };
 debtOf=function(st,cls=null){
-    if(tuitionIsArchivedTransferSource(st))return 0;
+    if(tuitionIsArchivedTransferSource(st)||tuitionIsCourseDebtForwarded(st))return 0;
     const owner=cls||tuitionFindClassForStudent(st);
     const due=owner?tuitionInfo(st,owner).due:(Number(st?.tuition)||0);
     return Math.max(0,due-(Number(st?.paid)||0));
@@ -4933,7 +4944,7 @@ debtOf=function(st,cls=null){
 renderDebts=function(){
     tuitionApplyAll();
     const query=q();
-    const all=getAllStudents().filter(x=>!tuitionIsArchivedTransferSource(x.s)).map(x=>{
+    const all=getAllStudents().filter(x=>!tuitionIsArchivedTransferSource(x.s)&&!tuitionIsCourseDebtForwarded(x.s)).map(x=>{
         const info=tuitionInfo(x.s,x.cls);
         return {...x,info,due:info.due,debt:Math.max(0,info.due-(Number(x.s.paid)||0))};
     });
@@ -4946,16 +4957,20 @@ renderDebts=function(){
         let formula='';
         if(x.info.carryDue>0){
             const local=x.info.startSession?`${x.info.billableSessions} buổi × ${money(x.info.rate)} = ${money(x.info.localDue)}`:'Chưa học buổi đầu ở lớp mới';
-            formula=`<b>Cộng dồn chuyển lớp</b><span class="tuition-formula">Lớp cũ: ${money(x.info.carryDue)}<br>Lớp hiện tại: ${local}</span>`;
+            const carryParts=[];
+            if(x.info.courseDebtCarryDue)carryParts.push(`Nợ đợt trước: ${money(x.info.courseDebtCarryDue)}`);
+            if(x.info.transferCarryDue)carryParts.push(`Lớp chuyển đến: ${money(x.info.transferCarryDue)}`);
+            if(!carryParts.length)carryParts.push(`Khoản cũ: ${money(x.info.carryDue)}`);
+            formula=`<b>Cộng dồn công nợ</b><span class="tuition-formula">${carryParts.join('<br>')}<br>Đợt hiện tại: ${local}</span>`;
         }else if(x.info.startSession){
             formula=`<b>${x.info.billableSessions} buổi × ${money(x.info.rate)}</b><span class="tuition-formula">${x.info.reason==='continuing'?'Tiếp nối đợt trước · từ B1':'Từ B'+x.info.startSession}</span>`;
         }else{
             formula=`<span class="tuition-not-started">Chưa phát sinh</span><span class="tuition-formula">Từ buổi đầu có mặt</span>`;
         }
         const transferLine=x.s.transferredFrom?`<div class="subtext">↳ Chuyển từ ${esc(x.s.transferredFrom.className||'lớp cũ')}</div>`:'';
-        return `<tr><td><b>${esc(x.s.name)}</b><div class="subtext">${esc(x.className)} · ${esc(x.s.school||'')}</div>${transferLine}</td><td>${esc(x.s.phone||'—')}<div class="subtext">PH: ${esc(x.s.parentPhone||'—')}</div></td><td>${formula}<span class="debt-rule-chip">${x.info.classSize} HS · ${money(x.info.rate)}/buổi</span></td><td class="tuition-due-cell"><b>${money(x.due)}</b>${x.info.carryDue?`<span class="tuition-formula">Gồm ${money(x.info.carryDue)} từ lớp cũ</span>`:''}</td><td class="money"><b>${money(x.s.paid)}</b></td><td class="debt"><b>${money(x.debt)}</b></td><td>${esc(x.s.paymentNote||x.s.note||'')}</td><td>${canEditClass(x.cls)?`<button class="btn btn-green" onclick="openPaymentModal('${esc(x.classKey)}',${x.s.id})">💰 Cập nhật</button>`:'<span class="readonly-chip">Chỉ xem</span>'}</td></tr>`;
+        return `<tr><td><b>${esc(x.s.name)}</b><div class="subtext">${esc(x.className)} · ${esc(x.s.school||'')}</div>${transferLine}</td><td>${esc(x.s.phone||'—')}<div class="subtext">PH: ${esc(x.s.parentPhone||'—')}</div></td><td>${formula}<span class="debt-rule-chip">${x.info.classSize} HS · ${money(x.info.rate)}/buổi</span></td><td class="tuition-due-cell"><b>${money(x.due)}</b>${x.info.courseDebtCarryDue?`<span class="tuition-formula">Gồm ${money(x.info.courseDebtCarryDue)} nợ đợt trước</span>`:x.info.carryDue?`<span class="tuition-formula">Gồm ${money(x.info.carryDue)} từ lớp cũ</span>`:''}</td><td class="money"><b>${money(x.s.paid)}</b></td><td class="debt"><b>${money(x.debt)}</b></td><td>${esc(x.s.paymentNote||x.s.note||'')}</td><td>${canEditClass(x.cls)?`<button class="btn btn-green" onclick="openPaymentModal('${esc(x.classKey)}',${x.s.id})">💰 Cập nhật</button>`:'<span class="readonly-chip">Chỉ xem</span>'}</td></tr>`;
     }).join('')||`<tr class="empty-row"><td colspan="8">Không có công nợ.</td></tr>`;
-    mainContent.innerHTML=`<div class="panel"><div class="debt-pro-head"><div><h2>💰 Bảng công nợ học phí</h2><p>Tự động tính theo buổi và sĩ số. Học sinh chuyển lớp được cộng số tiền đã phát sinh ở lớp cũ vào lớp mới; bản ghi cũ không bị tính trùng.</p><span class="debt-rule-chip">≥15 HS: 45.000đ/buổi</span> <span class="debt-rule-chip">11–14 HS: 70.000đ/buổi</span> <span class="debt-rule-chip">≤10 HS: 90.000đ/buổi</span></div></div><div class="debt-pro-kpis"><div class="debt-pro-kpi"><b>${all.filter(x=>x.due>0).length}</b><span>Học sinh đã phát sinh</span></div><div class="debt-pro-kpi"><b>${money(totalDue)}</b><span>Tổng phải đóng</span></div><div class="debt-pro-kpi"><b>${money(totalPaid)}</b><span>Tổng đã đóng</span></div><div class="debt-pro-kpi"><b>${money(totalDebt)}</b><span>Tổng còn nợ</span></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Học sinh</th><th>Liên hệ</th><th>Cách tính</th><th>Phải đóng</th><th>Đã đóng</th><th>Còn nợ</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    mainContent.innerHTML=`<div class="panel"><div class="debt-pro-head"><div><h2>💰 Bảng công nợ học phí</h2><p>Tự động tính theo buổi và sĩ số. Nợ chưa thu khi kết thúc đợt được chuyển sang đợt sau; học sinh chuyển lớp cũng được cộng dồn và không bị tính trùng bản ghi cũ.</p><span class="debt-rule-chip">≥15 HS: 45.000đ/buổi</span> <span class="debt-rule-chip">11–14 HS: 70.000đ/buổi</span> <span class="debt-rule-chip">≤10 HS: 90.000đ/buổi</span></div></div><div class="debt-pro-kpis"><div class="debt-pro-kpi"><b>${all.filter(x=>x.due>0).length}</b><span>Học sinh đã phát sinh</span></div><div class="debt-pro-kpi"><b>${money(totalDue)}</b><span>Tổng phải đóng</span></div><div class="debt-pro-kpi"><b>${money(totalPaid)}</b><span>Tổng đã đóng</span></div><div class="debt-pro-kpi"><b>${money(totalDebt)}</b><span>Tổng còn nợ</span></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Học sinh</th><th>Liên hệ</th><th>Cách tính</th><th>Phải đóng</th><th>Đã đóng</th><th>Còn nợ</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 };
 
 openPaymentModal=function(className,id){
@@ -4965,6 +4980,7 @@ openPaymentModal=function(className,id){
     const st=(cls.students||[]).find(x=>String(x.id)===String(id));
     if(!st)return showToast('Không tìm thấy học sinh','error');
     if(tuitionIsArchivedTransferSource(st))return showToast('Công nợ của học sinh chuyển lớp được cập nhật tại lớp mới','warn');
+    if(tuitionIsCourseDebtForwarded(st))return showToast('Công nợ đợt này đã được chuyển sang đợt học sau','warn');
     tuitionApplyClass(cls);
     const info=tuitionInfo(st,cls);
     paymentSub.textContent=st.name+' · '+classTitle(className)+' · '+classCode(className);
@@ -4979,7 +4995,10 @@ openPaymentModal=function(className,id){
     }
     if(info.carryDue>0){
         const local=info.startSession?`${info.billableSessions} buổi × ${money(info.rate)} = ${money(info.localDue)}`:'chưa phát sinh buổi học ở lớp mới';
-        note.innerHTML=`Cộng dồn chuyển lớp: <b>${money(info.carryDue)} lớp cũ + ${local}</b><br>Tổng phải đóng: <b>${money(info.due)}</b>.`;
+        const carryParts=[];
+        if(info.courseDebtCarryDue)carryParts.push(`nợ đợt trước ${money(info.courseDebtCarryDue)}`);
+        if(info.transferCarryDue)carryParts.push(`lớp chuyển đến ${money(info.transferCarryDue)}`);
+        note.innerHTML=`Cộng dồn: <b>${carryParts.join(' + ')||money(info.carryDue)} + ${local}</b><br>Tổng phải đóng: <b>${money(info.due)}</b>.`;
     }else{
         note.innerHTML=info.startSession
             ?`Cách tính: <b>${info.billableSessions} buổi × ${money(info.rate)} = ${money(info.due)}</b><br>${info.reason==='continuing'?'Học sinh tiếp nối đợt trước nên tính từ B1.':'Bắt đầu tính từ B'+info.startSession+'.'} Sĩ số đang học: ${info.classSize}.`
@@ -5018,6 +5037,8 @@ handleTransferStudent=function(){
     const snapshot=tuitionBuildTransferSnapshot(st,fromCls,false);
     const newStudent=cloneStudentForTransfer(st,fromCls,toCls,note);
     newStudent.transferCarryDue=snapshot.totalDue;
+    // Snapshot chuyển lớp đã gồm cả nợ các đợt trước, không cộng lặp lại ở lớp mới.
+    newStudent.courseDebtCarryDue=0;
     newStudent.transferTuitionHistory=[
         ...(Array.isArray(st.transferTuitionHistory)?st.transferTuitionHistory:[]),
         {id:String(fromCls.id||fromKey)+':'+String(st.id),fromClassId:fromCls.id||fromKey,fromClassName:fromCls.name||fromKey,fromClassCode:fromCls.code||'',fromStudentId:st.id,localDue:snapshot.localDue,priorCarryDue:snapshot.priorCarryDue,totalDue:snapshot.totalDue,startSession:snapshot.startSession,endSession:snapshot.endSession,transferredAt:new Date().toISOString()}
@@ -5058,7 +5079,7 @@ normalize=function(){
    Nhập nhanh tổng đã đóng cho toàn bộ học sinh trong một lớp. */
 let batchPaymentClassKey='';
 function batchPaymentStudents(cls){
-    return sortedStudentsOf(cls).filter(st=>!tuitionIsArchivedTransferSource(st));
+    return sortedStudentsOf(cls).filter(st=>!tuitionIsArchivedTransferSource(st)&&!tuitionIsCourseDebtForwarded(st));
 }
 function ensureBatchPaymentModal(){
     let overlay=document.getElementById('batchPaymentModal');
@@ -5145,7 +5166,10 @@ function openBatchPaymentModal(className){
         const info=tuitionInfo(st,cls);
         const paid=Math.max(0,Number(st.paid)||0);
         const debt=Math.max(0,info.due-paid);
-        const transfer=info.carryDue?`<div class="subtext">Gồm ${money(info.carryDue)} từ lớp cũ</div>`:'';
+        const carryParts=[];
+        if(info.courseDebtCarryDue)carryParts.push(`${money(info.courseDebtCarryDue)} nợ đợt trước`);
+        if(info.transferCarryDue)carryParts.push(`${money(info.transferCarryDue)} từ lớp chuyển đến`);
+        const transfer=carryParts.length?`<div class="subtext">Gồm ${carryParts.join(' + ')}</div>`:'';
         return `<tr><td><b>${esc(st.name||'Học sinh')}</b><div class="subtext">${studentStatusLabel(st)}${st.parentPhone?' · PH: '+esc(st.parentPhone):''}</div></td><td class="tuition-due-cell"><b>${money(info.due)}</b>${transfer}</td><td class="money"><b>${money(paid)}</b></td><td><div class="batch-payment-input-wrap"><input class="batch-payment-input" data-student-id="${esc(st.id)}" data-due="${info.due}" type="number" min="0" step="10000" inputmode="numeric" value="${paid}" oninput="updateBatchPaymentSummary()" /><button class="btn btn-green" type="button" onclick="batchFillRowDue(this)">Đủ</button></div></td><td class="debt"><b class="batch-row-debt">${money(debt)}</b></td></tr>`;
     }).join('')||`<tr class="empty-row"><td colspan="5">Không có học sinh để nhập tiền.</td></tr>`;
     updateBatchPaymentSummary();
@@ -5157,7 +5181,7 @@ function saveBatchPayments(){
     let changed=0;
     batchPaymentInputs().forEach(input=>{
         const st=(cls.students||[]).find(x=>String(x.id)===String(input.dataset.studentId));
-        if(!st||tuitionIsArchivedTransferSource(st))return;
+        if(!st||tuitionIsArchivedTransferSource(st)||tuitionIsCourseDebtForwarded(st))return;
         const nextPaid=Math.max(0,Number(input.value)||0);
         if(nextPaid!==Math.max(0,Number(st.paid)||0))changed++;
         st.paid=nextPaid;st.updatedAt=new Date().toISOString();
@@ -5173,6 +5197,110 @@ normalize=function(){
     __batchPaymentOldNormalize();
     data.meta={...(data.meta||{}),tuitionPricingVersion:'11.5',batchPaymentEntry:true};
     data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.5',batchPaymentEntry:true};
+};
+
+/* ---------- COURSE DEBT CARRY-FORWARD v11.6 ----------
+   Khi kết thúc đợt, chỉ số tiền còn thiếu được chuyển sang đợt kế tiếp. */
+function courseDebtStudentLinkId(st){
+    return String(st?.firestoreId||st?.id||'');
+}
+function courseDebtFindCopiedStudent(oldSt,nextCls){
+    const sourceId=courseDebtStudentLinkId(oldSt);
+    return (nextCls?.students||[]).find(st=>String(st?.sourceStudentId||'')===sourceId)||null;
+}
+function courseDebtOutstanding(st,cls){
+    const info=tuitionInfo(st,cls);
+    return Math.max(0,(Number(info.due)||0)-(Number(st?.paid)||0));
+}
+function courseDebtHistoryEntry(oldSt,oldCls,amount,nextCls){
+    return {
+        id:'course-debt:'+String(oldCls?.id||'')+':'+String(oldSt?.id||''),
+        fromClassId:oldCls?.id||'',fromClassName:oldCls?.name||'',fromClassCode:oldCls?.code||'',
+        fromCourseNo:Number(oldCls?.courseNo)||1,toClassId:nextCls?.id||'',toClassName:nextCls?.name||'',
+        amount:Math.max(0,Number(amount)||0),carriedAt:oldCls?.completedAt||oldCls?.updatedAt||''
+    };
+}
+function courseDebtApplyLink(oldSt,oldCls,newSt,nextCls,amount,resetNewPaid=false){
+    amount=Math.max(0,Number(amount)||0);
+    newSt.courseDebtCarryDue=amount;
+    const entry=courseDebtHistoryEntry(oldSt,oldCls,amount,nextCls);
+    const history=Array.isArray(newSt.courseDebtCarryHistory)?newSt.courseDebtCarryHistory:[];
+    newSt.courseDebtCarryHistory=[...history.filter(x=>String(x.id)!==String(entry.id)),entry];
+    if(resetNewPaid)newSt.paid=0;
+    oldSt.courseDebtForwarded=true;
+    oldSt.courseDebtForwardedTo={classId:nextCls?.id||'',className:nextCls?.name||'',classCode:nextCls?.code||'',studentId:newSt.id,amount,at:oldCls?.completedAt||new Date().toISOString()};
+}
+function courseDebtHydrateLinks(){
+    const oldClasses=Object.values(data.classes||{}).filter(cls=>cls?.nextClassId).sort((a,b)=>(Number(a.courseNo)||1)-(Number(b.courseNo)||1));
+    for(const oldCls of oldClasses){
+        const nextCls=tuitionClassByRef(oldCls.nextClassId);
+        if(!nextCls)continue;
+        for(const oldSt of (oldCls.students||[])){
+            if(tuitionIsArchivedTransferSource(oldSt))continue;
+            const newSt=courseDebtFindCopiedStudent(oldSt,nextCls);
+            if(!newSt)continue;
+            const stored=oldSt.courseDebtForwardedTo;
+            const amount=stored&&Number.isFinite(Number(stored.amount))?Math.max(0,Number(stored.amount)):courseDebtOutstanding(oldSt,oldCls);
+            courseDebtApplyLink(oldSt,oldCls,newSt,nextCls,amount,false);
+        }
+        tuitionApplyClass(nextCls);
+    }
+}
+
+const __courseDebtOldOpenNewCourse=openNewCourseModal;
+openNewCourseModal=function(className){
+    __courseDebtOldOpenNewCourse(className);
+    const cls=data.classes?.[className];
+    if(!cls||!canEditClass(cls))return;
+    newCourseResetPaymentInput.checked=true;
+    newCourseResetPaymentInput.disabled=true;
+    let note=document.getElementById('courseDebtCarryNote');
+    if(!note){
+        note=document.createElement('div');note.id='courseDebtCarryNote';note.className='payment-auto-note';
+        newCourseResetPaymentInput.closest('label')?.insertAdjacentElement('afterend',note);
+    }
+    const debtStudents=(cls.students||[]).filter(st=>!tuitionIsArchivedTransferSource(st)&&courseDebtOutstanding(st,cls)>0);
+    const totalDebt=debtStudents.reduce((sum,st)=>sum+courseDebtOutstanding(st,cls),0);
+    note.innerHTML=`Khi tạo đợt mới, hệ thống tự chuyển <b>${money(totalDebt)}</b> còn nợ của ${debtStudents.length} học sinh sang đợt sau. Số “đã đóng” của đợt mới bắt đầu từ 0 để không trừ tiền hai lần.`;
+};
+
+const __courseDebtOldCreateNewCourse=handleCreateNewCourse;
+handleCreateNewCourse=function(){
+    const oldKey=newCourseSourceClass,oldCls=data.classes?.[oldKey];
+    if(!oldCls)return __courseDebtOldCreateNewCourse();
+    const beforeKeys=new Set(Object.keys(data.classes||{}));
+    const debts=new Map();
+    (oldCls.students||[]).forEach(st=>{
+        if(!tuitionIsArchivedTransferSource(st))debts.set(courseDebtStudentLinkId(st),{st,amount:courseDebtOutstanding(st,oldCls)});
+    });
+    __courseDebtOldCreateNewCourse();
+    const nextKey=oldCls.nextClassId,nextCls=data.classes?.[nextKey];
+    if(!nextCls||beforeKeys.has(nextKey))return;
+    for(const newSt of (nextCls.students||[])){
+        const row=debts.get(String(newSt.sourceStudentId||''));
+        if(!row)continue;
+        courseDebtApplyLink(row.st,oldCls,newSt,nextCls,row.amount,true);
+    }
+    tuitionApplyClass(oldCls);tuitionApplyClass(nextCls);
+    oldCls.updatedAt=new Date().toISOString();nextCls.updatedAt=new Date().toISOString();
+    saveData();
+    const carried=[...(nextCls.students||[])].reduce((sum,st)=>sum+(Number(st.courseDebtCarryDue)||0),0);
+    logActivity('Chuyển nợ sang đợt mới',`${oldCls.name||oldKey} → ${nextCls.name||nextKey} · ${money(carried)}`,nextKey,'course-debt');
+    if(carried>0)showToast('Đã cộng '+money(carried)+' công nợ cũ vào đợt mới');
+    render();
+};
+
+tuitionApplyAll=function(){
+    tuitionHydrateTransferLinks();
+    courseDebtHydrateLinks();
+    Object.values(data.classes||{}).forEach(tuitionApplyClass);
+};
+const __courseDebtOldNormalize=normalize;
+normalize=function(){
+    __courseDebtOldNormalize();
+    courseDebtHydrateLinks();tuitionApplyAll();
+    data.meta={...(data.meta||{}),tuitionPricingVersion:'11.6',courseDebtCarryForward:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.6',courseDebtCarryForward:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
