@@ -1360,7 +1360,7 @@ async function renderAdminDashboard(){
     if(!isAdmin()){renderOnlineGate('Chỉ Admin hoặc Super Admin mới xem được khu quản trị.');return}
     const classes=getVisibleClassEntries();
     const students=getAllStudents();
-    const revenue=students.reduce((a,x)=>a+(Number(x.s.paid)||0),0);
+    const revenue=accountingPaidTotal(students);
     const debt=students.reduce((a,x)=>a+debtOf(x.s),0);
     const active=students.filter(x=>x.s.status==='active').length;
     const paused=students.filter(x=>x.s.status==='paused').length;
@@ -1373,7 +1373,7 @@ async function renderAdminDashboard(){
     </div>
     <div class="admin-section"><div class="admin-toolbar"><h2>${isSuperAdmin()?'👑 Super Admin Dashboard':'🛡️ Admin Dashboard'}</h2><div class="admin-actions"><button class="btn btn-blue" onclick="refreshAdminUsers()">↻ Tải tài khoản</button><button class="btn btn-green superadmin-only" onclick="pushOnlineToFirestore()">☁️ Lưu ngay hệ thống</button><button class="btn btn-soft superadmin-only" onclick="openBackupRestoreModal()">🛡️ Sao lưu/Phục hồi</button></div></div>
     <div class="admin-section"><h2>📊 Phân bố học sinh</h2><div class="mini-grid"><div class="mini-card"><b>Đang học</b><div class="num money">${active}</div></div><div class="mini-card"><b>Tạm nghỉ</b><div class="num">${paused}</div></div><div class="mini-card"><b>Đã nghỉ</b><div class="num debt">${left}</div></div><div class="mini-card superadmin-only"><b>Hệ thống</b><div class="subtext">${firestoreReady?'Đang online':'Chưa kết nối'} · ${esc(getFirestoreCenterId())}</div></div></div></div>
-    <div class="admin-section"><h2>🏫 Danh sách lớp</h2><div class="table-scroll"><table class="data-table"><thead><tr><th>Lớp</th><th>Mã lớp</th><th>Giáo viên</th><th>Học sinh</th><th>Tiến độ</th><th>Đã thu</th><th>Công nợ</th><th>Thao tác</th></tr></thead><tbody>${classes.map(([key,cls])=>{const st=cls.students||[];const paid=st.reduce((a,s)=>a+(+s.paid||0),0);const d=st.reduce((a,s)=>a+debtOf(s),0);const at=getAttendedSessions(cls);return `<tr><td><b>${esc(cls.name||key)}</b><div class="subtext">${esc(cls.schedule||'Chưa có lịch')}</div></td><td><span class="class-code">${esc(cls.code||key)}</span></td><td>${esc(cls.teacherName||cls.teacherEmail||cls.teacherId||'—')}</td><td>${st.length}</td><td>${at}/${cls.sessions||0} buổi</td><td class="money"><b>${money(paid)}</b></td><td class="debt"><b>${money(d)}</b></td><td><button class="btn btn-blue" onclick="viewClass('${esc(key)}')">Mở lớp</button></td></tr>`}).join('')||'<tr class="empty-row"><td colspan="8">Chưa có lớp.</td></tr>'}</tbody></table></div></div>
+    <div class="admin-section"><h2>🏫 Danh sách lớp</h2><div class="table-scroll"><table class="data-table"><thead><tr><th>Lớp</th><th>Mã lớp</th><th>Giáo viên</th><th>Học sinh</th><th>Tiến độ</th><th>Đã thu</th><th>Công nợ</th><th>Thao tác</th></tr></thead><tbody>${classes.map(([key,cls])=>{const st=cls.students||[];const paid=accountingPaidForClass(cls);const d=accountingDebtForClass(cls);const at=getAttendedSessions(cls);return `<tr><td><b>${esc(cls.name||key)}</b><div class="subtext">${esc(cls.schedule||'Chưa có lịch')}</div></td><td><span class="class-code">${esc(cls.code||key)}</span></td><td>${esc(cls.teacherName||cls.teacherEmail||cls.teacherId||'—')}</td><td>${st.length}</td><td>${at}/${cls.sessions||0} buổi</td><td class="money"><b>${money(paid)}</b></td><td class="debt"><b>${money(d)}</b></td><td><button class="btn btn-blue" onclick="viewClass('${esc(key)}')">Mở lớp</button></td></tr>`}).join('')||'<tr class="empty-row"><td colspan="8">Chưa có lớp.</td></tr>'}</tbody></table></div></div>
     <div class="admin-section"><div class="admin-toolbar"><h2>👥 Tài khoản hệ thống</h2><span class="subtext" id="adminUserStatus">Đang tải...</span></div><div id="adminUsersBox"><div class="empty-state"><div class="icon">⏳</div><p>Đang tải danh sách tài khoản...</p></div></div></div>`;
     refreshAdminUsers();
 }
@@ -1447,7 +1447,7 @@ function renderDashboard(){
     const currentSort=document.getElementById('overviewSort')?.value||'progress-desc';
     for(const key of keys){
         const cls=data.classes[key];const st=cls.students;const sessionCount=Number(cls.sessions)||0;const attended=getAttendedSessions(cls);const status=dashboardStatus(attended,sessionCount);const percent=sessionCount?Math.round(attended/sessionCount*100):0;
-        const totalDebt=st.reduce((a,s)=>a+debtOf(s),0);const paid=st.reduce((a,s)=>a+(Number(s.paid)||0),0);
+        const totalDebt=accountingDebtForClass(cls);const paid=accountingPaidForClass(cls);
         let total=0,present=0;st.forEach(s=>{for(let i=1;i<=sessionCount;i++){total++;if(s.attendance['B'+i])present++}});const attendanceRate=total?Math.round(present/total*100):0;
         const canEdit=canEditClass(cls);
         html+=`<div class="class-card pro ${status}">
@@ -1469,7 +1469,7 @@ function renderDashboard(){
         const completedSorted=sortDashboardClasses(completedKeys);
         html+=`<section class="completed-course-section"><div class="completed-course-head"><div class="completed-course-title">✅ Các lớp đã hoàn thành đợt học<span>Tách riêng lớp cũ để không trùng với đợt mới. Lịch cố định của các lớp này không còn đưa vào màn Hôm nay/Lịch sắp tới.</span></div><span class="badge">${completedSorted.length} lớp đã kết thúc</span></div><div class="completed-mini-note">Khi bấm “🔁 Đợt mới”, lớp nguồn được lưu tại đây để tra cứu điểm danh/công nợ cũ; lớp mới tiếp tục nằm ở phần đang học.</div><div class="class-grid pro">`;
         for(const key of completedSorted){
-            const cls=data.classes[key];const st=cls.students||[];const sessionCount=Number(cls.sessions)||0;const attended=getAttendedSessions(cls);const percent=sessionCount?Math.round(attended/sessionCount*100):0;const totalDebt=st.reduce((a,s)=>a+debtOf(s),0);const paid=st.reduce((a,s)=>a+(Number(s.paid)||0),0);const canEdit=canEditClass(cls);
+            const cls=data.classes[key];const st=cls.students||[];const sessionCount=Number(cls.sessions)||0;const attended=getAttendedSessions(cls);const percent=sessionCount?Math.round(attended/sessionCount*100):0;const totalDebt=accountingDebtForClass(cls);const paid=accountingPaidForClass(cls);const canEdit=canEditClass(cls);
             html+=`<div class="class-card pro done"><div class="class-header"><div><span class="class-name">📦 ${esc(cls.name||key)}</span><span class="class-code">Mã: ${esc(cls.code||key)}</span><span class="course-chip old">${courseLabel(cls)}</span>${privateClassChip(cls)}${!isTeacher()?`<div class="teacher-owner">GV phụ trách: ${esc(cls.teacherName||cls.teacherEmail||cls.teacherId||'—')}</div>`:''}</div><span class="status-chip none">Đã lưu trữ</span></div><div class="progress-text"><span>Tiến độ đã hoàn thành</span><span>${attended}/${sessionCount} buổi · ${percent}%</span></div><div class="progress-wrap"><div class="progress-fill done" style="width:${percent}%"></div></div><div class="overview-row"><div class="overview-mini"><div class="k">Học sinh</div><div class="v">👨‍🎓 ${st.length}</div></div><div class="overview-mini"><div class="k">Đợt học</div><div class="v">📦 ${Number(cls.courseNo)||1}</div></div><div class="overview-mini"><div class="k">Còn nợ</div><div class="v">${money(totalDebt)}</div></div></div><div class="schedule-line">🗓️ ${esc(cls.schedule||'Chưa nhập lịch học')}</div><div class="money-line">✅ Đã thu: <b class="money">${money(paid)}</b><br>⚠️ Còn nợ: <b class="debt">${money(totalDebt)}</b></div><div class="actions"><button class="btn btn-soft" onclick="viewClass('${esc(key)}')">👁️ Xem lại</button>${canEdit?`<button class="btn btn-blue" onclick="openNewCourseModal('${esc(key)}')">🔁 Tạo đợt tiếp</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(key)}')">🗑️</button>`:''}`:''}</div></div>`;
         }
         html+='</div></section>';
@@ -1484,12 +1484,48 @@ function handleCreateClass(){if(!canCreateClass())return showToast('Vai trò hi�
 function handleEditClass(){const cls=data.classes[editingClassName];if(!canEditClass(cls))return showToast('Vai trò hiện tại không được sửa lớp này','error');const f=readClassForm();if(!f.name)return showToast('Vui lòng nhập tên lớp','error');cls.name=f.name;cls.sessions=f.sessions;cls.sessionDates=f.sessionDates;cls.defaultFee=f.defaultFee;cls.schedule=f.schedule;cls.visibility=f.visibility;cls.anonymousClass=f.anonymousClass;cls.privateClass=f.anonymousClass;cls.updatedAt=new Date().toISOString();cls.students.forEach(s=>{let att={};for(let i=1;i<=f.sessions;i++)att['B'+i]=s.attendance['B'+i]||false;s.attendance=att;if(!s.tuition)s.tuition=f.defaultFee;s.classCode=cls.code;s.classKey=editingClassName});(cls.calendarEvents||[]).forEach(ev=>{ev.className=cls.name;ev.classCode=cls.code;ev.classKey=editingClassName});saveData();closeModal('classModal');showToast('Đã cập nhật lớp '+cls.name+' · Mã '+cls.code);render()}
 function courseLabel(cls){const no=Number(cls?.courseNo)||1;return 'Đợt '+no+(cls?.courseStatus==='completed'?' · đã kết thúc':' · đang học')}
 function makeAttendanceForSessions(sessions){let att={};for(let i=1;i<=sessions;i++)att['B'+i]=false;return att}
+function courseCloneValue(value){
+    if(value===undefined)return undefined;
+    try{return JSON.parse(JSON.stringify(value))}catch(e){return value}
+}
+function courseExistingNextClass(cls){
+    const ref=cls?.nextClassId;
+    if(!ref)return null;
+    if(data.classes?.[ref])return data.classes[ref];
+    return Object.values(data.classes||{}).find(item=>String(item?.id||'')===String(ref))||null;
+}
+function courseStudentCanCopy(st,activeOnly=true){
+    const status=String(st?.status||'active');
+    if(status==='transferred'||tuitionIsArchivedTransferSource(st)||tuitionIsCourseDebtForwarded(st))return false;
+    return activeOnly?status==='active'||status==='paused':status!=='transferred';
+}
+function courseBuildCopiedStudent(st,context){
+    const {classId,classCode,sessions,sourceClass,sourceClassKey}=context;
+    const profileFields=['name','grade','phone','parentPhone','school','note','crm','busySlots','homeworks','tasks','learningLogs','logs','goal','parentNote'];
+    const next={};
+    profileFields.forEach(field=>{if(Object.prototype.hasOwnProperty.call(st||{},field))next[field]=courseCloneValue(st[field])});
+    next.id=nextStudentId++;
+    next.firestoreId=makeId('student',classId+'-'+(st?.name||'hs'));
+    next.studentChainId=st?.studentChainId||st?.accountingStudentId||st?.firestoreId||makeId('chain',st?.name||'student');
+    next.accountingStudentId=st?.accountingStudentId||next.studentChainId;
+    next.classId=classId;next.classKey=classId;next.classCode=classCode;
+    next.teacherId=sourceClass.teacherId||getActiveUserId();next.centerId=getFirestoreCenterId();
+    next.status=String(st?.status||'active')==='paused'?'paused':'active';
+    next.attendance=makeAttendanceForSessions(sessions);next.attendanceStartSession=1;
+    next.tuition=0;next.paid=0;next.paymentNote='';
+    next.sourceStudentId=st?.firestoreId||st?.id||'';next.sourceClassId=sourceClass.id||sourceClassKey;
+    next.transferTuitionHistory=courseCloneValue(Array.isArray(st?.transferTuitionHistory)?st.transferTuitionHistory:[]);
+    next.courseDebtCarryHistory=courseCloneValue(Array.isArray(st?.courseDebtCarryHistory)?st.courseDebtCarryHistory:[]);
+    if(st?.transferredFrom)next.transferredFrom=courseCloneValue(st.transferredFrom);
+    next.createdAt=new Date().toISOString();next.updatedAt=next.createdAt;
+    return next;
+}
 function openNewCourseModal(className){
     const cls=data.classes[className];
     if(!canEditClass(cls))return showToast('Thầy không có quyền tạo đợt học mới từ lớp này','error');
     newCourseSourceClass=className;
     const nextNo=(Number(cls.courseNo)||1)+1;
-    const students=(cls.students||[]).filter(s=>isStudentAttendanceActive(s));
+    const students=(cls.students||[]).filter(s=>courseStudentCanCopy(s,true));
     newCourseSub.textContent='Tạo đợt mới từ '+(cls.name||className)+' · '+(cls.code||className);
     newCourseNameInput.value=(cls.name||className).replace(/\s*[·\-–—]?\s*Đợt\s*\d+$/i,'')+' - Đợt '+nextNo;
     newCourseSessionInput.value=cls.sessions||10;
@@ -1505,6 +1541,8 @@ function openNewCourseModal(className){
 function handleCreateNewCourseBase(){
     const oldKey=newCourseSourceClass; const oldCls=data.classes[oldKey];
     if(!oldCls||!canEditClass(oldCls))return showToast('Không tìm thấy lớp nguồn hoặc không có quyền','error');
+    const existingNext=courseExistingNextClass(oldCls);
+    if(existingNext)return showToast('Đợt tiếp theo đã tồn tại: '+(existingNext.name||existingNext.code||'lớp kế tiếp')+'. Không tạo thêm để tránh trùng học sinh và công nợ.','warn');
     const sessions=Math.max(1,Math.min(60,Number(newCourseSessionInput.value)||10));
     let dates=String(newCourseDatesInput.value||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);while(dates.length<sessions)dates.push('');dates=dates.slice(0,sessions);
     const name=newCourseNameInput.value.trim()||((oldCls.name||'Lớp học')+' - Đợt '+((Number(oldCls.courseNo)||1)+1));
@@ -1513,15 +1551,10 @@ function handleCreateNewCourseBase(){
     const code=ensureUniqueClassCode(generateClassCode(name),id);
     const copyActiveOnly=!!newCourseActiveOnlyInput.checked;
     const resetPayment=!!newCourseResetPaymentInput.checked;
-    const copied=(oldCls.students||[]).filter(s=>!copyActiveOnly||s.status!=='left').map(s=>{
-        const ns={...s};
-        ns.id=nextStudentId++; ns.firestoreId=makeId('student',id+'-'+(s.name||'hs'));
-        ns.classId=id; ns.classKey=id; ns.classCode=code; ns.teacherId=oldCls.teacherId||getActiveUserId(); ns.centerId=getFirestoreCenterId();
-        ns.attendance=makeAttendanceForSessions(sessions); ns.tuition=fee||Number(s.tuition)||Number(oldCls.defaultFee)||0;
-        if(resetPayment){ns.paid=0;ns.paymentNote=''}
-        ns.sourceStudentId=s.firestoreId||s.id||''; ns.sourceClassId=oldCls.id||oldKey; ns.createdAt=new Date().toISOString(); ns.updatedAt=new Date().toISOString();
-        return ns;
-    });
+    const copied=(oldCls.students||[])
+        .filter(st=>courseStudentCanCopy(st,copyActiveOnly))
+        .map(st=>courseBuildCopiedStudent(st,{classId:id,classCode:code,sessions,sourceClass:oldCls,sourceClassKey:oldKey}));
+    if(!copied.length)return showToast('Không có học sinh hợp lệ để sao chép sang đợt mới.','warn');
     data.classes[id]={id,code,name,teacherId:oldCls.teacherId||getActiveUserId(),teacherName:oldCls.teacherName||getActiveUserName(),teacherEmail:oldCls.teacherEmail||getActiveUserEmail(),centerId:getFirestoreCenterId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),sessions,sessionDates:dates,defaultFee:fee,schedule:newCourseScheduleInput.value.trim()||oldCls.schedule||'',visibility:oldCls.visibility||'center',anonymousClass:!!isAnonymousClass(oldCls),privateClass:!!isAnonymousClass(oldCls),courseNo:(Number(oldCls.courseNo)||1)+1,courseStatus:'current',lineageId:oldCls.lineageId||oldCls.id||oldKey,previousClassId:oldCls.id||oldKey,nextClassId:'',calendarEvents:[],students:copied};
     oldCls.nextClassId=id; oldCls.updatedAt=new Date().toISOString();
     if(newCourseArchiveOldInput.checked){oldCls.courseStatus='completed';oldCls.completedAt=new Date().toISOString();oldCls.completedBy=getActiveUserId();}
@@ -4500,6 +4533,48 @@ function tuitionRateForSize(size){
     if(size>=11)return 70000;
     return 90000;
 }
+function tuitionPricingHasStarted(cls){
+    if(!cls)return false;
+    if(String(cls.courseStatus||'current')==='completed')return true;
+    if(Object.values(cls.attendanceSessions||{}).some(meta=>meta&&meta.marked))return true;
+    return (cls.students||[]).some(st=>Object.values(st.attendance||{}).some(value=>value===true));
+}
+function tuitionStoredRateCandidate(cls,dynamicRate){
+    const candidates=[
+        cls?.pricingSnapshot?.feePerSession,
+        cls?.feePerSession,
+        ...(cls?.students||[]).map(st=>st?.tuitionCalculation?.rate)
+    ].map(Number).filter(value=>Number.isFinite(value)&&value>0);
+    return candidates[0]||dynamicRate;
+}
+function tuitionEffectivePricing(cls,currentClassSize=tuitionClassSize(cls)){
+    currentClassSize=Math.max(0,Number(currentClassSize)||0);
+    const snapshot=cls?.pricingSnapshot;
+    if(snapshot?.locked&&Number(snapshot.feePerSession)>0){
+        return {
+            rate:Number(snapshot.feePerSession),
+            classSize:Math.max(0,Number(snapshot.classSizeAtLock)||currentClassSize),
+            currentClassSize,locked:true,lockedAt:snapshot.lockedAt||'',reason:snapshot.reason||'locked'
+        };
+    }
+    const dynamicRate=tuitionRateForSize(currentClassSize);
+    if(cls&&tuitionPricingHasStarted(cls)){
+        const rate=tuitionStoredRateCandidate(cls,dynamicRate);
+        const classSizeAtLock=Math.max(0,Number(cls.tuitionClassSize)||currentClassSize);
+        cls.pricingSnapshot={
+            policyVersion:'session-tier-2026.1',locked:true,
+            classSizeAtLock,feePerSession:rate,
+            lockedAt:cls.completedAt||new Date().toISOString(),
+            lockedBy:cls.completedBy||getActiveUserId?.()||'',
+            reason:String(cls.courseStatus||'current')==='completed'?'completed-course-migration':'first-attendance-or-migration'
+        };
+        return {rate,classSize:classSizeAtLock,currentClassSize,locked:true,lockedAt:cls.pricingSnapshot.lockedAt,reason:cls.pricingSnapshot.reason};
+    }
+    return {rate:dynamicRate,classSize:currentClassSize,currentClassSize,locked:false,lockedAt:'',reason:'preview-before-first-attendance'};
+}
+function tuitionEffectiveRate(cls,currentClassSize=tuitionClassSize(cls)){
+    return tuitionEffectivePricing(cls,currentClassSize).rate;
+}
 function tuitionIsContinuingStudent(st,cls){
     return Number(cls?.courseNo||1)>1&&!!(st?.sourceClassId||st?.sourceStudentId);
 }
@@ -4566,7 +4641,9 @@ debtOf=function(st,cls=null){
 renderDetailView=function(className){
     const cls=data.classes[className];
     tuitionApplyClass(cls);
-    const infoClass={classSize:tuitionClassSize(cls),rate:tuitionRateForSize(tuitionClassSize(cls))};
+    const currentClassSize=tuitionClassSize(cls);
+    const pricingClass=tuitionEffectivePricing(cls,currentClassSize);
+    const infoClass={classSize:pricingClass.classSize,currentClassSize,rate:pricingClass.rate,locked:pricingClass.locked};
     const students=sortedStudentsOf(cls).filter(s=>{
         const query=q();
         return !query||[s.name,s.phone,s.parentPhone,s.school,s.grade,s.note].join(' ').toLowerCase().includes(query);
@@ -4605,7 +4682,7 @@ renderDetailView=function(className){
         summary+=`<td style="text-align:center">${count}/${activeStudents.length}</td>`;
     }
     summary+=`<td class="tuition-due-cell"><b>${money(totalDue)}</b><span class="tuition-formula">Tổng phải đóng đang hiển thị</span></td><td></td></tr>`;
-    mainContent.innerHTML=`<div class="detail-view attendance-clean-view"><div class="detail-header"><div><h2>📘 ${esc(cls.name||className)} <span class="class-code">Mã: ${esc(cls.code||className)}</span><span class="course-chip ${cls.courseStatus==='completed'?'old':'current'}">${courseLabel(cls)}</span>${privateClassChip(cls)}<small>${students.length} học sinh · ${cls.sessions} buổi · ${esc(cls.schedule||'Chưa có lịch học')} · Mức ${money(infoClass.rate)}/buổi (${infoClass.classSize} HS đang học)</small></h2></div><div class="actions" style="border:none;padding:0"><button class="btn btn-gray" onclick="goBack()">← Quay lại</button>${canEditClass(cls)?`<button class="btn btn-green" onclick="openAddStudentModal('${esc(className)}')">➕ Thêm HS</button><button class="btn btn-blue" onclick="openBatchPaymentModal('${esc(className)}')">💵 Nhập tiền cả lớp</button><button class="btn btn-warn" onclick="openCreateClassModal('${esc(className)}')">✏️ Sửa lớp</button><button class="btn btn-blue" onclick="openNewCourseModal('${esc(className)}')">🔁 Tạo đợt mới</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(className)}')">🗑️ Xoá lớp</button>`:''}`:''}</div></div>${getAbsentSummaryHtml(cls).replace('absent-box','attendance-summary-bar')}<div class="table-scroll"><table class="data-table attendance-table"><thead><tr>${header}</tr></thead><tbody>${rows}${summary}</tbody></table></div></div>`;
+    mainContent.innerHTML=`<div class="detail-view attendance-clean-view"><div class="detail-header"><div><h2>📘 ${esc(cls.name||className)} <span class="class-code">Mã: ${esc(cls.code||className)}</span><span class="course-chip ${cls.courseStatus==='completed'?'old':'current'}">${courseLabel(cls)}</span>${privateClassChip(cls)}<small>${students.length} học sinh · ${cls.sessions} buổi · ${esc(cls.schedule||'Chưa có lịch học')} · Mức ${money(infoClass.rate)}/buổi (${infoClass.locked?'đã chốt theo '+infoClass.classSize+' HS':'tạm tính theo '+infoClass.currentClassSize+' HS'})</small></h2></div><div class="actions" style="border:none;padding:0"><button class="btn btn-gray" onclick="goBack()">← Quay lại</button>${canEditClass(cls)?`<button class="btn btn-green" onclick="openAddStudentModal('${esc(className)}')">➕ Thêm HS</button><button class="btn btn-blue" onclick="openBatchPaymentModal('${esc(className)}')">💵 Nhập tiền cả lớp</button><button class="btn btn-warn" onclick="openCreateClassModal('${esc(className)}')">✏️ Sửa lớp</button><button class="btn btn-blue" onclick="openNewCourseModal('${esc(className)}')">🔁 Tạo đợt mới</button>${canDeleteClass(cls)?`<button class="btn btn-danger" onclick="confirmDeleteClass('${esc(className)}')">🗑️ Xoá lớp</button>`:''}`:''}</div></div>${getAbsentSummaryHtml(cls).replace('absent-box','attendance-summary-bar')}<div class="table-scroll"><table class="data-table attendance-table"><thead><tr>${header}</tr></thead><tbody>${rows}${summary}</tbody></table></div></div>`;
 };
 
 renderDebtsImplementation=function(){
@@ -4809,11 +4886,12 @@ function tuitionLastPresentSession(st,cls){
 }
 function tuitionBuildTransferSnapshot(st,cls,migrated=false){
     const sessions=Math.max(0,Number(cls?.sessions)||0);
-    let classSize=tuitionClassSize(cls);
+    let currentClassSize=tuitionClassSize(cls);
     if(!isStudentAttendanceActive(st)){
-        classSize=Math.max(classSize+1,Number(st?.tuitionCalculation?.classSize)||0);
+        currentClassSize=Math.max(currentClassSize+1,Number(st?.tuitionCalculation?.currentClassSize)||Number(st?.tuitionCalculation?.classSize)||0);
     }
-    const rate=tuitionRateForSize(classSize);
+    const pricing=tuitionEffectivePricing(cls,currentClassSize);
+    const classSize=pricing.classSize,rate=pricing.rate;
     const startSession=tuitionFirstPresentSession(st,cls);
     const endSession=tuitionLastPresentSession(st,cls);
     const localBillableSessions=startSession&&endSession>=startSession?endSession-startSession+1:0;
@@ -4825,7 +4903,7 @@ function tuitionBuildTransferSnapshot(st,cls,migrated=false){
         classId:cls?.id||'',
         className:cls?.name||'',
         classCode:cls?.code||'',
-        classSize,rate,sessions,startSession,endSession,
+        classSize,currentClassSize,rate,pricingLocked:pricing.locked,sessions,startSession,endSession,
         localBillableSessions,localDue,priorCarryDue,
         totalDue:priorCarryDue+localDue,
         paidAtTransfer:Math.max(0,Number(st?.paid)||0),
@@ -4914,8 +4992,9 @@ tuitionInfo=function(st,cls){
             archivedTransferSource:true
         };
     }
-    const classSize=tuitionClassSize(cls);
-    const rate=tuitionRateForSize(classSize);
+    const currentClassSize=tuitionClassSize(cls);
+    const pricing=tuitionEffectivePricing(cls,currentClassSize);
+    const classSize=pricing.classSize,rate=pricing.rate;
     const continuing=tuitionIsContinuingStudent(st,cls);
     const startSession=continuing&&sessions?1:tuitionFirstPresentSession(st,cls);
     const billableSessions=startSession?Math.max(0,sessions-startSession+1):0;
@@ -4924,7 +5003,7 @@ tuitionInfo=function(st,cls){
     const courseDebtCarryDue=Math.max(0,Number(st?.courseDebtCarryDue)||0);
     const carryDue=transferCarryDue+courseDebtCarryDue;
     return {
-        classSize,rate,sessions,startSession,billableSessions,localDue,carryDue,transferCarryDue,courseDebtCarryDue,
+        classSize,currentClassSize,rate,pricingLocked:pricing.locked,sessions,startSession,billableSessions,localDue,carryDue,transferCarryDue,courseDebtCarryDue,
         due:carryDue+localDue,
         reason:carryDue?(startSession?'carry-cumulative':'carry-only'):(continuing?'continuing':(startSession?'first-present':'not-started')),
         archivedTransferSource:false,
@@ -4950,9 +5029,10 @@ tuitionFormulaText=function(info){
 };
 tuitionApplyClass=function(cls){
     if(!cls)return;
-    const classSize=tuitionClassSize(cls);
-    const rate=tuitionRateForSize(classSize);
-    cls.tuitionClassSize=classSize;
+    const currentClassSize=tuitionClassSize(cls);
+    const pricing=tuitionEffectivePricing(cls,currentClassSize);
+    const classSize=pricing.classSize,rate=pricing.rate;
+    cls.tuitionClassSize=classSize;cls.currentActiveClassSize=currentClassSize;
     cls.feePerSession=rate;
     cls.defaultFee=(Math.max(0,Number(cls.sessions)||0))*rate;
     (cls.students||[]).forEach(st=>{
@@ -4960,7 +5040,7 @@ tuitionApplyClass=function(cls){
         st.tuition=info.due;
         st.tuitionCalculation={
             mode:'session-tier-course-debt-v11.6',
-            classSize:info.classSize,rate:info.rate,
+            classSize:info.classSize,currentClassSize:info.currentClassSize,rate:info.rate,pricingLocked:!!info.pricingLocked,
             startSession:info.startSession,endSession:info.endSession||info.sessions,
             billableSessions:info.billableSessions,sessions:info.sessions,
             localDue:info.localDue,carryDue:info.carryDue,transferCarryDue:info.transferCarryDue||0,courseDebtCarryDue:info.courseDebtCarryDue||0,
@@ -4979,6 +5059,26 @@ debtOf=function(st,cls=null){
     const due=owner?tuitionInfo(st,owner).due:(Number(st?.tuition)||0);
     return Math.max(0,due-(Number(st?.paid)||0));
 };
+
+/* ---------- UNIFIED ACCOUNTING ROWS v11.9 ----------
+   Doanh thu chỉ nhận một bản ghi đang sở hữu khoản đã đóng trong chuỗi chuyển lớp.
+   Đợt cũ vẫn được giữ để doanh thu lịch sử không biến mất khi chuyển nợ sang đợt mới. */
+function accountingRevenueRows(entries=getAllStudents()){
+    return (entries||[]).filter(row=>row?.s&&!tuitionIsArchivedTransferSource(row.s));
+}
+function accountingDebtRows(entries=getAllStudents()){
+    return (entries||[]).filter(row=>row?.s&&!tuitionIsArchivedTransferSource(row.s)&&!tuitionIsCourseDebtForwarded(row.s));
+}
+function accountingPaidTotal(entries=getAllStudents()){
+    return accountingRevenueRows(entries).reduce((sum,row)=>sum+Math.max(0,Number(row.s.paid)||0),0);
+}
+function accountingPaidForClass(cls){
+    const rows=(cls?.students||[]).map(st=>({s:st,cls}));
+    return accountingPaidTotal(rows);
+}
+function accountingDebtForClass(cls){
+    return (cls?.students||[]).reduce((sum,st)=>sum+debtOf(st,cls),0);
+}
 
 renderDebtsImplementation=function(){
     tuitionApplyAll();
@@ -5100,7 +5200,7 @@ handleTransferStudentImplementation=function(){
 updateStatsImplementation=function(){
     const classes=getVisibleActiveClassEntries().map(([k,c])=>c);
     const students=getAllStudents().filter(x=>!isCompletedCourse(x.cls)&&!tuitionIsArchivedTransferSource(x.s));
-    const revenue=students.reduce((sum,x)=>sum+(Number(x.s.paid)||0),0);
+    const revenue=accountingPaidTotal();
     const debt=students.reduce((sum,x)=>sum+debtOf(x.s,x.cls),0);
     const sessions=classes.reduce((sum,cls)=>sum+(Number(cls.sessions)||0),0);
     statsGrid.innerHTML=`<div class="stat-card"><div class="num">${classes.length}</div><div class="label">Tổng số lớp</div></div><div class="stat-card"><div class="num">${students.length}</div><div class="label">Tổng học sinh</div></div><div class="stat-card"><div class="num">${sessions}</div><div class="label">Tổng buổi học</div></div><div class="stat-card"><div class="num money">${money(revenue)}</div><div class="label">Đã thu học phí</div></div><div class="stat-card"><div class="num debt">${money(debt)}</div><div class="label">Còn nợ</div></div>`;
@@ -5338,8 +5438,8 @@ const __courseDebtOldNormalize=normalizeImplementation;
 normalizeImplementation=function(){
     __courseDebtOldNormalize();
     courseDebtHydrateLinks();tuitionApplyAll();
-    data.meta={...(data.meta||{}),tuitionPricingVersion:'11.6',courseDebtCarryForward:true};
-    data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.6',courseDebtCarryForward:true};
+    data.meta={...(data.meta||{}),tuitionPricingVersion:'11.9',courseDebtCarryForward:true,coursePricingSnapshot:true,unifiedAccountingRows:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:'11.9',courseDebtCarryForward:true,coursePricingSnapshot:true,unifiedAccountingRows:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
