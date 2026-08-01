@@ -731,6 +731,7 @@
         .batch-payment-note{font-size:11px;color:#64748b;font-weight:750;line-height:1.45;margin:8px 0 0}
         body.dark-mode .batch-payment-toolbar,body.dark-mode .batch-payment-kpi{background:#0b1220;border-color:#253044}
         @media(max-width:760px){.batch-payment-toolbar{grid-template-columns:1fr 1fr}.batch-payment-toolbar .btn{width:100%}.batch-payment-summary{grid-template-columns:1fr}.batch-payment-modal{padding:20px 14px!important}}
+        .integrity-modal{max-width:980px!important}.integrity-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.integrity-card{padding:14px;border:1px solid #dbe5ef;border-radius:14px;background:#f8fafc}.integrity-card b{display:block;font-size:12px;color:#64748b}.integrity-card strong{display:block;font-size:24px;margin-top:5px;color:#0f2942}.integrity-score.good strong{color:#15803d}.integrity-score.warn strong{color:#b45309}.integrity-score.bad strong{color:#b91c1c}.integrity-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.integrity-list{max-height:430px;overflow:auto;border:1px solid #e2e8f0;border-radius:14px}.integrity-row{display:grid;grid-template-columns:105px 1fr auto;gap:12px;align-items:start;padding:12px 14px;border-bottom:1px solid #edf2f7}.integrity-row:last-child{border-bottom:none}.integrity-row h4{margin:0 0 4px;font-size:14px}.integrity-row p{margin:0;color:#64748b;font-size:12px;line-height:1.45}.integrity-tag{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:850}.integrity-tag.critical{background:#fee2e2;color:#b91c1c}.integrity-tag.warning{background:#fef3c7;color:#92400e}.integrity-tag.info{background:#dbeafe;color:#1d4ed8}.integrity-fix{font-size:10px;color:#15803d;font-weight:800;white-space:nowrap}.integrity-safe{padding:14px;border-radius:14px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}.integrity-mode-note{padding:11px 13px;border-radius:12px;background:#eff6ff;color:#1e40af;font-size:12px;font-weight:700}.integrity-quarantine{color:#9a3412;font-size:11px;margin-top:8px}.dark-mode .integrity-card,.dark-mode .integrity-list{background:#0f172a;border-color:#334155}.dark-mode .integrity-row{border-color:#253044}.dark-mode .integrity-card strong,.dark-mode .integrity-row h4{color:#f8fafc}.dark-mode .integrity-row p{color:#94a3b8}@media(max-width:760px){.integrity-summary{grid-template-columns:1fr 1fr}.integrity-row{grid-template-columns:90px 1fr}.integrity-fix{grid-column:2}}
 </style>
 </head>
 <body>
@@ -748,6 +749,7 @@
             
             <button class="teacher-secondary" onclick="printCurrent()">🖨️ In báo cáo</button>
             <button class="superadmin-only" onclick="step3ShowDiagnostics()">🩺 Kiểm tra hệ thống</button>
+            <button class="superadmin-only" onclick="openDataIntegrityModal()">🧹 Toàn vẹn dữ liệu</button>
             <button class="superadmin-only" onclick="openFirestoreModal()">🔥 Firestore</button>
             <button onclick="openAuthModal()">👤 Tài khoản</button>
             <span class="account-badge" id="accountBadge" onclick="openAuthModal()" style="cursor:pointer"><span class="avatar">?</span><span class="txt" id="accountText">Chưa đăng nhập</span></span>
@@ -787,6 +789,19 @@
         <div id="autoBackupMeta" class="backup-meta">Chọn một mốc để xem thông tin trước khi khôi phục.</div>
         <label>Chế độ khôi phục</label><select id="restoreModeInput"><option value="replace">Ghi đè toàn bộ dữ liệu hiện tại</option><option value="merge">Gộp thêm/cập nhật theo dữ liệu trong mốc sao lưu</option></select>
         <div class="backup-actions"><button class="btn btn-danger" onclick="restoreSelectedAutoBackup()">⏪ Khôi phục mốc đã chọn</button><span><button class="btn btn-warn" onclick="importData()">📤 Khôi phục từ file JSON</button><button class="btn btn-gray" onclick="closeModal('backupRestoreModal')">Đóng</button></span></div>
+    </div></div>
+
+    <div class="modal-overlay" id="dataIntegrityModal"><div class="modal integrity-modal">
+        <h2>🧹 Kiểm tra toàn vẹn dữ liệu</h2>
+        <p class="sub">Quét quyền sở hữu lớp, liên kết tài khoản học sinh, dữ liệu phân mảnh, chuyển lớp và công nợ. Hệ thống luôn sao lưu trước khi sửa và không tự xóa hồ sơ.</p>
+        <div class="integrity-mode-note" id="integrityModeNote">Đang chuẩn bị kiểm tra...</div>
+        <div id="integrityReportBody"><div class="empty-state"><div class="icon">⏳</div><p>Đang quét dữ liệu...</p></div></div>
+        <div class="integrity-toolbar">
+            <button class="btn btn-blue" id="integrityScanBtn" onclick="runDataIntegrityScan(true)">🔍 Quét lại</button>
+            <button class="btn btn-green" id="integrityRepairBtn" onclick="repairDataIntegritySafeIssues()">🛠️ Sao lưu và sửa lỗi an toàn</button>
+            <button class="btn btn-soft" onclick="downloadDataIntegrityReport()">⬇️ Tải báo cáo JSON</button>
+            <button class="btn btn-gray" onclick="closeModal('dataIntegrityModal')">Đóng</button>
+        </div>
     </div></div>
 
     <div class="modal-overlay" id="classModal"><div class="modal">
@@ -5460,6 +5475,7 @@ normalizeImplementation=function(){
 const PARTITION_SCHEMA_VERSION=12;
 const ACCESS_SCHEMA_VERSION=2;
 const STEP3_RUNTIME_VERSION='13.0';
+const STEP4_INTEGRITY_VERSION='14.0';
 const PARTITION_MAX_TRANSACTION_OPS=360;
 const PARTITION_COLLECTIONS={
     meta:'appMeta',classes:'classes',students:'students',attendance:'attendance',payments:'payments',events:'calendarEvents'
@@ -6033,15 +6049,16 @@ function step3DuplicateDomIds(){
 function step3RunDiagnostics(){
     const duplicateDomIds=step3DuplicateDomIds();
     const checks={
-        runtimeVersion:STEP3_RUNTIME_VERSION==='13.0',
+        runtimeVersion:STEP3_RUNTIME_VERSION==='13.0'&&STEP4_INTEGRITY_VERSION==='14.0',
         syncController:saveData===STEP3_SYNC_CONTROLLER.requestSave&&scheduleFirestoreSave===STEP3_SYNC_CONTROLLER.scheduleSave&&pushOnlineToFirestore===STEP3_SYNC_CONTROLLER.flushSave&&loadFromFirestoreOnce===STEP3_SYNC_CONTROLLER.load&&listenFirestoreRealtime===STEP3_SYNC_CONTROLLER.listen&&initFirestoreIfEnabled===STEP3_SYNC_CONTROLLER.init,
         firestoreSanitizer:typeof syncFirestoreSafe==='function',
         partitionSchema:PARTITION_SCHEMA_VERSION===12&&ACCESS_SCHEMA_VERSION===2,
         storageMode:['partitioned','legacy-guarded'].includes(syncStorageMode),
-        uniqueDomIds:duplicateDomIds.length===0
+        uniqueDomIds:duplicateDomIds.length===0,
+        dataIntegrityCenter:typeof integrityScanCurrentData==='function'&&typeof repairDataIntegritySafeIssues==='function'
     };
     return {
-        ok:Object.values(checks).every(Boolean),version:STEP3_RUNTIME_VERSION,checkedAt:new Date().toISOString(),checks,duplicateDomIds,
+        ok:Object.values(checks).every(Boolean),version:STEP4_INTEGRITY_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,checkedAt:new Date().toISOString(),checks,duplicateDomIds,
         sync:{inFlight:syncSaveInFlight,queued:syncSaveQueued,dirty:syncDirty,changeRevision:syncChangeRevision,lastSavedRevision:syncLastSavedRevision,lastError:syncLastSaveError||''}
     };
 }
@@ -6053,13 +6070,182 @@ function step3ShowDiagnostics(){
     else showToast('Phát hiện '+Object.values(report.checks).filter(value=>!value).length+' mục cần kiểm tra; xem Console','warn');
     return report;
 }
-window.KienNangDiagnostics=Object.freeze({version:STEP3_RUNTIME_VERSION,run:step3RunDiagnostics});
+window.KienNangDiagnostics=Object.freeze({version:STEP4_INTEGRITY_VERSION,run:step3RunDiagnostics});
+
+/* ---------- DATA INTEGRITY CENTER v14.0 ----------
+   Quét chỉ đọc; sửa luôn tạo backup trước và không tự xóa tài liệu. */
+let integrityLastReport=null;
+let integrityRepairInFlight=false;
+function integrityAddIssue(report,severity,code,title,detail,options={}){
+    report.issues.push({
+        severity,code,title,detail,repairable:options.repairable===true,
+        entityType:String(options.entityType||''),entityId:String(options.entityId||''),classId:String(options.classId||'')
+    });
+}
+function integrityClassRows(){
+    return Object.entries(data.classes||{}).map(([classKey,cls])=>({classKey,cls:cls||{},classId:String(cls?.id||classKey)}));
+}
+function integrityRemoteMetadataIssues(report,classOwners){
+    if(syncStorageMode!=='partitioned')return;
+    const centerId=getFirestoreCenterId();
+    const kinds=['classes','students','attendance','payments','events'];
+    kinds.forEach(kind=>{
+        const map=syncRemoteSnapshot?.[kind]||new Map(),versions=syncRemoteVersions?.[kind]||new Map();
+        map.forEach((payload0,docId)=>{
+            const payload=payload0||{},classId=kind==='classes'?String(payload.id||payload.classKey||''):String(payload.classId||payload.classKey||'');
+            const owner=classOwners.get(classId)||'';
+            if(kind!=='classes'&&(!classId||!classOwners.has(classId))){
+                integrityAddIssue(report,'critical','ORPHAN_'+kind.toUpperCase(),'Tài liệu '+kind+' không còn lớp cha',`${kind}/${docId} đang tham chiếu lớp “${classId||'trống'}”. Tài liệu được đưa vào danh sách chờ, không tự xóa.`,{entityType:kind,entityId:docId,classId});
+                return;
+            }
+            if(Number(versions.get(docId)||0)<=0){
+                integrityAddIssue(report,'warning','MISSING_VERSION','Tài liệu chưa có phiên bản chống ghi đè',`${kind}/${docId} cần được quản trị viên kiểm tra trước khi chuyển đổi.`,{entityType:kind,entityId:docId,classId});
+            }
+            if(String(payload.centerId||'')!==centerId){
+                integrityAddIssue(report,'warning','REMOTE_CENTER','Sai centerId trong tài liệu phân mảnh',`${kind}/${docId} sẽ được đồng bộ lại về ${centerId}.`,{repairable:true,entityType:kind,entityId:docId,classId});
+            }
+            if(Number(payload.accessSchemaVersion||0)!==ACCESS_SCHEMA_VERSION){
+                integrityAddIssue(report,'warning','REMOTE_ACCESS_SCHEMA','Thiếu metadata phân quyền máy chủ',`${kind}/${docId} chưa dùng access schema ${ACCESS_SCHEMA_VERSION}.`,{repairable:true,entityType:kind,entityId:docId,classId});
+            }
+            if(!String(payload.teacherId||'').trim()){
+                integrityAddIssue(report,'critical','REMOTE_MISSING_TEACHER','Tài liệu chưa có giáo viên sở hữu',`${kind}/${docId} chưa có teacherId. Cần chọn đúng giáo viên, hệ thống không tự đoán.`,{entityType:kind,entityId:docId,classId});
+            }else if(kind!=='classes'&&owner&&String(payload.teacherId)!==owner){
+                integrityAddIssue(report,'warning','REMOTE_TEACHER_MISMATCH','Quyền sở hữu tài liệu chưa khớp lớp',`${kind}/${docId} sẽ được đưa về teacherId của lớp.`,{repairable:true,entityType:kind,entityId:docId,classId});
+            }
+        });
+    });
+}
+function integrityScanCurrentData(){
+    const checkedAt=new Date().toISOString(),centerId=getFirestoreCenterId(),rows=integrityClassRows();
+    const report={version:STEP4_INTEGRITY_VERSION,checkedAt,mode:syncStorageMode,centerId,issues:[],stats:{classes:rows.length,students:0,events:0,remoteDocuments:0},score:100,repairableCount:0,quarantineCount:0,blockingCount:0,fingerprint:''};
+    if(!firestoreReady)integrityAddIssue(report,'critical','FIRESTORE_OFFLINE','Firestore chưa sẵn sàng','Không thể xác nhận dữ liệu online khi kết nối Firestore chưa hoạt động.',{});
+    if(syncStorageMode!=='partitioned')integrityAddIssue(report,'critical','LEGACY_MODE','Đang dùng appState tương thích','Cần Publish Security Rules bước 2 và đăng nhập lại Super Admin trước khi sửa dữ liệu.',{});
+    const classOwners=new Map();
+    rows.forEach(({classKey,cls,classId})=>{
+        const teacherId=String(cls.teacherId||cls.ownerId||cls.createdByUid||'').trim();classOwners.set(classId,teacherId);
+        if(!teacherId)integrityAddIssue(report,'critical','CLASS_MISSING_TEACHER','Lớp chưa có giáo viên phụ trách',`Lớp “${cls.name||classKey}” cần được chọn đúng giáo viên. Hệ thống không tự gán Super Admin.`,{entityType:'class',entityId:classId,classId});
+        if(String(cls.centerId||'')!==centerId)integrityAddIssue(report,'warning','CLASS_CENTER','Lớp sai centerId',`Lớp “${cls.name||classKey}” sẽ được chuẩn hóa về ${centerId}.`,{repairable:true,entityType:'class',entityId:classId,classId});
+        const seen=new Map();
+        (cls.students||[]).forEach((st,index)=>{
+            report.stats.students++;const label=String(st.name||('Học sinh '+(index+1))),uid=String(st.userId||st.uid||st.authUid||'').trim(),rawEmail=String(st.email||st.studentEmail||''),email=syncCleanEmail(rawEmail);
+            const identifiers=[st.id!==undefined&&st.id!==null?'id:'+String(st.id):'',st.firestoreId?'firestore:'+String(st.firestoreId):'',uid?'uid:'+uid:'',email?'email:'+email:''].filter(Boolean);
+            identifiers.forEach(identifier=>{
+                if(seen.has(identifier))integrityAddIssue(report,'critical','DUPLICATE_STUDENT_KEY','Trùng khóa học sinh trong cùng lớp',`“${label}” trùng ${identifier} với một hồ sơ khác trong lớp “${cls.name||classKey}”. Không tự gộp hoặc xóa.`,{entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+                else seen.set(identifier,index);
+            });
+            if(!uid&&!email)integrityAddIssue(report,'info','STUDENT_NOT_LINKED','Học sinh chưa liên kết tài khoản',`“${label}” chưa có UID hoặc email đăng nhập; chỉ cần bổ sung nếu học sinh sử dụng cổng cá nhân.`,{entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+            if(rawEmail&&rawEmail!==email)integrityAddIssue(report,'warning','EMAIL_FORMAT','Email học sinh chưa chuẩn hóa',`Email của “${label}” sẽ được bỏ khoảng trắng và chuyển chữ thường.`,{repairable:true,entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+            if(String(st.classId||'')!==classId||String(st.teacherId||'')!==teacherId||String(st.centerId||'')!==centerId){
+                integrityAddIssue(report,'warning','STUDENT_PARENT_LINK','Hồ sơ học sinh chưa khớp lớp cha',`“${label}” sẽ được đồng bộ classId, teacherId và centerId theo lớp “${cls.name||classKey}”.`,{repairable:!!teacherId,entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+            }
+            if(st.transferredTo&&!tuitionIsArchivedTransferSource(st)){
+                integrityAddIssue(report,'warning','TRANSFER_ACCOUNTING','Hồ sơ chuyển lớp chưa khóa kế toán nguồn',`“${label}” đã có đích chuyển lớp nhưng bản nguồn vẫn có nguy cơ được cộng công nợ.`,{repairable:true,entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+            }else if((st.status==='transferred'||st.transferStatus==='moved')&&!st.transferredTo){
+                integrityAddIssue(report,'warning','TRANSFER_TARGET_MISSING','Hồ sơ chuyển lớp thiếu đích đến',`“${label}” đang ở trạng thái chuyển lớp nhưng không có lớp nhận. Cần kiểm tra thủ công.`,{entityType:'student',entityId:String(st.firestoreId||st.id||index),classId});
+            }
+        });
+        (cls.calendarEvents||[]).forEach((event,index)=>{
+            report.stats.events++;
+            if(String(event.classId||'')!==classId||String(event.teacherId||'')!==teacherId||String(event.centerId||'')!==centerId){
+                integrityAddIssue(report,'warning','EVENT_PARENT_LINK','Lịch học chưa khớp lớp cha',`Sự kiện “${event.title||event.date||index+1}” sẽ được đồng bộ lại thông tin lớp và giáo viên.`,{repairable:!!teacherId,entityType:'event',entityId:String(event.id||index),classId});
+            }
+        });
+    });
+    if(syncStorageMode==='partitioned'){
+        ['classes','students','attendance','payments','events'].forEach(kind=>report.stats.remoteDocuments+=(syncRemoteSnapshot?.[kind]?.size||0));
+        integrityRemoteMetadataIssues(report,classOwners);
+        if(rows.length>0&&(syncRemoteSnapshot?.classes?.size||0)===0)integrityAddIssue(report,'critical','REMOTE_SNAPSHOT_EMPTY','Chưa tải được tài liệu lớp phân mảnh','Dữ liệu trên màn hình có lớp nhưng snapshot Firestore phân mảnh đang trống. Không nên sửa cho đến khi tải lại thành công.',{});
+    }
+    const counts={critical:0,warning:0,info:0};report.issues.forEach(issue=>counts[issue.severity]++);report.counts=counts;
+    report.repairableCount=report.issues.filter(issue=>issue.repairable).length;
+    report.quarantineCount=report.issues.filter(issue=>!issue.repairable&&issue.severity!=='info').length;
+    const blockingCodes=new Set(['FIRESTORE_OFFLINE','LEGACY_MODE','CLASS_MISSING_TEACHER','REMOTE_MISSING_TEACHER','MISSING_VERSION','REMOTE_SNAPSHOT_EMPTY']);
+    report.blockingCount=report.issues.filter(issue=>blockingCodes.has(issue.code)).length;
+    report.score=Math.max(0,100-counts.critical*15-counts.warning*4);
+    report.fingerprint=syncHash(report.issues.map(issue=>[issue.code,issue.entityType,issue.entityId,issue.classId].join(':')).sort().join('|')||'clean');
+    return report;
+}
+function integrityIssueHtml(issue){
+    const labels={critical:'Cần xử lý',warning:'Cảnh báo',info:'Thông tin'};
+    return `<div class="integrity-row"><span class="integrity-tag ${issue.severity}">${labels[issue.severity]||issue.severity}</span><div><h4>${esc(issue.title)}</h4><p>${esc(issue.detail)}</p></div>${issue.repairable?'<span class="integrity-fix">✓ Có thể sửa an toàn</span>':'<span class="integrity-fix" style="color:#9a3412">Chờ kiểm tra</span>'}</div>`;
+}
+function renderDataIntegrityReport(report){
+    integrityLastReport=report;const body=document.getElementById('integrityReportBody'),note=document.getElementById('integrityModeNote'),repairBtn=document.getElementById('integrityRepairBtn');if(!body)return;
+    note.textContent=report.mode==='partitioned'?`Đang kiểm tra dữ liệu phân mảnh · ${report.stats.remoteDocuments} tài liệu Firestore`:'Đang dùng appState tương thích · chỉ quét, chưa cho phép sửa tự động';
+    const scoreClass=report.score>=90?'good':report.score>=70?'warn':'bad';
+    const summary=`<div class="integrity-summary"><div class="integrity-card integrity-score ${scoreClass}"><b>Điểm toàn vẹn</b><strong>${report.score}/100</strong></div><div class="integrity-card"><b>Lớp · Học sinh</b><strong>${report.stats.classes} · ${report.stats.students}</strong></div><div class="integrity-card"><b>Cần xử lý · Cảnh báo</b><strong>${report.counts.critical} · ${report.counts.warning}</strong></div><div class="integrity-card"><b>Có thể sửa an toàn</b><strong>${report.repairableCount}</strong></div></div>`;
+    const list=report.issues.length?`<div class="integrity-list">${report.issues.slice(0,240).map(integrityIssueHtml).join('')}</div>${report.issues.length>240?`<p class="integrity-quarantine">Báo cáo đang hiển thị 240/${report.issues.length} mục. Hãy tải JSON để xem đầy đủ.</p>`:''}`:'<div class="integrity-safe"><b>✓ Dữ liệu hiện tại không phát hiện lỗi toàn vẹn.</b><br>Có thể tiếp tục vận hành và theo dõi định kỳ.</div>';
+    body.innerHTML=summary+list+(report.quarantineCount?`<div class="integrity-quarantine">${report.quarantineCount} mục không chắc chắn đã được đưa vào danh sách chờ; hệ thống không tự xóa hoặc gộp.</div>`:'')+(report.blockingCount?`<div class="integrity-quarantine"><b>Đang khóa sửa tự động:</b> cần xử lý ${report.blockingCount} lỗi nền tảng trước để tránh gán nhầm quyền hoặc ghi lên tài liệu cũ chưa có phiên bản.</div>`:'');
+    if(repairBtn){repairBtn.disabled=integrityRepairInFlight||report.mode!=='partitioned'||report.repairableCount===0||report.blockingCount>0;repairBtn.textContent=integrityRepairInFlight?'⏳ Đang sao lưu và sửa...':'🛠️ Sao lưu và sửa lỗi an toàn'}
+}
+function runDataIntegrityScan(notify=false){
+    if(!isSuperAdmin())return showToast('Chỉ Super Admin được kiểm tra toàn vẹn dữ liệu','warn');
+    const report=integrityScanCurrentData();renderDataIntegrityReport(report);
+    if(notify)showToast(report.issues.length?`Đã quét: ${report.counts.critical} mục cần xử lý · ${report.counts.warning} cảnh báo`:'Dữ liệu không phát hiện lỗi toàn vẹn',report.counts.critical?'warn':'success');
+    return report;
+}
+function openDataIntegrityModal(){
+    if(!isSuperAdmin())return showToast('Chỉ Super Admin được kiểm tra toàn vẹn dữ liệu','warn');
+    openModal('dataIntegrityModal');document.getElementById('integrityReportBody').innerHTML='<div class="empty-state"><div class="icon">⏳</div><p>Đang quét dữ liệu...</p></div>';setTimeout(()=>runDataIntegrityScan(false),30);
+}
+function integritySetValue(target,key,value){
+    if(syncSame(target?.[key],value))return 0;target[key]=value;return 1;
+}
+function integrityApplySafeRepairs(){
+    const centerId=getFirestoreCenterId();let changes=0;
+    integrityClassRows().forEach(({classKey,cls,classId})=>{
+        const teacherId=String(cls.teacherId||cls.ownerId||cls.createdByUid||'').trim();let classChanges=0;
+        classChanges+=integritySetValue(cls,'centerId',centerId);
+        (cls.students||[]).forEach(st=>{
+            const email=syncCleanEmail(st.email||st.studentEmail),uid=String(st.userId||st.uid||st.authUid||'').trim();
+            classChanges+=integritySetValue(st,'classId',classId);classChanges+=integritySetValue(st,'classKey',classKey);classChanges+=integritySetValue(st,'classCode',String(cls.code||''));classChanges+=integritySetValue(st,'centerId',centerId);
+            if(teacherId)classChanges+=integritySetValue(st,'teacherId',teacherId);
+            if(email){classChanges+=integritySetValue(st,'email',email);classChanges+=integritySetValue(st,'studentEmail',email)}
+            if(uid)classChanges+=integritySetValue(st,'userId',uid);
+            if(st.transferredTo){classChanges+=integritySetValue(st,'status','transferred');classChanges+=integritySetValue(st,'transferStatus','moved');classChanges+=integritySetValue(st,'accountingArchived',true)}
+        });
+        (cls.calendarEvents||[]).forEach(event=>{
+            classChanges+=integritySetValue(event,'classId',classId);classChanges+=integritySetValue(event,'classKey',classKey);classChanges+=integritySetValue(event,'classCode',String(cls.code||''));classChanges+=integritySetValue(event,'className',String(cls.name||classKey));classChanges+=integritySetValue(event,'centerId',centerId);if(teacherId)classChanges+=integritySetValue(event,'teacherId',teacherId);
+        });
+        if(classChanges){cls.updatedAt=new Date().toISOString();changes+=classChanges}
+    });
+    return changes;
+}
+function integrityQuarantineFromReport(report){
+    return report.issues.filter(issue=>!issue.repairable&&issue.severity!=='info').slice(0,300).map(issue=>({code:issue.code,entityType:issue.entityType,entityId:issue.entityId,classId:issue.classId}));
+}
+async function repairDataIntegritySafeIssues(){
+    if(!isSuperAdmin())return showToast('Chỉ Super Admin được sửa dữ liệu toàn trung tâm','warn');
+    if(integrityRepairInFlight)return;
+    const before=integrityScanCurrentData();renderDataIntegrityReport(before);
+    if(before.mode!=='partitioned')return showToast('Chưa thể sửa: website vẫn đang dùng appState. Hãy Publish Rules bước 2 rồi tải lại trang.','error');
+    if(before.blockingCount)return showToast('Chưa thể sửa tự động: còn '+before.blockingCount+' lỗi nền tảng cần kiểm tra thủ công','error');
+    if(!before.repairableCount)return showToast('Không có lỗi an toàn nào cần tự động sửa','warn');
+    if(!confirm(`Hệ thống sẽ tạo một bản sao lưu rồi sửa ${before.repairableCount} mục an toàn. Hồ sơ trùng hoặc mồ côi sẽ không bị xóa. Tiếp tục?`))return;
+    integrityRepairInFlight=true;renderDataIntegrityReport(before);
+    try{
+        const stamp=new Date().toISOString(),backupId='integrity_'+stamp.replace(/[:.]/g,'-');
+        const backup=await writeBackupDoc(backupId,'integrity-before-repair','integrity',stamp.slice(0,10));if(!backup)throw new Error('Không tạo được bản sao lưu trước khi sửa');
+        const linked=await syncHydrateStudentUidsFromProfiles();let changes=integrityApplySafeRepairs()+linked;
+        normalize();const preview=integrityScanCurrentData(),quarantine=integrityQuarantineFromReport(preview);
+        data.meta={...(data.meta||{}),integrity:{version:STEP4_INTEGRITY_VERSION,lastCheckedAt:stamp,lastBackupId:backupId,lastFingerprint:preview.fingerprint,score:preview.score,critical:preview.counts.critical,warning:preview.counts.warning,quarantine},integrityVersion:STEP4_INTEGRITY_VERSION};
+        logActivity('Kiểm tra toàn vẹn dữ liệu',`Đã sao lưu và chuẩn hóa ${changes} trường · liên kết ${linked} UID · cách ly ${quarantine.length} mục`);
+        syncLastSaveError='';saveData();clearTimeout(firestoreSaveTimer);await pushOnlineToFirestore();if(syncLastSaveError)throw new Error(syncLastSaveError);
+        const after=integrityScanCurrentData();renderDataIntegrityReport(after);showToast(`Đã sao lưu và sửa ${changes} trường an toàn · còn ${after.quarantineCount} mục chờ kiểm tra`);
+    }catch(error){showToast('Không hoàn tất sửa dữ liệu: '+error.message,'error')}
+    finally{integrityRepairInFlight=false;if(integrityLastReport)renderDataIntegrityReport(integrityLastReport)}
+}
+function downloadDataIntegrityReport(){
+    if(!isSuperAdmin())return showToast('Chỉ Super Admin được tải báo cáo dữ liệu','warn');
+    const report=integrityLastReport||integrityScanCurrentData();download(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),'kien-nang-integrity-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json');showToast('Đã tải báo cáo toàn vẹn dữ liệu');
+}
+window.KienNangDataIntegrity=Object.freeze({version:STEP4_INTEGRITY_VERSION,scan:integrityScanCurrentData});
 
 const __partitionOldNormalize=normalizeImplementation;
 normalizeImplementation=function(){
     __partitionOldNormalize();
-    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION,maintenanceVersion:STEP3_RUNTIME_VERSION,serializedSaveQueue:true};
-    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP3_RUNTIME_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,serializedSaveQueue:true};
+    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION,maintenanceVersion:STEP4_INTEGRITY_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,integrityVersion:STEP4_INTEGRITY_VERSION,serializedSaveQueue:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP4_INTEGRITY_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,serializedSaveQueue:true,dataIntegrityCenter:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
