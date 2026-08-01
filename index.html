@@ -732,6 +732,7 @@
         body.dark-mode .batch-payment-toolbar,body.dark-mode .batch-payment-kpi{background:#0b1220;border-color:#253044}
         @media(max-width:760px){.batch-payment-toolbar{grid-template-columns:1fr 1fr}.batch-payment-toolbar .btn{width:100%}.batch-payment-summary{grid-template-columns:1fr}.batch-payment-modal{padding:20px 14px!important}}
         .integrity-modal{max-width:980px!important}.integrity-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.integrity-card{padding:14px;border:1px solid #dbe5ef;border-radius:14px;background:#f8fafc}.integrity-card b{display:block;font-size:12px;color:#64748b}.integrity-card strong{display:block;font-size:24px;margin-top:5px;color:#0f2942}.integrity-score.good strong{color:#15803d}.integrity-score.warn strong{color:#b45309}.integrity-score.bad strong{color:#b91c1c}.integrity-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.integrity-list{max-height:430px;overflow:auto;border:1px solid #e2e8f0;border-radius:14px}.integrity-row{display:grid;grid-template-columns:105px 1fr auto;gap:12px;align-items:start;padding:12px 14px;border-bottom:1px solid #edf2f7}.integrity-row:last-child{border-bottom:none}.integrity-row h4{margin:0 0 4px;font-size:14px}.integrity-row p{margin:0;color:#64748b;font-size:12px;line-height:1.45}.integrity-tag{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:850}.integrity-tag.critical{background:#fee2e2;color:#b91c1c}.integrity-tag.warning{background:#fef3c7;color:#92400e}.integrity-tag.info{background:#dbeafe;color:#1d4ed8}.integrity-fix{font-size:10px;color:#15803d;font-weight:800;white-space:nowrap}.integrity-safe{padding:14px;border-radius:14px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}.integrity-mode-note{padding:11px 13px;border-radius:12px;background:#eff6ff;color:#1e40af;font-size:12px;font-weight:700}.integrity-quarantine{color:#9a3412;font-size:11px;margin-top:8px}.dark-mode .integrity-card,.dark-mode .integrity-list{background:#0f172a;border-color:#334155}.dark-mode .integrity-row{border-color:#253044}.dark-mode .integrity-card strong,.dark-mode .integrity-row h4{color:#f8fafc}.dark-mode .integrity-row p{color:#94a3b8}@media(max-width:760px){.integrity-summary{grid-template-columns:1fr 1fr}.integrity-row{grid-template-columns:90px 1fr}.integrity-fix{grid-column:2}}
+        .payment-ledger-preview{margin:12px 0;padding:12px;border:1px solid #dbe5ef;border-radius:14px;background:#f8fafc}.payment-ledger-preview h4{margin:0 0 8px;color:#0f2942}.payment-ledger-line{display:grid;grid-template-columns:105px 1fr auto;gap:10px;padding:8px 0;border-bottom:1px dashed #dbe5ef;font-size:12px}.payment-ledger-line:last-child{border-bottom:none}.payment-ledger-line .amount{font-weight:900}.payment-ledger-line .amount.in{color:#15803d}.payment-ledger-line .amount.out{color:#b91c1c}.ledger-modal{max-width:1050px!important}.ledger-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}.ledger-kpi{padding:13px;border-radius:14px;background:#f8fafc;border:1px solid #dbe5ef}.ledger-kpi b{display:block;font-size:20px}.ledger-kpi span{font-size:11px;color:#64748b}.ledger-table-wrap{max-height:480px;overflow:auto;border:1px solid #e2e8f0;border-radius:14px}.ledger-source-chip{display:inline-flex;padding:3px 7px;border-radius:999px;background:#e0f2fe;color:#075985;font-size:10px;font-weight:800}.ledger-adjustment{color:#b91c1c}.ledger-receipt{color:#15803d}.dark-mode .payment-ledger-preview,.dark-mode .ledger-kpi{background:#0f172a;border-color:#334155}.dark-mode .payment-ledger-preview h4{color:#f8fafc}@media(max-width:760px){.ledger-kpis{grid-template-columns:1fr 1fr}.payment-ledger-line{grid-template-columns:85px 1fr}.payment-ledger-line .amount{grid-column:2}}
 </style>
 </head>
 <body>
@@ -877,10 +878,19 @@
     </div></div>
 
     <div class="modal-overlay" id="paymentModal"><div class="modal">
-        <h2>Cập nhật học phí</h2><p class="sub" id="paymentSub"></p>
-        <div class="row"><div><label>Học phí / đợt</label><input type="number" id="payTuitionInput" min="0" step="10000" /></div><div><label>Đã đóng</label><input type="number" id="payPaidInput" min="0" step="10000" /></div></div>
+        <h2>Ghi nhận học phí</h2><p class="sub" id="paymentSub"></p>
+        <div class="row"><div><label>Học phí / đợt</label><input type="number" id="payTuitionInput" min="0" step="10000" /></div><div><label>Tổng đã đóng sau cập nhật</label><input type="number" id="payPaidInput" min="0" step="10000" oninput="step5UpdatePaymentPreview()" /></div></div>
+        <div class="row"><div><label>Cách ghi sổ</label><select id="paymentEntryMode" onchange="step5UpdatePaymentPreview()"><option value="add">Thu thêm khoản mới</option><option value="set">Điều chỉnh tổng đã đóng</option></select></div><div><label>Số tiền thu thêm</label><input type="number" id="paymentAmountInput" min="0" step="10000" inputmode="numeric" oninput="step5UpdatePaymentPreview()" placeholder="Ví dụ: 500000" /></div></div>
+        <div class="row"><div><label>Hình thức</label><select id="paymentMethodInput"><option value="cash">Tiền mặt</option><option value="bank">Chuyển khoản</option><option value="other">Khác</option></select></div><div><label>Ngày thu/điều chỉnh</label><input type="date" id="paymentDateInput" /></div></div>
         <label>Ghi chú học phí</label><textarea id="payNoteInput"></textarea>
-        <div class="modal-actions"><button class="btn btn-gray" onclick="closeModal('paymentModal')">Huỷ</button><button class="btn btn-blue" id="paymentConfirm">Lưu học phí</button></div>
+        <div id="paymentLedgerPreview" class="payment-ledger-preview"></div>
+        <div class="modal-actions"><button class="btn btn-gray" onclick="closeModal('paymentModal')">Huỷ</button><button class="btn btn-blue" id="paymentConfirm">Ghi vào sổ</button></div>
+    </div></div>
+
+    <div class="modal-overlay" id="paymentLedgerModal"><div class="modal ledger-modal">
+        <h2>📒 Sổ giao dịch học phí</h2><p class="sub">Mỗi khoản thu hoặc điều chỉnh là một bút toán riêng; lịch sử cũ không bị sửa hoặc xóa.</p>
+        <div id="paymentLedgerBody"><div class="empty-state"><div class="icon">⏳</div><p>Đang tổng hợp giao dịch...</p></div></div>
+        <div class="modal-actions"><button class="btn btn-soft" onclick="exportPaymentLedgerCSV()">⬇️ Xuất CSV</button><button class="btn btn-gray" onclick="closeModal('paymentLedgerModal')">Đóng</button></div>
     </div></div>
 
 
@@ -5476,6 +5486,7 @@ const PARTITION_SCHEMA_VERSION=12;
 const ACCESS_SCHEMA_VERSION=2;
 const STEP3_RUNTIME_VERSION='13.0';
 const STEP4_INTEGRITY_VERSION='14.0';
+const STEP5_ACCOUNTING_VERSION='15.0';
 const PARTITION_MAX_TRANSACTION_OPS=360;
 const PARTITION_COLLECTIONS={
     meta:'appMeta',classes:'classes',students:'students',attendance:'attendance',payments:'payments',events:'calendarEvents'
@@ -5484,7 +5495,8 @@ const PARTITION_KINDS=Object.keys(PARTITION_COLLECTIONS);
 const PARTITION_PAYMENT_FIELDS=[
     'tuition','paid','paymentNote','tuitionCalculation','transferCarryDue','courseDebtCarryDue',
     'transferTuitionHistory','courseDebtCarryHistory','courseDebtForwarded','courseDebtForwardedTo',
-    'accountingArchived','transferTuitionSnapshot','transferStatus','transferredTo'
+    'accountingArchived','transferTuitionSnapshot','transferStatus','transferredTo',
+    'paymentLedger','paymentLedgerVersion','paymentLedgerTotal','paymentLedgerUpdatedAt'
 ];
 let syncStorageMode='partitioned';
 let syncCenterRef=null;
@@ -5975,7 +5987,9 @@ const STEP3_SYNC_CONTROLLER=Object.freeze({
         try{
             const result=await syncLoadOrMigratePartitioned();syncStorageMode='partitioned';firestoreDocRef=syncDocumentRef('meta','main');
             const secured=await syncUpgradeSecurityMetadataIfNeeded();
+            const ledgered=await accountingUpgradeLedgersIfNeeded();
             if(result.migrated)showToast('Đã chuyển dữ liệu cũ sang cấu trúc tách lớp an toàn; bản cũ vẫn được giữ');
+            else if(ledgered)showToast(`Đã tạo sổ giao dịch cho ${ledgered} hồ sơ học phí cũ`);
             else if(!secured)showToast('Đã tải dữ liệu đúng phạm vi phân quyền');
         }finally{firestoreLoading=false}
     },
@@ -6049,16 +6063,17 @@ function step3DuplicateDomIds(){
 function step3RunDiagnostics(){
     const duplicateDomIds=step3DuplicateDomIds();
     const checks={
-        runtimeVersion:STEP3_RUNTIME_VERSION==='13.0'&&STEP4_INTEGRITY_VERSION==='14.0',
+        runtimeVersion:STEP3_RUNTIME_VERSION==='13.0'&&STEP4_INTEGRITY_VERSION==='14.0'&&STEP5_ACCOUNTING_VERSION==='15.0',
         syncController:saveData===STEP3_SYNC_CONTROLLER.requestSave&&scheduleFirestoreSave===STEP3_SYNC_CONTROLLER.scheduleSave&&pushOnlineToFirestore===STEP3_SYNC_CONTROLLER.flushSave&&loadFromFirestoreOnce===STEP3_SYNC_CONTROLLER.load&&listenFirestoreRealtime===STEP3_SYNC_CONTROLLER.listen&&initFirestoreIfEnabled===STEP3_SYNC_CONTROLLER.init,
         firestoreSanitizer:typeof syncFirestoreSafe==='function',
         partitionSchema:PARTITION_SCHEMA_VERSION===12&&ACCESS_SCHEMA_VERSION===2,
         storageMode:['partitioned','legacy-guarded'].includes(syncStorageMode),
         uniqueDomIds:duplicateDomIds.length===0,
-        dataIntegrityCenter:typeof integrityScanCurrentData==='function'&&typeof repairDataIntegritySafeIssues==='function'
+        dataIntegrityCenter:typeof integrityScanCurrentData==='function'&&typeof repairDataIntegritySafeIssues==='function',
+        unifiedPaymentLedger:typeof accountingEnsureLedger==='function'&&typeof accountingSetPaid==='function'&&typeof accountingLedgerEntries==='function'
     };
     return {
-        ok:Object.values(checks).every(Boolean),version:STEP4_INTEGRITY_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,checkedAt:new Date().toISOString(),checks,duplicateDomIds,
+        ok:Object.values(checks).every(Boolean),version:STEP5_ACCOUNTING_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,checkedAt:new Date().toISOString(),checks,duplicateDomIds,
         sync:{inFlight:syncSaveInFlight,queued:syncSaveQueued,dirty:syncDirty,changeRevision:syncChangeRevision,lastSavedRevision:syncLastSavedRevision,lastError:syncLastSaveError||''}
     };
 }
@@ -6070,7 +6085,7 @@ function step3ShowDiagnostics(){
     else showToast('Phát hiện '+Object.values(report.checks).filter(value=>!value).length+' mục cần kiểm tra; xem Console','warn');
     return report;
 }
-window.KienNangDiagnostics=Object.freeze({version:STEP4_INTEGRITY_VERSION,run:step3RunDiagnostics});
+window.KienNangDiagnostics=Object.freeze({version:STEP5_ACCOUNTING_VERSION,run:step3RunDiagnostics});
 
 /* ---------- DATA INTEGRITY CENTER v14.0 ----------
    Quét chỉ đọc; sửa luôn tạo backup trước và không tự xóa tài liệu. */
@@ -6241,11 +6256,120 @@ function downloadDataIntegrityReport(){
 }
 window.KienNangDataIntegrity=Object.freeze({version:STEP4_INTEGRITY_VERSION,scan:integrityScanCurrentData});
 
+/* ---------- UNIFIED PAYMENT LEDGER v15.0 ----------
+   paid vẫn được giữ để tương thích; paymentLedger là lịch sử bút toán bất biến. */
+function accountingChainId(st){return String(st?.accountingStudentId||st?.studentChainId||st?.firestoreId||st?.id||'student')}
+function accountingLedgerOrigin(st,cls){
+    const moved=st?.transferredFrom||{};
+    return {classId:String(moved.classKey||moved.classId||cls?.id||''),className:String(moved.className||cls?.name||''),classCode:String(moved.classCode||cls?.code||'')};
+}
+function accountingEntryDelta(entry){
+    if(Number.isFinite(Number(entry?.delta)))return Number(entry.delta);
+    if(Number.isFinite(Number(entry?.nextPaid))&&Number.isFinite(Number(entry?.previousPaid)))return Number(entry.nextPaid)-Number(entry.previousPaid);
+    const amount=Math.max(0,Number(entry?.amount)||0);return entry?.direction==='out'?-amount:amount;
+}
+function accountingLedgerSum(st){return (Array.isArray(st?.paymentLedger)?st.paymentLedger:[]).reduce((sum,entry)=>sum+accountingEntryDelta(entry),0)}
+function accountingEnsureLedger(st,cls){
+    if(!st)return 0;let created=0;const paid=Math.max(0,Math.round(Number(st.paid)||0)),origin=accountingLedgerOrigin(st,cls),seen=new Set(),ledger=[];
+    (Array.isArray(st.paymentLedger)?st.paymentLedger:[]).forEach((entry,index)=>{
+        if(!entry||typeof entry!=='object')return;
+        const id=String(entry.id||syncDocId('txn',accountingChainId(st)+'|'+origin.classId+'|legacy-'+index));if(seen.has(id))return;seen.add(id);
+        const delta=Math.round(accountingEntryDelta(entry));ledger.push({...syncClone(entry),id,delta,amount:Math.abs(delta),direction:delta<0?'out':'in',version:STEP5_ACCOUNTING_VERSION});
+    });
+    if(!ledger.length&&paid>0){
+        const id=syncDocId('opening',accountingChainId(st)+'|'+origin.classId);ledger.push({id,version:STEP5_ACCOUNTING_VERSION,type:'opening-balance',source:'legacy-migration',direction:'in',amount:paid,delta:paid,previousPaid:0,nextPaid:paid,at:String(st.createdAt||st.updatedAt||new Date().toISOString()),classId:origin.classId,className:origin.className,classCode:origin.classCode,studentId:String(st.firestoreId||st.id||''),studentName:String(st.name||''),actorUid:'migration',actorName:'Chuyển đổi dữ liệu cũ',method:'legacy',note:'Số đã đóng trước khi bật sổ giao dịch'});created++;
+    }
+    let total=ledger.reduce((sum,entry)=>sum+Number(entry.delta||0),0);
+    if(total!==paid){
+        const delta=paid-total,id=syncDocId('reconcile',accountingChainId(st)+'|'+origin.classId+'|'+total+'|'+paid);
+        if(!seen.has(id)){ledger.push({id,version:STEP5_ACCOUNTING_VERSION,type:'reconciliation',source:'automatic-reconciliation',direction:delta<0?'out':'in',amount:Math.abs(delta),delta,previousPaid:total,nextPaid:paid,at:new Date().toISOString(),classId:origin.classId,className:origin.className,classCode:origin.classCode,studentId:String(st.firestoreId||st.id||''),studentName:String(st.name||''),actorUid:getActiveUserId()||'system',actorName:getActiveUserName()||'Hệ thống',method:'adjustment',note:'Đối chiếu tổng đã đóng với dữ liệu hiện có'});created++;total=paid}
+    }
+    st.paymentLedger=ledger;st.paymentLedgerVersion=STEP5_ACCOUNTING_VERSION;st.paymentLedgerTotal=paid;if(created)st.paymentLedgerUpdatedAt=new Date().toISOString();return created;
+}
+function accountingHydrateAllLedgers(){
+    let created=0;for(const cls of Object.values(data.classes||{}))for(const st of (cls.students||[]))created+=accountingEnsureLedger(st,cls);return created;
+}
+function accountingTransactionAt(dateValue){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(String(dateValue||''))){const parsed=new Date(String(dateValue)+'T12:00:00+07:00');if(!Number.isNaN(parsed.getTime()))return parsed.toISOString()}
+    return new Date().toISOString();
+}
+function accountingSetPaid(st,cls,nextPaid,meta={}){
+    accountingEnsureLedger(st,cls);const previousPaid=Math.max(0,Math.round(Number(st.paid)||0));nextPaid=Math.max(0,Math.round(Number(nextPaid)||0));const delta=nextPaid-previousPaid;if(!delta)return null;
+    const origin={classId:String(cls?.id||''),className:String(cls?.name||''),classCode:String(cls?.code||'')},at=accountingTransactionAt(meta.date),id=syncDocId('txn',accountingChainId(st)+'|'+origin.classId+'|'+at+'|'+delta+'|'+Math.random());
+    const entry={id,version:STEP5_ACCOUNTING_VERSION,type:delta>0?'receipt':'adjustment',source:String(meta.source||'single-entry'),direction:delta<0?'out':'in',amount:Math.abs(delta),delta,previousPaid,nextPaid,at,classId:origin.classId,className:origin.className,classCode:origin.classCode,studentId:String(st.firestoreId||st.id||''),studentName:String(st.name||''),actorUid:getActiveUserId(),actorName:getActiveUserName(),method:String(meta.method||'other'),note:String(meta.note||'').trim()};
+    st.paymentLedger=[...(st.paymentLedger||[]),entry];st.paid=nextPaid;st.paymentLedgerTotal=nextPaid;st.paymentLedgerVersion=STEP5_ACCOUNTING_VERSION;st.paymentLedgerUpdatedAt=new Date().toISOString();st.updatedAt=st.paymentLedgerUpdatedAt;return entry;
+}
+function accountingRows(entries=getAllStudents()){
+    return (entries||[]).filter(row=>row?.s&&!tuitionIsArchivedTransferSource(row.s)).map(row=>{
+        accountingEnsureLedger(row.s,row.cls);const forwarded=tuitionIsCourseDebtForwarded(row.s),info=tuitionInfo(row.s,row.cls),due=forwarded?0:Math.max(0,Number(info.due)||0),paid=Math.max(0,Number(row.s.paid)||0),debt=forwarded?0:Math.max(0,due-paid),overpaid=Math.max(0,paid-due);
+        return {...row,info,due,paid,debt,overpaid,forwarded,transactions:[...(row.s.paymentLedger||[])]};
+    });
+}
+function accountingLedgerEntries(entries=getAllStudents()){
+    const byId=new Map();(entries||[]).forEach(row=>{if(!row?.s)return;accountingEnsureLedger(row.s,row.cls);(row.s.paymentLedger||[]).forEach(entry=>{const id=String(entry.id||'');if(id&&!byId.has(id))byId.set(id,{...entry,studentName:entry.studentName||row.s.name||'',className:entry.className||row.cls?.name||'',classId:entry.classId||row.cls?.id||''})})});
+    return [...byId.values()].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')));
+}
+accountingRevenueRows=function(entries=getAllStudents()){return accountingRows(entries)};
+accountingDebtRows=function(entries=getAllStudents()){return accountingRows(entries).filter(row=>!row.forwarded)};
+accountingPaidTotal=function(entries=getAllStudents()){return Math.max(0,accountingLedgerEntries(entries).reduce((sum,entry)=>sum+accountingEntryDelta(entry),0))};
+accountingPaidForClass=function(cls){const classId=String(cls?.id||'');return Math.max(0,accountingLedgerEntries(getAllStudents()).filter(entry=>String(entry.classId||'')===classId).reduce((sum,entry)=>sum+accountingEntryDelta(entry),0))};
+accountingDebtForClass=function(cls){return accountingRows((cls?.students||[]).map(st=>({s:st,cls}))).reduce((sum,row)=>sum+row.debt,0)};
+debtOf=function(st,cls=null){if(tuitionIsArchivedTransferSource(st)||tuitionIsCourseDebtForwarded(st))return 0;const owner=cls||tuitionFindClassForStudent(st);if(!owner)return Math.max(0,(Number(st?.tuition)||0)-(Number(st?.paid)||0));return accountingRows([{s:st,cls:owner}])[0]?.debt||0};
+function accountingLedgerShape(payload){return {version:String(payload?.paymentLedgerVersion||''),total:Number(payload?.paymentLedgerTotal)||0,ledger:payload?.paymentLedger||[]}}
+async function accountingUpgradeLedgersIfNeeded(){
+    if(isStudent()||!['superadmin','admin','teacher'].includes(getActiveUserRole()))return 0;accountingHydrateAllLedgers();const current=syncBuildPartitionSnapshot();let operations=[];
+    current.payments.forEach((payload,id)=>{const remote=syncRemoteSnapshot.payments.get(id);if(!remote||!syncSame(accountingLedgerShape(remote),accountingLedgerShape(payload)))operations.push({kind:'payments',id,type:'set',payload})});
+    operations=syncOperationsForActiveRole(operations);if(!operations.length)return 0;const commitId='ledger_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    for(let i=0;i<operations.length;i+=PARTITION_MAX_TRANSACTION_OPS)await syncCommitPartitionChunk(operations.slice(i,i+PARTITION_MAX_TRANSACTION_OPS),commitId);return operations.length;
+}
+function paymentMethodLabel(method){return ({cash:'Tiền mặt',bank:'Chuyển khoản',other:'Khác',legacy:'Dữ liệu cũ',adjustment:'Điều chỉnh',batch:'Nhập cả lớp'})[method]||String(method||'Khác')}
+function paymentLedgerPreviewHtml(st,cls){
+    accountingEnsureLedger(st,cls);const list=[...(st.paymentLedger||[])].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||''))).slice(0,6);
+    return `<h4>📒 Giao dịch gần đây</h4>${list.length?list.map(entry=>{const delta=accountingEntryDelta(entry);return `<div class="payment-ledger-line"><span>${esc(entry.at?new Date(entry.at).toLocaleDateString('vi-VN'):'—')}</span><span>${esc(paymentMethodLabel(entry.method))}${entry.note?' · '+esc(entry.note):''}<br><span class="subtext">${esc(entry.actorName||entry.actorUid||'Hệ thống')}</span></span><span class="amount ${delta<0?'out':'in'}">${delta<0?'−':'+'}${money(Math.abs(delta))}</span></div>`}).join(''):'<div class="subtext">Chưa có giao dịch.</div>'}`;
+}
+function step5UpdatePaymentPreview(){
+    const cls=data.classes?.[paymentClass],st=(cls?.students||[]).find(x=>String(x.id)===String(paymentStudentId));if(!st)return;const mode=document.getElementById('paymentEntryMode')?.value||'add',amountInput=document.getElementById('paymentAmountInput'),paidInput=document.getElementById('payPaidInput'),current=Math.max(0,Number(st.paid)||0);
+    if(mode==='add'){amountInput.disabled=false;paidInput.readOnly=true;paidInput.value=current+Math.max(0,Number(amountInput.value)||0)}else{amountInput.disabled=true;amountInput.value='';paidInput.readOnly=false}
+    const info=tuitionInfo(st,cls),next=Math.max(0,Number(paidInput.value)||0),note=document.getElementById('paymentAutoTuitionNote');
+    if(note)note.innerHTML=`${esc(tuitionFormulaText(info))}<br>Hiện đã đóng: <b>${money(current)}</b> · Sau cập nhật: <b>${money(next)}</b> · Còn nợ: <b>${money(Math.max(0,info.due-next))}</b>${next>info.due?` · Đóng dư: <b>${money(next-info.due)}</b>`:''}`;
+}
+openPaymentModal=function(className,id){
+    const cls=data.classes?.[className];if(!canEditClass(cls))return showToast('Vai trò hiện tại không được sửa học phí lớp này','error');paymentClass=className;paymentStudentId=id;const st=(cls.students||[]).find(x=>String(x.id)===String(id));if(!st)return showToast('Không tìm thấy học sinh','error');if(tuitionIsArchivedTransferSource(st))return showToast('Công nợ của học sinh chuyển lớp được cập nhật tại lớp mới','warn');if(tuitionIsCourseDebtForwarded(st))return showToast('Công nợ đợt này đã được chuyển sang đợt học sau','warn');
+    tuitionApplyClass(cls);accountingEnsureLedger(st,cls);const info=tuitionInfo(st,cls);paymentSub.textContent=st.name+' · '+classTitle(className)+' · '+classCode(className);payTuitionInput.value=info.due;payTuitionInput.readOnly=true;payPaidInput.value=Number(st.paid)||0;payPaidInput.readOnly=true;payNoteInput.value=st.paymentNote||'';paymentEntryMode.value='add';paymentAmountInput.value='';paymentMethodInput.value='cash';paymentDateInput.value=new Date().toISOString().slice(0,10);paymentLedgerPreview.innerHTML=paymentLedgerPreviewHtml(st,cls);
+    let note=document.getElementById('paymentAutoTuitionNote');if(!note){note=document.createElement('div');note.id='paymentAutoTuitionNote';note.className='payment-auto-note';payTuitionInput.closest('.row')?.insertAdjacentElement('afterend',note)}step5UpdatePaymentPreview();
+    paymentConfirm.onclick=()=>{const mode=paymentEntryMode.value,current=Math.max(0,Number(st.paid)||0),next=mode==='add'?current+Math.max(0,Number(paymentAmountInput.value)||0):Math.max(0,Number(payPaidInput.value)||0);if(mode==='add'&&next===current)return showToast('Vui lòng nhập số tiền vừa thu','warn');const entry=accountingSetPaid(st,cls,next,{source:mode==='add'?'single-receipt':'manual-total-adjustment',method:paymentMethodInput.value,date:paymentDateInput.value,note:payNoteInput.value});st.paymentNote=payNoteInput.value.trim();tuitionApplyClass(cls);saveData();closeModal('paymentModal');logActivity(entry?(entry.delta<0?'Điều chỉnh giảm thanh toán':'Ghi nhận khoản thu'):'Cập nhật ghi chú học phí',`${st.name} · ${entry?money(Math.abs(entry.delta)):'không đổi'}`,paymentClass,st.id);showToast(entry?`Đã ghi sổ ${entry.delta<0?'điều chỉnh giảm ':'khoản thu '}${money(Math.abs(entry.delta))}`:'Tổng đã đóng không thay đổi');render()};openModal('paymentModal');
+};
+const __step5OldOpenBatchPaymentModal=openBatchPaymentModal;
+openBatchPaymentModal=function(className){__step5OldOpenBatchPaymentModal(className);const cls=data.classes?.[className];if(!cls)return;batchPaymentStudents(cls).forEach(st=>accountingEnsureLedger(st,cls));const mode=document.getElementById('batchPaymentMode');if(mode)mode.value='add';const note=document.querySelector('#batchPaymentModal .batch-payment-note');if(note)note.textContent='Mỗi thay đổi sẽ tạo một bút toán riêng trong sổ giao dịch. “Cộng thêm khoản thu” là chế độ khuyến nghị; điều chỉnh tổng chỉ dùng khi cần sửa số liệu.'};
+saveBatchPayments=function(){
+    const cls=data.classes?.[batchPaymentClassKey];if(!cls||!canEditClass(cls))return showToast('Không thể cập nhật học phí lớp này','error');const mode=document.getElementById('batchPaymentMode')?.value||'set';let changed=0,totalDelta=0;
+    batchPaymentInputs().forEach(input=>{const st=(cls.students||[]).find(x=>String(x.id)===String(input.dataset.studentId));if(!st||tuitionIsArchivedTransferSource(st)||tuitionIsCourseDebtForwarded(st))return;const entry=accountingSetPaid(st,cls,Math.max(0,Number(input.value)||0),{source:mode==='add'?'batch-receipt':'batch-total-adjustment',method:'batch',note:'Nhập tiền cả lớp'});if(entry){changed++;totalDelta+=entry.delta}});
+    tuitionApplyClass(cls);cls.updatedAt=new Date().toISOString();saveData();closeModal('batchPaymentModal');logActivity('Ghi sổ tiền cả lớp',`${cls.name||batchPaymentClassKey} · ${changed} học sinh · ${money(Math.abs(totalDelta))}`,batchPaymentClassKey,'batch-payment');showToast(changed?`Đã ghi ${changed} giao dịch · biến động ${money(Math.abs(totalDelta))}`:'Không có số tiền nào thay đổi');render();
+};
+function openPaymentLedgerModal(){
+    if(isStudent())return showToast('Tài khoản học sinh không được xem sổ thu toàn trung tâm','warn');const entries=accountingLedgerEntries(),received=entries.filter(x=>accountingEntryDelta(x)>0).reduce((s,x)=>s+accountingEntryDelta(x),0),adjusted=entries.filter(x=>accountingEntryDelta(x)<0).reduce((s,x)=>s+Math.abs(accountingEntryDelta(x)),0),net=received-adjusted;
+    const rows=entries.slice(0,500).map(entry=>{const delta=accountingEntryDelta(entry);return `<tr><td>${esc(entry.at?new Date(entry.at).toLocaleString('vi-VN'):'—')}</td><td><b>${esc(entry.studentName||'Học sinh')}</b></td><td>${esc(entry.className||'—')}</td><td><span class="ledger-source-chip">${esc(paymentMethodLabel(entry.method))}</span></td><td class="${delta<0?'ledger-adjustment':'ledger-receipt'}"><b>${delta<0?'−':'+'}${money(Math.abs(delta))}</b></td><td>${esc(entry.note||'')}</td><td>${esc(entry.actorName||entry.actorUid||'Hệ thống')}</td></tr>`}).join('')||'<tr class="empty-row"><td colspan="7">Chưa có giao dịch.</td></tr>';
+    paymentLedgerBody.innerHTML=`<div class="ledger-kpis"><div class="ledger-kpi"><b>${entries.length}</b><span>Số bút toán</span></div><div class="ledger-kpi"><b class="money">${money(received)}</b><span>Tổng khoản thu</span></div><div class="ledger-kpi"><b class="debt">${money(adjusted)}</b><span>Tổng điều chỉnh giảm</span></div><div class="ledger-kpi"><b>${money(net)}</b><span>Thu ròng</span></div></div><div class="ledger-table-wrap"><table class="data-table"><thead><tr><th>Thời gian</th><th>Học sinh</th><th>Lớp ghi nhận</th><th>Hình thức</th><th>Biến động</th><th>Ghi chú</th><th>Người ghi</th></tr></thead><tbody>${rows}</tbody></table></div>${entries.length>500?`<div class="subtext" style="margin-top:8px">Đang hiển thị 500/${entries.length} bút toán mới nhất. File CSV chứa đầy đủ.</div>`:''}`;openModal('paymentLedgerModal');
+}
+function exportPaymentLedgerCSV(){
+    if(isStudent())return;const rows=[['Thoi gian','Hoc sinh','Lop','Hinh thuc','Loai','So tien bien dong','Tong truoc','Tong sau','Ghi chu','Nguoi ghi']];accountingLedgerEntries().forEach(entry=>rows.push([entry.at||'',entry.studentName||'',entry.className||'',paymentMethodLabel(entry.method),entry.type||'',accountingEntryDelta(entry),Number(entry.previousPaid)||0,Number(entry.nextPaid)||0,entry.note||'',entry.actorName||entry.actorUid||'']));const csv=rows.map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\n');download(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'so-giao-dich-hoc-phi-'+new Date().toISOString().slice(0,10)+'.csv');showToast('Đã xuất sổ giao dịch học phí');
+}
+renderDebtsImplementation=function(){
+    tuitionApplyAll();const query=q(),all=accountingRows();let items=all.filter(row=>row.debt>0||query);items=items.filter(row=>!query||[row.className,row.s.name,row.s.phone,row.s.parentPhone,row.s.school,row.s.note].join(' ').toLowerCase().includes(query));const totalDue=all.reduce((s,r)=>s+r.due,0),totalPaid=accountingPaidTotal(),totalDebt=all.reduce((s,r)=>s+r.debt,0),totalOverpaid=all.reduce((s,r)=>s+r.overpaid,0);
+    const rows=items.map(row=>{const last=[...row.transactions].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')))[0];return `<tr><td><b>${esc(row.s.name)}</b><div class="subtext">${esc(row.className)} · ${esc(row.s.school||'')}</div></td><td>${esc(row.s.phone||'—')}<div class="subtext">PH: ${esc(row.s.parentPhone||'—')}</div></td><td><b>${money(row.due)}</b><span class="tuition-formula">${esc(tuitionFormulaText(row.info))}</span></td><td class="money"><b>${money(row.paid)}</b><span class="tuition-formula">${row.transactions.length} bút toán${last?' · gần nhất '+new Date(last.at).toLocaleDateString('vi-VN'):''}</span></td><td class="debt"><b>${money(row.debt)}</b>${row.overpaid?`<span class="tuition-formula money">Dư ${money(row.overpaid)}</span>`:''}</td><td>${esc(row.s.paymentNote||row.s.note||'')}</td><td>${canEditClass(row.cls)?`<button class="btn btn-green" onclick="openPaymentModal('${esc(row.classKey)}',${row.s.id})">💰 Ghi khoản thu</button>`:'<span class="readonly-chip">Chỉ xem</span>'}</td></tr>`}).join('')||'<tr class="empty-row"><td colspan="7">Không có công nợ.</td></tr>';
+    mainContent.innerHTML=`<div class="panel"><div class="debt-pro-head"><div><h2>💰 Công nợ và sổ thu học phí</h2><p>Một nguồn kế toán duy nhất: học phí phải đóng, tổng đã thu, công nợ chuyển tiếp và từng bút toán thu/điều chỉnh.</p></div><button class="btn btn-blue" onclick="openPaymentLedgerModal()">📒 Mở sổ giao dịch</button></div><div class="debt-pro-kpis"><div class="debt-pro-kpi"><b>${money(totalDue)}</b><span>Tổng phải đóng</span></div><div class="debt-pro-kpi"><b>${money(totalPaid)}</b><span>Tổng thu ròng</span></div><div class="debt-pro-kpi"><b>${money(totalDebt)}</b><span>Tổng còn nợ</span></div><div class="debt-pro-kpi"><b>${money(totalOverpaid)}</b><span>Tổng đóng dư</span></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Học sinh</th><th>Liên hệ</th><th>Phải đóng</th><th>Đã đóng</th><th>Còn nợ</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+};
+updateStatsImplementation=function(){
+    const classes=getVisibleActiveClassEntries().map(([,cls])=>cls),rows=accountingRows().filter(row=>!isCompletedCourse(row.cls)),revenue=accountingPaidTotal(),debt=rows.reduce((sum,row)=>sum+row.debt,0),sessions=classes.reduce((sum,cls)=>sum+(Number(cls.sessions)||0),0);statsGrid.innerHTML=`<div class="stat-card"><div class="num">${classes.length}</div><div class="label">Tổng số lớp</div></div><div class="stat-card"><div class="num">${rows.length}</div><div class="label">Tổng học sinh</div></div><div class="stat-card"><div class="num">${sessions}</div><div class="label">Tổng buổi học</div></div><div class="stat-card"><div class="num money">${money(revenue)}</div><div class="label">Tổng thu ròng</div></div><div class="stat-card"><div class="num debt">${money(debt)}</div><div class="label">Còn nợ</div></div>`;
+};
+window.KienNangAccounting=Object.freeze({version:STEP5_ACCOUNTING_VERSION,rows:accountingRows,ledger:accountingLedgerEntries});
+
 const __partitionOldNormalize=normalizeImplementation;
 normalizeImplementation=function(){
     __partitionOldNormalize();
-    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION,maintenanceVersion:STEP4_INTEGRITY_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,integrityVersion:STEP4_INTEGRITY_VERSION,serializedSaveQueue:true};
-    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP4_INTEGRITY_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,serializedSaveQueue:true,dataIntegrityCenter:true};
+    accountingHydrateAllLedgers();
+    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION,maintenanceVersion:STEP5_ACCOUNTING_VERSION,syncRuntimeVersion:STEP3_RUNTIME_VERSION,integrityVersion:STEP4_INTEGRITY_VERSION,accountingVersion:STEP5_ACCOUNTING_VERSION,paymentLedger:true,serializedSaveQueue:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP5_ACCOUNTING_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,serializedSaveQueue:true,dataIntegrityCenter:true,unifiedPaymentLedger:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
