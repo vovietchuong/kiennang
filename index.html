@@ -747,6 +747,7 @@
             <button class="teacher-main" onclick="exportCSV()">📊 Xuất Excel/CSV</button>
             
             <button class="teacher-secondary" onclick="printCurrent()">🖨️ In báo cáo</button>
+            <button class="superadmin-only" onclick="step3ShowDiagnostics()">🩺 Kiểm tra hệ thống</button>
             <button class="superadmin-only" onclick="openFirestoreModal()">🔥 Firestore</button>
             <button onclick="openAuthModal()">👤 Tài khoản</button>
             <span class="account-badge" id="accountBadge" onclick="openAuthModal()" style="cursor:pointer"><span class="avatar">?</span><span class="txt" id="accountText">Chưa đăng nhập</span></span>
@@ -5458,6 +5459,7 @@ normalizeImplementation=function(){
      có transaction kiểm tra phiên bản thay cho lệnh set() ghi đè trực tiếp. */
 const PARTITION_SCHEMA_VERSION=12;
 const ACCESS_SCHEMA_VERSION=2;
+const STEP3_RUNTIME_VERSION='13.0';
 const PARTITION_MAX_TRANSACTION_OPS=360;
 const PARTITION_COLLECTIONS={
     meta:'appMeta',classes:'classes',students:'students',attendance:'attendance',payments:'payments',events:'calendarEvents'
@@ -5472,6 +5474,11 @@ let syncStorageMode='partitioned';
 let syncCenterRef=null;
 let syncDirty=false;
 let syncSaveInFlight=false;
+let syncSaveQueued=false;
+let syncActiveSavePromise=null;
+let syncChangeRevision=0;
+let syncLastSavedRevision=0;
+let syncLastSaveError='';
 let syncApplyingRemote=false;
 let syncRemoteApplyTimer=null;
 let syncRemoteApplyPending=false;
@@ -5902,62 +5909,87 @@ async function syncSaveLegacyGuarded(){
     }
 }
 
-// Ghi đè lớp đồng bộ cũ bằng lớp lưu phân mảnh, giữ nguyên toàn bộ API mà giao diện đang gọi.
-saveData=function(){
-    try{
-        if(ONLINE_ONLY&&(!firebaseUser||firebaseUser.isAnonymous)){showToast('Cần đăng nhập tài khoản trước khi lưu dữ liệu online','error');renderLoginRequired();return}
-        if(isStudent()||!['superadmin','admin','teacher'].includes(getActiveUserRole())){showToast('Tài khoản này chỉ có quyền xem dữ liệu','warn');return}
-        if(ONLINE_ONLY&&!firestoreReady){showToast('Chưa kết nối Firestore, dữ liệu chưa được lưu','error');setSyncBadge('error','Chưa kết nối');return}
-        const legacyTimestamp=syncStorageMode==='partitioned'?{}:{updatedAt:new Date().toISOString()};
-        data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,mode:syncStorageMode==='partitioned'?'partitioned-firestore-v12':'legacy-guarded-v12',...legacyTimestamp};
-        syncDirty=true;scheduleFirestoreSave();
-    }catch(error){showToast('Lưu dữ liệu online thất bại: '+error.message,'error')}
-};
-scheduleFirestoreSave=function(){
-    if(!firestoreReady||syncApplyingRemote)return;clearTimeout(firestoreSaveTimer);setSyncBadge('syncing','Đang chuẩn bị lưu an toàn');firestoreSaveTimer=setTimeout(pushOnlineToFirestore,900);
-};
-pushOnlineToFirestore=async function(){
-    if(syncSaveInFlight)return;
-    try{
-        if(!firestoreReady)await initFirestoreIfEnabled();
-        if(!firebaseUser||firebaseUser.isAnonymous)throw new Error('Cần đăng nhập Email/Password');
-        syncSaveInFlight=true;setSyncBadge('syncing','Đang kiểm tra phiên bản và lưu');
-        if(syncStorageMode==='partitioned')await syncSavePartitioned();else await syncSaveLegacyGuarded();
-    }catch(error){if(!(error?.code==='kienang/sync-conflict'))console.error('Safe sync:',error)}
-    finally{
-        syncSaveInFlight=false;
-        if(syncRemoteApplyPending&&!syncDirty){syncRemoteApplyPending=false;syncApplyRemoteSnapshot(false)}
-    }
-};
-loadFromFirestoreOnce=async function(){
-    firestoreLoading=true;
-    try{
-        const result=await syncLoadOrMigratePartitioned();syncStorageMode='partitioned';firestoreDocRef=syncDocumentRef('meta','main');
-        const secured=await syncUpgradeSecurityMetadataIfNeeded();
-        if(result.migrated)showToast('Đã chuyển dữ liệu cũ sang cấu trúc tách lớp an toàn; bản cũ vẫn được giữ');
-        else if(!secured)showToast('Đã tải dữ liệu đúng phạm vi phân quyền');
-    }finally{firestoreLoading=false}
-};
-listenFirestoreRealtime=function(){if(syncStorageMode==='partitioned')syncListenPartitioned();else syncListenLegacyGuarded()};
-initFirestoreIfEnabled=async function(){
-    localStorage.setItem(FIRESTORE_ENABLED_KEY,'1');const cfg=getFirestoreConfig();
-    if(!cfg||!cfg.projectId){setSyncBadge('error','Thiếu Firebase config');renderOnlineGate('Hệ thống cần đăng nhập để kết nối dữ liệu online.');return}
-    try{
-        setSyncBadge('syncing','Đang nối Firestore an toàn');ensureFirebaseApp();const user=await ensureFirebaseAuth();firestoreDb=firebase.firestore();syncCenterRef=firestoreDb.collection('centers').doc(getFirestoreCenterId());
-        firestoreReady=true;
-        try{await loadFromFirestoreOnce()}
-        catch(partitionError){
-            if(!isAdmin()||syncPartitionSchemaDetected||!syncCanFallbackToLegacy(partitionError))throw partitionError;
-            console.warn('Partitioned Firestore fallback:',partitionError.message);await syncLoadLegacyGuarded();showToast('Firestore Rules hiện tại chưa cho phép dữ liệu tách lớp; đang dùng chế độ tương thích có chống ghi đè','warn');
+/* Bước 3: một bộ điều khiển duy nhất cho mọi yêu cầu lưu.
+   Revision giúp nhận biết thao tác mới phát sinh trong lúc transaction đang chờ;
+   hàng đợi tuần tự bảo đảm lượt lưu sau không bị bỏ qua. */
+const STEP3_SYNC_CONTROLLER=Object.freeze({
+    requestSave:function step3RequestSave(){
+        try{
+            if(ONLINE_ONLY&&(!firebaseUser||firebaseUser.isAnonymous)){showToast('Cần đăng nhập tài khoản trước khi lưu dữ liệu online','error');renderLoginRequired();return}
+            if(isStudent()||!['superadmin','admin','teacher'].includes(getActiveUserRole())){showToast('Tài khoản này chỉ có quyền xem dữ liệu','warn');return}
+            if(ONLINE_ONLY&&!firestoreReady){showToast('Chưa kết nối Firestore, dữ liệu chưa được lưu','error');setSyncBadge('error','Chưa kết nối');return}
+            const legacyTimestamp=syncStorageMode==='partitioned'?{}:{updatedAt:new Date().toISOString()};
+            data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,mode:syncStorageMode==='partitioned'?'partitioned-firestore-v13':'legacy-guarded-v13',maintenanceVersion:STEP3_RUNTIME_VERSION,...legacyTimestamp};
+            syncChangeRevision++;syncDirty=true;scheduleFirestoreSave();
+        }catch(error){showToast('Lưu dữ liệu online thất bại: '+error.message,'error')}
+    },
+    scheduleSave:function step3ScheduleSave(){
+        if(!firestoreReady||syncApplyingRemote)return;
+        if(syncSaveInFlight){syncSaveQueued=true;setSyncBadge('syncing','Đã xếp hàng thay đổi mới');return}
+        clearTimeout(firestoreSaveTimer);setSyncBadge('syncing','Đang chuẩn bị lưu an toàn');firestoreSaveTimer=setTimeout(pushOnlineToFirestore,900);
+    },
+    flushSave:async function step3FlushSave(){
+        if(syncSaveInFlight){syncSaveQueued=true;return syncActiveSavePromise}
+        syncSaveInFlight=true;
+        syncActiveSavePromise=(async()=>{
+            if(!firestoreReady)await initFirestoreIfEnabled();
+            if(!firestoreReady)throw new Error('Không kết nối được Firestore');
+            if(!firebaseUser||firebaseUser.isAnonymous)throw new Error('Cần đăng nhập Email/Password');
+            do{
+                syncSaveQueued=false;
+                const targetRevision=syncChangeRevision;
+                setSyncBadge('syncing','Đang kiểm tra phiên bản và lưu');
+                if(syncStorageMode==='partitioned')await syncSavePartitioned();else await syncSaveLegacyGuarded();
+                syncLastSavedRevision=Math.max(syncLastSavedRevision,targetRevision);syncLastSaveError='';
+                if(syncChangeRevision>targetRevision){syncDirty=true;syncSaveQueued=true;setSyncBadge('syncing','Đang lưu tiếp thay đổi mới')}
+            }while(syncSaveQueued);
+        })();
+        let completed=false;
+        try{await syncActiveSavePromise;completed=true}
+        catch(error){syncLastSaveError=String(error?.message||error);if(!(error?.code==='kienang/sync-conflict'))console.error('Safe sync:',error)}
+        finally{
+            syncSaveInFlight=false;syncActiveSavePromise=null;
+            if(completed&&(syncSaveQueued||syncChangeRevision>syncLastSavedRevision)){
+                syncSaveQueued=false;syncDirty=true;clearTimeout(firestoreSaveTimer);firestoreSaveTimer=setTimeout(pushOnlineToFirestore,120);
+            }else if(syncRemoteApplyPending&&!syncDirty){syncRemoteApplyPending=false;syncApplyRemoteSnapshot(false)}
         }
-        listenFirestoreRealtime();syncSetModeBadge();startAutoBackupScheduler();return user;
-    }catch(error){
-        firestoreReady=false;setSyncBadge('error','Chưa online');console.error(error);let more='';
-        if(String(error.message||'').includes('operation-not-allowed'))more=' Thầy/Cô cần bật Email/Password trong Firebase Authentication.';
-        if(String(error.message||'').includes('Missing or insufficient permissions'))more=' Firestore Rules chưa cho phép tài khoản truy cập dữ liệu.';
-        renderOnlineGate('Không kết nối được Firestore: '+error.message+more);showToast('Không kết nối được Firestore: '+error.message+more,'error');
+    },
+    load:async function step3Load(){
+        firestoreLoading=true;
+        try{
+            const result=await syncLoadOrMigratePartitioned();syncStorageMode='partitioned';firestoreDocRef=syncDocumentRef('meta','main');
+            const secured=await syncUpgradeSecurityMetadataIfNeeded();
+            if(result.migrated)showToast('Đã chuyển dữ liệu cũ sang cấu trúc tách lớp an toàn; bản cũ vẫn được giữ');
+            else if(!secured)showToast('Đã tải dữ liệu đúng phạm vi phân quyền');
+        }finally{firestoreLoading=false}
+    },
+    listen:function step3Listen(){if(syncStorageMode==='partitioned')syncListenPartitioned();else syncListenLegacyGuarded()},
+    init:async function step3Init(){
+        localStorage.setItem(FIRESTORE_ENABLED_KEY,'1');const cfg=getFirestoreConfig();
+        if(!cfg||!cfg.projectId){setSyncBadge('error','Thiếu Firebase config');renderOnlineGate('Hệ thống cần đăng nhập để kết nối dữ liệu online.');return}
+        try{
+            setSyncBadge('syncing','Đang nối Firestore an toàn');ensureFirebaseApp();const user=await ensureFirebaseAuth();firestoreDb=firebase.firestore();syncCenterRef=firestoreDb.collection('centers').doc(getFirestoreCenterId());
+            firestoreReady=true;
+            try{await loadFromFirestoreOnce()}
+            catch(partitionError){
+                if(!isAdmin()||syncPartitionSchemaDetected||!syncCanFallbackToLegacy(partitionError))throw partitionError;
+                console.warn('Partitioned Firestore fallback:',partitionError.message);await syncLoadLegacyGuarded();showToast('Firestore Rules hiện tại chưa cho phép dữ liệu tách lớp; đang dùng chế độ tương thích có chống ghi đè','warn');
+            }
+            listenFirestoreRealtime();syncSetModeBadge();startAutoBackupScheduler();return user;
+        }catch(error){
+            firestoreReady=false;setSyncBadge('error','Chưa online');console.error(error);let more='';
+            if(String(error.message||'').includes('operation-not-allowed'))more=' Thầy/Cô cần bật Email/Password trong Firebase Authentication.';
+            if(String(error.message||'').includes('Missing or insufficient permissions'))more=' Firestore Rules chưa cho phép tài khoản truy cập dữ liệu.';
+            renderOnlineGate('Không kết nối được Firestore: '+error.message+more);showToast('Không kết nối được Firestore: '+error.message+more,'error');
+        }
     }
-};
+});
+saveData=STEP3_SYNC_CONTROLLER.requestSave;
+scheduleFirestoreSave=STEP3_SYNC_CONTROLLER.scheduleSave;
+pushOnlineToFirestore=STEP3_SYNC_CONTROLLER.flushSave;
+loadFromFirestoreOnce=STEP3_SYNC_CONTROLLER.load;
+listenFirestoreRealtime=STEP3_SYNC_CONTROLLER.listen;
+initFirestoreIfEnabled=STEP3_SYNC_CONTROLLER.init;
 
 /* Nhật ký tách riêng: giáo viên chỉ thêm sự kiện của chính mình, Admin đọc toàn bộ. */
 const __securityOldLogActivity=logActivity;
@@ -5994,14 +6026,44 @@ clearActivityLog=async function(){
     }catch(error){showToast('Không xóa được nhật ký: '+error.message,'error')}
 };
 
+function step3DuplicateDomIds(){
+    const counts=new Map();document.querySelectorAll('[id]').forEach(node=>counts.set(node.id,(counts.get(node.id)||0)+1));
+    return [...counts.entries()].filter(([,count])=>count>1).map(([id,count])=>({id,count}));
+}
+function step3RunDiagnostics(){
+    const duplicateDomIds=step3DuplicateDomIds();
+    const checks={
+        runtimeVersion:STEP3_RUNTIME_VERSION==='13.0',
+        syncController:saveData===STEP3_SYNC_CONTROLLER.requestSave&&scheduleFirestoreSave===STEP3_SYNC_CONTROLLER.scheduleSave&&pushOnlineToFirestore===STEP3_SYNC_CONTROLLER.flushSave&&loadFromFirestoreOnce===STEP3_SYNC_CONTROLLER.load&&listenFirestoreRealtime===STEP3_SYNC_CONTROLLER.listen&&initFirestoreIfEnabled===STEP3_SYNC_CONTROLLER.init,
+        firestoreSanitizer:typeof syncFirestoreSafe==='function',
+        partitionSchema:PARTITION_SCHEMA_VERSION===12&&ACCESS_SCHEMA_VERSION===2,
+        storageMode:['partitioned','legacy-guarded'].includes(syncStorageMode),
+        uniqueDomIds:duplicateDomIds.length===0
+    };
+    return {
+        ok:Object.values(checks).every(Boolean),version:STEP3_RUNTIME_VERSION,checkedAt:new Date().toISOString(),checks,duplicateDomIds,
+        sync:{inFlight:syncSaveInFlight,queued:syncSaveQueued,dirty:syncDirty,changeRevision:syncChangeRevision,lastSavedRevision:syncLastSavedRevision,lastError:syncLastSaveError||''}
+    };
+}
+function step3ShowDiagnostics(){
+    if(!isSuperAdmin())return showToast('Chỉ Super Admin được kiểm tra hệ thống','warn');
+    const report=step3RunDiagnostics();
+    console.table(report.checks);console.info('Kiên Năng diagnostics',report);
+    if(report.ok)showToast('Hệ thống ổn định · phiên bản '+report.version+' · hàng đợi lưu an toàn');
+    else showToast('Phát hiện '+Object.values(report.checks).filter(value=>!value).length+' mục cần kiểm tra; xem Console','warn');
+    return report;
+}
+window.KienNangDiagnostics=Object.freeze({version:STEP3_RUNTIME_VERSION,run:step3RunDiagnostics});
+
 const __partitionOldNormalize=normalizeImplementation;
 normalizeImplementation=function(){
     __partitionOldNormalize();
-    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION};
-    data.schedulerSettings={...(data.schedulerSettings||{}),version:'12.2',partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true};
+    data.meta={...(data.meta||{}),version:PARTITION_SCHEMA_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,accessSchemaVersion:ACCESS_SCHEMA_VERSION,maintenanceVersion:STEP3_RUNTIME_VERSION,serializedSaveQueue:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP3_RUNTIME_VERSION,partitionedFirestore:true,conflictGuard:true,serverEnforcedRbac:true,serializedSaveQueue:true};
 };
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAllModals()});init();
+setTimeout(()=>{const report=step3RunDiagnostics();if(!report.ok)console.warn('Kiên Năng maintenance check',report)},0);
 </script>
 <!-- UX 7.1 dashboard cleanup applied: gom điểm danh hôm nay vào một khối, ẩn thành phần trùng trên dashboard giáo viên. -->
 </body>
