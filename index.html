@@ -801,7 +801,7 @@
         <h2>🛡️ Sao lưu và phục hồi dữ liệu</h2><p class="sub">Dành riêng cho Super Admin. Hệ thống tự tạo bản sao lưu vào 12:00 và 24:00 khi tài khoản Super Admin đang mở trang.</p>
         <div class="backup-grid" id="backupStats"></div>
         <div class="safe-note">Bản sao lưu gồm toàn bộ lớp, học sinh, học phí, điểm danh, lịch học và thông tin người thao tác.</div>
-        <div class="backup-actions"><button class="btn btn-green" onclick="exportJSON()">💾 Tải sao lưu JSON</button><span><button class="btn btn-blue" onclick="createAutoBackupNow('manual')">☁️ Tạo mốc sao lưu ngay</button><button class="btn btn-soft" onclick="loadAutoBackups()">↻ Tải danh sách mốc</button></span></div>
+        <div class="backup-actions"><button class="btn btn-green" onclick="exportJSON()">💾 Tải sao lưu JSON</button><span><button class="btn btn-blue" onclick="createAutoBackupNow('manual')">☁️ Tạo mốc sao lưu ngay</button><button class="btn btn-soft" onclick="loadAutoBackups(true)">↻ Tải danh sách mốc</button></span></div>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0">
         <label>Khôi phục từ mốc sao lưu online</label>
         <select id="autoBackupSelect" class="backup-list" onchange="previewSelectedBackup()"><option value="">Đang tải danh sách...</option></select>
@@ -1419,12 +1419,10 @@ function sortDashboardClasses(names){
     });
 }
 
-async function fetchUsersForAdmin(){
+async function fetchUsersForAdmin(force=false){
     if(!isAdmin())return [];
-    try{
-        const snap=await firebase.firestore().collection('centers').doc(getFirestoreCenterId()).collection('users').orderBy('updatedAt','desc').get();
-        return snap.docs.map(d=>({id:d.id,...d.data()}));
-    }catch(err){showToast('Chưa đọc được danh sách tài khoản: '+err.message,'error');return []}
+    try{return await step8FetchUsersShared(force)}
+    catch(err){showToast('Chưa đọc được danh sách tài khoản: '+err.message,'error');return []}
 }
 async function renderAdminDashboard(){
     if(!isAdmin()){renderOnlineGate('Chỉ Admin hoặc Super Admin mới xem được khu quản trị.');return}
@@ -1441,16 +1439,16 @@ async function renderAdminDashboard(){
         <div class="admin-card"><div class="big money">${money(revenue)}</div><div class="cap">Doanh thu đã thu</div></div>
         <div class="admin-card"><div class="big debt">${money(debt)}</div><div class="cap">Công nợ còn lại</div></div>
     </div>
-    <div class="admin-section"><div class="admin-toolbar"><h2>${isSuperAdmin()?'👑 Super Admin Dashboard':'🛡️ Admin Dashboard'}</h2><div class="admin-actions"><button class="btn btn-blue" onclick="refreshAdminUsers()">↻ Tải tài khoản</button><button class="btn btn-green superadmin-only" onclick="pushOnlineToFirestore()">☁️ Lưu ngay hệ thống</button><button class="btn btn-soft superadmin-only" onclick="openBackupRestoreModal()">🛡️ Sao lưu/Phục hồi</button></div></div>
+    <div class="admin-section"><div class="admin-toolbar"><h2>${isSuperAdmin()?'👑 Super Admin Dashboard':'🛡️ Admin Dashboard'}</h2><div class="admin-actions"><button class="btn btn-blue" onclick="refreshAdminUsers(true)">↻ Tải tài khoản</button><button class="btn btn-green superadmin-only" onclick="pushOnlineToFirestore()">☁️ Lưu ngay hệ thống</button><button class="btn btn-soft superadmin-only" onclick="openBackupRestoreModal()">🛡️ Sao lưu/Phục hồi</button></div></div>
     <div class="admin-section"><h2>📊 Phân bố học sinh</h2><div class="mini-grid"><div class="mini-card"><b>Đang học</b><div class="num money">${active}</div></div><div class="mini-card"><b>Tạm nghỉ</b><div class="num">${paused}</div></div><div class="mini-card"><b>Đã nghỉ</b><div class="num debt">${left}</div></div><div class="mini-card superadmin-only"><b>Hệ thống</b><div class="subtext">${firestoreReady?'Đang online':'Chưa kết nối'} · ${esc(getFirestoreCenterId())}</div></div></div></div>
     <div class="admin-section"><h2>🏫 Danh sách lớp</h2><div class="table-scroll"><table class="data-table"><thead><tr><th>Lớp</th><th>Mã lớp</th><th>Giáo viên</th><th>Học sinh</th><th>Tiến độ</th><th>Đã thu</th><th>Công nợ</th><th>Thao tác</th></tr></thead><tbody>${classes.map(([key,cls])=>{const st=cls.students||[];const paid=accountingPaidForClass(cls);const d=accountingDebtForClass(cls);const at=getAttendedSessions(cls);return `<tr><td><b>${esc(cls.name||key)}</b><div class="subtext">${esc(cls.schedule||'Chưa có lịch')}</div></td><td><span class="class-code">${esc(cls.code||key)}</span></td><td>${esc(cls.teacherName||cls.teacherEmail||cls.teacherId||'—')}</td><td>${st.length}</td><td>${at}/${cls.sessions||0} buổi</td><td class="money"><b>${money(paid)}</b></td><td class="debt"><b>${money(d)}</b></td><td><button class="btn btn-blue" onclick="viewClass('${esc(key)}')">Mở lớp</button></td></tr>`}).join('')||'<tr class="empty-row"><td colspan="8">Chưa có lớp.</td></tr>'}</tbody></table></div></div>
     <div class="admin-section"><div class="admin-toolbar"><h2>👥 Tài khoản hệ thống</h2><span class="subtext" id="adminUserStatus">Đang tải...</span></div><div id="adminUsersBox"><div class="empty-state"><div class="icon">⏳</div><p>Đang tải danh sách tài khoản...</p></div></div></div>`;
-    refreshAdminUsers();
+    refreshAdminUsers(false);
 }
-async function refreshAdminUsers(){
+async function refreshAdminUsers(force=false){
     const box=document.getElementById('adminUsersBox'); const status=document.getElementById('adminUserStatus');
     if(!box)return;
-    const users=await fetchUsersForAdmin();
+    const users=await fetchUsersForAdmin(force);
     if(status)status.textContent=users.length+' tài khoản';
     const roleOptions=(u)=>{
         const current=u.role||'teacher';
@@ -1482,8 +1480,9 @@ async function adminUpdateUserRole(uid){
     try{
         await firebase.firestore().collection('centers').doc(getFirestoreCenterId()).collection('users').doc(uid).set({role,updatedAt:new Date().toISOString(),updatedBy:getActiveUserId()},{merge:true});
         showToast('Đã cập nhật quyền: '+roleLabel(role));
-        if(uid===firebaseUser?.uid){currentUserProfile=await loadUserProfile(firebaseUser);updateAccountBadge()}
-        refreshAdminUsers();
+        step8InvalidateUsersCache();
+        if(uid===firebaseUser?.uid){step8InvalidateProfileCache(uid);currentUserProfile=await loadUserProfile(firebaseUser);updateAccountBadge()}
+        refreshAdminUsers(true);
     }catch(err){showToast('Không cập nhật được quyền: '+err.message,'error')}
 }
 
@@ -2149,10 +2148,10 @@ function backupSlotInfo(date=new Date()){const h=date.getHours();const slot=h===
 function startAutoBackupScheduler(){if(autoBackupTimer)clearInterval(autoBackupTimer);if(!isSuperAdmin()||!firestoreReady)return;checkAutoBackupSlot();autoBackupTimer=setInterval(checkAutoBackupSlot,60*1000)}
 async function checkAutoBackupSlot(){try{if(!isSuperAdmin()||!firestoreReady)return;const {slot,day,id}=backupSlotInfo(new Date());if(!slot)return;const localKey='kienang_autobackup_done_'+getFirestoreCenterId()+'_'+id;if(localStorage.getItem(localKey))return;const ref=backupCollectionRef().doc(id);const snap=await ref.get();if(snap.exists){localStorage.setItem(localKey,'1');return}await writeBackupDoc(id,'auto',slot,day);localStorage.setItem(localKey,'1');showToast('Đã tự động sao lưu dữ liệu mốc '+(slot==='1200'?'12:00':'24:00'))}catch(err){console.warn('Auto backup:',err.message)}}
 async function writeBackupDoc(id,kind='manual',slot='manual',day=new Date().toISOString().slice(0,10)){if(!requireSuperAdminAction('sao lưu online'))return;let payload=buildBackupPayload(kind);payload.slot=slot;payload.day=day;payload.id=id||('manual_'+new Date().toISOString().replace(/[:.]/g,'-'));payload=syncFirestoreSafe(payload);await backupCollectionRef().doc(payload.id).set(payload);return payload}
-async function createAutoBackupNow(kind='manual'){try{if(!requireSuperAdminAction('tạo mốc sao lưu'))return;if(!firestoreReady)await initFirestoreIfEnabled();const id='manual_'+new Date().toISOString().replace(/[:.]/g,'-');await writeBackupDoc(id,kind,'manual',new Date().toISOString().slice(0,10));showToast('Đã tạo mốc sao lưu online');await loadAutoBackups()}catch(err){showToast('Không tạo được mốc sao lưu: '+err.message,'error')}}
+async function createAutoBackupNow(kind='manual'){try{if(!requireSuperAdminAction('tạo mốc sao lưu'))return;if(!firestoreReady)await initFirestoreIfEnabled();const id='manual_'+new Date().toISOString().replace(/[:.]/g,'-');await writeBackupDoc(id,kind,'manual',new Date().toISOString().slice(0,10));showToast('Đã tạo mốc sao lưu online');await loadAutoBackups(true)}catch(err){showToast('Không tạo được mốc sao lưu: '+err.message,'error')}}
 function openBackupRestoreModal(){if(!requireSuperAdminAction('sao lưu/phục hồi'))return;updateBackupStats();openModal('backupRestoreModal');loadAutoBackups()}
 function updateBackupStats(){const el=document.getElementById('backupStats');if(!el)return;const classes=Object.values(data.classes||{});const students=classes.reduce((sum,c)=>sum+(c.students||[]).length,0);const events=classes.reduce((sum,c)=>sum+(c.calendarEvents||[]).length,0);el.innerHTML=`<div class="backup-card"><b>${classes.length}</b><span>Lớp học</span></div><div class="backup-card"><b>${students}</b><span>Học sinh</span></div><div class="backup-card"><b>${events}</b><span>Lịch học</span></div><div class="backup-card"><b>12:00 · 24:00</b><span>Tự động sao lưu</span></div>`}
-async function loadAutoBackups(){try{if(!requireSuperAdminAction('xem mốc sao lưu'))return;if(!firestoreReady)await initFirestoreIfEnabled();const sel=document.getElementById('autoBackupSelect');if(sel)sel.innerHTML='<option value="">Đang tải...</option>';const snap=await backupCollectionRef().orderBy('backupAt','desc').limit(100).get();autoBackupCache=snap.docs.map(d=>({id:d.id,...d.data()}));if(sel){sel.innerHTML=autoBackupCache.length?'<option value="">Chọn mốc sao lưu...</option>'+autoBackupCache.map(b=>`<option value="${esc(b.id)}">${formatBackupTitle(b)}</option>`).join(''):'<option value="">Chưa có mốc sao lưu online</option>'}previewSelectedBackup()}catch(err){showToast('Không tải được danh sách sao lưu: '+err.message,'error')}}
+async function loadAutoBackups(force=false){try{if(!requireSuperAdminAction('xem mốc sao lưu'))return;if(!firestoreReady)await initFirestoreIfEnabled();const sel=document.getElementById('autoBackupSelect');if(step8AutoBackupLoadedAt&&!force&&Date.now()-step8AutoBackupLoadedAt<STEP8_AUX_CACHE_TTL){step8ReadMetrics.backupCacheHits++;step8RenderBackupOptions(sel);return}if(sel)sel.innerHTML='<option value="">Đang tải...</option>';const snap=await backupCollectionRef().orderBy('backupAt','desc').limit(100).get();autoBackupCache=snap.docs.map(d=>({id:d.id,...d.data()}));step8AutoBackupLoadedAt=Date.now();step8RenderBackupOptions(sel)}catch(err){showToast('Không tải được danh sách sao lưu: '+err.message,'error')}}
 function formatBackupTitle(b){const t=new Date(b.backupAt||Date.now()).toLocaleString('vi-VN');const kind=b.slot==='1200'?'Tự động 12:00':b.slot==='2400'?'Tự động 24:00':'Thủ công';return `${kind} · ${t} · ${b.counts?.classes||0} lớp · ${b.counts?.students||0} HS`}
 function previewSelectedBackup(){const meta=document.getElementById('autoBackupMeta'),sel=document.getElementById('autoBackupSelect');if(!meta||!sel)return;const b=autoBackupCache.find(x=>x.id===sel.value);if(!b){meta.textContent='Chọn một mốc để xem thông tin trước khi khôi phục.';return}meta.innerHTML=`<b>${esc(formatBackupTitle(b))}</b><br>Người tạo: ${esc(b.exportedBy?.name||'Super Admin')} · ${esc(b.exportedBy?.email||'')}<br>Mã mốc: ${esc(b.id)}`}
 async function restoreSelectedAutoBackup(){try{if(!requireSuperAdminAction('khôi phục mốc sao lưu'))return;const sel=document.getElementById('autoBackupSelect');const id=sel?.value;if(!id)return showToast('Thầy/Cô cần chọn một mốc sao lưu để khôi phục','warn');const snap=await backupCollectionRef().doc(id).get();if(!snap.exists)throw new Error('Mốc sao lưu không còn tồn tại');const backup=snap.data();const imported=extractImportedData(backup);const mode=document.getElementById('restoreModeInput')?.value||'replace';const oldCount=Object.keys(data.classes||{}).length;const newCount=Object.keys(imported.classes||{}).length;if(!newCount)throw new Error('Mốc sao lưu không có lớp học nào');const msg=mode==='replace'?`Sắp GHI ĐÈ ${oldCount} lớp hiện tại bằng mốc ${formatBackupTitle(backup)}. Tiếp tục?`:`Sắp GỘP dữ liệu từ mốc ${formatBackupTitle(backup)} vào hệ thống hiện tại. Tiếp tục?`;if(!confirm(msg))return;await createAutoBackupNow('before_restore');if(mode==='merge'){data={...(data||{}),classes:mergeImportedClasses(imported.classes),meta:{...(data.meta||{}),restoredAt:new Date().toISOString(),restoreMode:'merge',restoreFrom:id}}}else{data=imported;data.meta={...(data.meta||{}),restoredAt:new Date().toISOString(),restoreMode:'replace',restoreFrom:id}}normalize();saveData();closeModal('backupRestoreModal');showToast('Đã khôi phục mốc sao lưu và lưu lên Firestore');render()}catch(err){showToast('Không khôi phục được: '+err.message,'error')}}
@@ -6083,7 +6082,7 @@ async function syncReloadAfterConflict(){
     if(!confirm('Tải dữ liệu online mới nhất? Thay đổi chưa lưu trên màn hình hiện tại sẽ được thay bằng bản online. Thầy nên tải bản đang giữ trước khi tiếp tục.'))return;
     try{
         syncDirty=false;syncConflictPayload=null;
-        if(syncStorageMode==='partitioned')await syncLoadPartitionedCollections();else await syncLoadLegacyGuarded();
+        if(syncStorageMode==='partitioned')await syncLoadPartitionedCollections({force:true});else await syncLoadLegacyGuarded();
         closeModal('syncConflictModal');render();syncSetModeBadge();showToast('Đã tải dữ liệu online mới nhất');
     }catch(error){showToast('Không tải lại được dữ liệu: '+error.message,'error')}
 }
@@ -6168,11 +6167,10 @@ function syncSecurityMetadataOperations(){
 }
 async function syncHydrateStudentUidsFromProfiles(){
     if(!isAdmin()||!syncCenterRef)return 0;
-    const users=await syncCenterRef.collection('users').get(),byEmail=new Map();
-    users.forEach(doc=>{
-        const profile=doc.data()||{},email=syncCleanEmail(profile.email);
-        if(profile.role==='student'&&email)byEmail.set(email,doc.id);
-    });
+    const candidates=Object.values(data.classes||{}).flatMap(cls=>(cls.students||[]).filter(st=>!String(st.userId||st.uid||st.authUid||'').trim()&&syncCleanEmail(st.email||st.studentEmail)));
+    if(!candidates.length)return 0;
+    const users=await step8FetchUsersShared(false),byEmail=new Map();
+    users.forEach(profile=>{const email=syncCleanEmail(profile.email);if(profile.role==='student'&&email)byEmail.set(email,String(profile.uid||profile.id||''))});
     let linked=0;
     Object.values(data.classes||{}).forEach(cls=>(cls.students||[]).forEach(st=>{
         if(String(st.userId||st.uid||st.authUid||'').trim())return;
@@ -6192,6 +6190,9 @@ async function syncUpgradeSecurityMetadataIfNeeded(){
 }
 async function syncLoadOrMigratePartitioned(){
     syncPartitionSchemaDetected=false;
+    /* Listener đúng tài khoản/trung tâm vẫn hoạt động: dùng lại snapshot RAM,
+       không đọc meta và sáu collection thêm một lượt. */
+    if(step8CanReusePartitionData()){syncPartitionSchemaDetected=true;step8ReadMetrics.partitionBootstrapsReused++;return {migrated:false,reused:true,scoped:!isAdmin()}}
     /* Tài khoản không quản trị chỉ được tải truy vấn đã giới hạn theo quyền;
        không đọc appState cũ và không được tự chạy di chuyển toàn trung tâm. */
     if(!isAdmin()){
@@ -6918,11 +6919,13 @@ async function loadMoreActivityLogs(){
     try{
         const firstPage=!step7ActivityCursor;let query=syncCenterRef.collection('activityLogs').orderBy('at','desc').limit(STEP7_ACTIVITY_PAGE_SIZE);if(step7ActivityCursor)query=query.startAfter(step7ActivityCursor);const snap=await query.get(),map=new Map(step7ActivityItems.map(item=>[String(item.id||item.__docId||''),item]));
         snap.forEach(doc=>{const item={...doc.data(),__docId:doc.id},id=String(item.id||doc.id);if(!map.has(id))map.set(id,item)});if(!step7ActivityCursor)(data.activityLog||[]).forEach(item=>{const id=String(item.id||'');if(id&&!map.has(id))map.set(id,item)});
-        step7ActivityItems=[...map.values()].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')));if(firstPage)step7ActivityItems=step7ActivityItems.slice(0,STEP7_ACTIVITY_PAGE_SIZE);step7ActivityCursor=snap.docs[snap.docs.length-1]||step7ActivityCursor;step7ActivityHasMore=snap.size===STEP7_ACTIVITY_PAGE_SIZE;
+        step7ActivityItems=[...map.values()].sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')));if(firstPage){step7ActivityItems=step7ActivityItems.slice(0,STEP7_ACTIVITY_PAGE_SIZE);step8ActivityLoadedAt=Date.now()}step7ActivityCursor=snap.docs[snap.docs.length-1]||step7ActivityCursor;step7ActivityHasMore=snap.size===STEP7_ACTIVITY_PAGE_SIZE;
     }catch(error){showToast('Chưa tải thêm được nhật ký: '+error.message,'error');step7ActivityHasMore=false}finally{step7ActivityLoading=false;step7RenderActivityItems()}
 }
 openActivityLogModal=async function(){
-    if(!isAdmin())return showToast('Chỉ Admin được xem nhật ký toàn trung tâm','warn');step7ActivityItems=[];step7ActivityCursor=null;step7ActivityHasMore=true;step7ActivityLoading=false;activityLogBody.innerHTML='<div class="empty-state"><div class="icon">⏳</div><p>Đang tải 50 hoạt động gần nhất...</p></div>';openModal('activityLogModal');await loadMoreActivityLogs();
+    if(!isAdmin())return showToast('Chỉ Admin được xem nhật ký toàn trung tâm','warn');
+    if(step8ActivityLoadedAt&&Date.now()-step8ActivityLoadedAt<STEP8_ACTIVITY_CACHE_TTL){step8ReadMetrics.activityCacheHits++;openModal('activityLogModal');step7RenderActivityItems();return}
+    step7ActivityItems=[];step7ActivityCursor=null;step7ActivityHasMore=true;step7ActivityLoading=false;activityLogBody.innerHTML='<div class="empty-state"><div class="icon">⏳</div><p>Đang tải 50 hoạt động gần nhất...</p></div>';openModal('activityLogModal');await loadMoreActivityLogs();
 };
 function step7SnapshotCounts(){const out={};PARTITION_KINDS.forEach(kind=>out[kind]=syncRemoteSnapshot?.[kind]?.size||0);return out}
 function step7PerformanceReport(){
@@ -6939,10 +6942,10 @@ function runPerformanceLoadTest(notify=false){
 }
 function renderPerformanceReport(){
     if(!isSuperAdmin())return showToast('Chỉ Super Admin được xem hiệu năng hệ thống','warn');const report=step7PerformanceReport(),m=report.metrics,avg=m.averageRenderMs||0,load=report.lastLoadTest;
-    const metrics=`<div class="performance-metrics"><div class="performance-metric"><b>${Math.round(m.lastInitialLoadMs||0)} ms</b><span>Lượt tải ban đầu gần nhất</span></div><div class="performance-metric"><b>${report.documents}</b><span>Tài liệu trong cache RAM</span></div><div class="performance-metric"><b>${Math.round(avg*10)/10} ms</b><span>Render trung bình · tối đa ${Math.round(m.maxRenderMs||0)} ms</span></div><div class="performance-metric"><b>${m.changedDocuments}</b><span>Tài liệu realtime đã thay đổi</span></div><div class="performance-metric"><b>${m.skippedDocuments}</b><span>Tài liệu trùng đã bỏ qua</span></div><div class="performance-metric"><b>${m.renderBatches}</b><span>Lượt render đã gom theo lô</span></div><div class="performance-metric"><b>${report.listeners.active}</b><span>Listener đang hoạt động</span></div><div class="performance-metric"><b>${m.loadErrors}</b><span>Lỗi tải trong phiên</span></div></div>`;
+    const metrics=`<div class="performance-metrics"><div class="performance-metric"><b>${Math.round(m.lastInitialLoadMs||0)} ms</b><span>Lượt tải ban đầu gần nhất</span></div><div class="performance-metric"><b>${report.documents}</b><span>Tài liệu trong cache RAM</span></div><div class="performance-metric"><b>${Math.round(avg*10)/10} ms</b><span>Render trung bình · tối đa ${Math.round(m.maxRenderMs||0)} ms</span></div><div class="performance-metric"><b>${m.changedDocuments}</b><span>Tài liệu realtime đã thay đổi</span></div><div class="performance-metric"><b>${m.skippedDocuments}</b><span>Tài liệu trùng đã bỏ qua</span></div><div class="performance-metric"><b>${m.renderBatches}</b><span>Lượt render đã gom theo lô</span></div><div class="performance-metric"><b>${report.listeners.active}</b><span>Listener đang hoạt động</span></div><div class="performance-metric"><b>${m.loadErrors}</b><span>Lỗi tải trong phiên</span></div><div class="performance-metric"><b>${typeof step8EstimatedAvoidedReads==='function'?step8EstimatedAvoidedReads():0}</b><span>Reads ước tính đã tránh trong phiên</span></div><div class="performance-metric"><b>${typeof step8ReadMetrics==='object'?step8ReadMetrics.partitionBootstrapsReused:0}</b><span>Lượt khởi động dữ liệu đã tái sử dụng</span></div></div>`;
     const table=`<div class="performance-table-wrap"><table class="data-table"><thead><tr><th>Phân vùng</th><th>Collection</th><th>Tài liệu trong RAM</th><th>Thay đổi realtime</th></tr></thead><tbody>${PARTITION_KINDS.map(kind=>`<tr><td>${esc(kind)}</td><td>${esc(PARTITION_COLLECTIONS[kind])}</td><td>${report.counts[kind]||0}</td><td>${m.kindChanges?.[kind]||0}</td></tr>`).join('')}</tbody></table></div>`;
     const test=load?`<div class="performance-load-test"><h4>🧪 Kiểm thử tải lớn gần nhất <span class="performance-pill ${load.ok?'':'warn'}">${load.ok?'Đạt':'Theo dõi'}</span></h4><div class="test-row"><span>Quy mô mô phỏng</span><b>${load.classCount} lớp · ${load.students} học sinh · ${load.transactions} bút toán</b></div><div class="test-row"><span>Tạo dữ liệu</span><b>${Math.round(load.buildMs)} ms</b></div><div class="test-row"><span>Làm sạch/serialize</span><b>${Math.round(load.serializeMs)} ms</b></div><div class="test-row"><span>Tổng thời gian</span><b>${Math.round(load.totalMs)} ms</b></div></div>`:`<div class="performance-load-test"><h4>🧪 Chưa chạy kiểm thử tải lớn</h4><div class="subtext">Bài kiểm thử dùng dữ liệu giả trong RAM, không ghi Firestore và không thay đổi lớp thật.</div></div>`;
-    performanceReportBody.innerHTML=`<div class="performance-banner"><div><b>Listener-first · tải một lượt</b><div class="subtext">Snapshot đầu tiên vừa là dữ liệu khởi động vừa tiếp tục nghe realtime; không còn get() rồi đọc lại toàn bộ.</div></div><span class="performance-loading">${firestoreReady?'● Đang online':'○ Chưa online'}</span></div>${metrics}${table}${test}`;
+    performanceReportBody.innerHTML=`<div class="performance-banner"><div><b>Low-read v18 · listener dùng lại · cache đa tab</b><div class="subtext">Không tải lặp sáu phân vùng trong cùng phiên; hồ sơ, tài khoản, nhật ký và sao lưu đều có chống đọc trùng.</div></div><span class="performance-loading">${firestoreReady?'● Đang online':'○ Chưa online'}</span></div>${metrics}${table}${test}`;
 }
 function openPerformanceModal(){if(!isSuperAdmin())return showToast('Chỉ Super Admin được mở Trung tâm hiệu năng','warn');openModal('performanceModal');renderPerformanceReport()}
 async function retryFirestoreConnection(){
@@ -6953,6 +6956,120 @@ normalizeImplementation=function(){
     __step7OldNormalize();data.meta={...(data.meta||{}),performanceVersion:STEP7_PERFORMANCE_VERSION,listenerFirstLoad:true,inMemoryCacheOnly:true,paginatedLongViews:true};data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP7_PERFORMANCE_VERSION,performanceController:true,listenerDeduplication:true,batchedRemoteRender:true};
 };
 window.KienNangPerformance=Object.freeze({version:STEP7_PERFORMANCE_VERSION,report:step7PerformanceReport,loadTest:runPerformanceLoadTest,scheduleRender:step7ScheduleRender});
+
+/* ---------- LOW-READ FIRESTORE v18.0 ----------
+   - Bật cache IndexedDB đồng bộ đa tab của Firebase khi trình duyệt hỗ trợ.
+   - Gộp các yêu cầu hồ sơ/tài khoản đồng thời và cache ngắn hạn trong RAM.
+   - Không khởi động lại sáu listener khi đúng phiên kết nối vẫn còn hoạt động.
+   - Cache ngắn hạn danh sách nhật ký/sao lưu nhưng vẫn có nút tải mới thủ công. */
+const STEP8_READ_OPTIMIZATION_VERSION='18.0';
+const STEP8_TRUSTED_DEVICE_KEY='kienang_trusted_device_firestore_cache_v1';
+const STEP8_PROFILE_CACHE_TTL=5*60*1000;
+const STEP8_USERS_CACHE_TTL=5*60*1000;
+const STEP8_ACTIVITY_CACHE_TTL=60*1000;
+const STEP8_AUX_CACHE_TTL=5*60*1000;
+const step8ReadMetrics={
+    startedAt:new Date().toISOString(),persistence:'pending',profileCacheHits:0,usersCacheHits:0,
+    partitionBootstrapsReused:0,activityCacheHits:0,backupCacheHits:0,partitionLoads:0
+};
+let step8PersistencePromise=null;
+let step8ProfileCache=new Map();
+let step8ProfilePromises=new Map();
+let step8UsersCache=[];
+let step8UsersLoadedAt=0;
+let step8UsersPromise=null;
+let step8PartitionLoadPromise=null;
+let step8PartitionLoadKey='';
+let step8PartitionReadyKey='';
+let step8ActivityLoadedAt=0;
+let step8AutoBackupLoadedAt=0;
+
+function step8ConnectionKey(){return [getFirestoreCenterId(),getActiveUserId(),getActiveUserRole()].map(String).join('|')}
+function step8AllowPersistentCache(){
+    const saved=localStorage.getItem(STEP8_TRUSTED_DEVICE_KEY);if(saved==='1')return true;if(saved==='0')return false;
+    const allowed=confirm('Đây có phải máy cá nhân hoặc thiết bị tin cậy không?\n\nChọn OK để bật bộ nhớ đệm Firestore giúp giảm lượt đọc. Không nên bật trên máy dùng chung vì dữ liệu đã xem có thể được lưu trong trình duyệt.');
+    localStorage.setItem(STEP8_TRUSTED_DEVICE_KEY,allowed?'1':'0');return allowed;
+}
+async function step8EnableFirestorePersistence(){
+    if(step8PersistencePromise)return step8PersistencePromise;
+    step8PersistencePromise=(async()=>{
+        try{
+            ensureFirebaseApp();
+            if(!step8AllowPersistentCache()){step8ReadMetrics.persistence='disabled-untrusted-device';return false}
+            const db=firebase.firestore();
+            if(typeof db.enablePersistence!=='function'){step8ReadMetrics.persistence='unsupported';return false}
+            await db.enablePersistence({synchronizeTabs:true});step8ReadMetrics.persistence='indexeddb-multitab';return true;
+        }catch(error){
+            const code=String(error?.code||'');
+            step8ReadMetrics.persistence=code.includes('unimplemented')?'unsupported':'memory-fallback';
+            console.warn('Firestore cache:',code||error?.message||error);return false;
+        }
+    })();
+    return step8PersistencePromise;
+}
+
+const __step8OldLoadUserProfile=loadUserProfile;
+loadUserProfile=async function(user){
+    if(!user)return null;
+    const key=getFirestoreCenterId()+'|'+String(user.uid||''),cached=step8ProfileCache.get(key);
+    if(cached&&Date.now()-cached.at<STEP8_PROFILE_CACHE_TTL){step8ReadMetrics.profileCacheHits++;return cached.value}
+    if(step8ProfilePromises.has(key)){step8ReadMetrics.profileCacheHits++;return step8ProfilePromises.get(key)}
+    const promise=(async()=>{await step8EnableFirestorePersistence();const value=await __step8OldLoadUserProfile(user);step8ProfileCache.set(key,{at:Date.now(),value});return value})();
+    step8ProfilePromises.set(key,promise);
+    try{return await promise}finally{step8ProfilePromises.delete(key)}
+};
+function step8InvalidateProfileCache(uid=''){
+    if(!uid){step8ProfileCache.clear();step8ProfilePromises.clear();return}
+    const suffix='|'+String(uid);for(const key of step8ProfileCache.keys())if(key.endsWith(suffix))step8ProfileCache.delete(key);
+}
+const __step8OldSaveUserProfile=saveUserProfile;
+saveUserProfile=async function(user,extra={}){
+    await step8EnableFirestorePersistence();const value=await __step8OldSaveUserProfile(user,extra);
+    if(user?.uid)step8ProfileCache.set(getFirestoreCenterId()+'|'+String(user.uid),{at:Date.now(),value});step8InvalidateUsersCache();return value;
+};
+const __step8OldLogoutAccount=logoutAccount;
+logoutAccount=async function(...args){step8InvalidateProfileCache();step8InvalidateUsersCache();step8PartitionReadyKey='';return __step8OldLogoutAccount.apply(this,args)};
+
+function step8InvalidateUsersCache(){step8UsersCache=[];step8UsersLoadedAt=0;step8UsersPromise=null}
+async function step8FetchUsersShared(force=false){
+    if(!force&&step8UsersLoadedAt&&Date.now()-step8UsersLoadedAt<STEP8_USERS_CACHE_TTL){step8ReadMetrics.usersCacheHits++;return step8UsersCache}
+    if(step8UsersPromise){step8ReadMetrics.usersCacheHits++;return step8UsersPromise}
+    step8UsersPromise=(async()=>{
+        await step8EnableFirestorePersistence();
+        const snap=await firebase.firestore().collection('centers').doc(getFirestoreCenterId()).collection('users').orderBy('updatedAt','desc').get();
+        step8UsersCache=snap.docs.map(doc=>({id:doc.id,...doc.data()}));step8UsersLoadedAt=Date.now();return step8UsersCache;
+    })();
+    try{return await step8UsersPromise}finally{step8UsersPromise=null}
+}
+
+function step8CanReusePartitionData(){
+    return !!(step7ListenersPrimed&&syncCollectionUnsubs.length&&step8PartitionReadyKey===step8ConnectionKey()&&!syncStudentLinkRequired);
+}
+const __step8OldLoadPartitionedCollections=syncLoadPartitionedCollections;
+syncLoadPartitionedCollections=async function(options={}){
+    const force=options===true||options?.force===true,key=step8ConnectionKey();
+    if(!force&&step8CanReusePartitionData()){step8ReadMetrics.partitionBootstrapsReused++;return {reused:true}}
+    if(step8PartitionLoadPromise&&step8PartitionLoadKey===key)return step8PartitionLoadPromise;
+    step8PartitionLoadKey=key;step8ReadMetrics.partitionLoads++;
+    step8PartitionLoadPromise=(async()=>{await step8EnableFirestorePersistence();await __step8OldLoadPartitionedCollections();step8PartitionReadyKey=key;return {reused:false}})();
+    try{return await step8PartitionLoadPromise}finally{step8PartitionLoadPromise=null;step8PartitionLoadKey=''}
+};
+
+function step8RenderBackupOptions(sel=document.getElementById('autoBackupSelect')){
+    if(sel)sel.innerHTML=autoBackupCache.length?'<option value="">Chọn mốc sao lưu...</option>'+autoBackupCache.map(b=>`<option value="${esc(b.id)}">${formatBackupTitle(b)}</option>`).join(''):'<option value="">Chưa có mốc sao lưu online</option>';
+    previewSelectedBackup();
+}
+function step8EstimatedAvoidedReads(){
+    const partitionDocs=PARTITION_KINDS.reduce((sum,kind)=>sum+(syncRemoteSnapshot?.[kind]?.size||0),0);
+    return step8ReadMetrics.profileCacheHits+step8ReadMetrics.usersCacheHits*Math.max(1,step8UsersCache.length)+step8ReadMetrics.partitionBootstrapsReused*partitionDocs+step8ReadMetrics.activityCacheHits*STEP7_ACTIVITY_PAGE_SIZE+step8ReadMetrics.backupCacheHits*Math.max(1,autoBackupCache.length);
+}
+function step8ReadReport(){return {version:STEP8_READ_OPTIMIZATION_VERSION,checkedAt:new Date().toISOString(),estimatedReadsAvoided:step8EstimatedAvoidedReads(),metrics:{...step8ReadMetrics},cache:{profiles:step8ProfileCache.size,users:step8UsersCache.length,activity:step7ActivityItems.length,backups:autoBackupCache.length},partitionReuse:step8CanReusePartitionData()}}
+const __step8OldNormalize=normalizeImplementation;
+normalizeImplementation=function(){
+    __step8OldNormalize();const persistent=step8ReadMetrics.persistence==='indexeddb-multitab';data.meta={...(data.meta||{}),readOptimizationVersion:STEP8_READ_OPTIMIZATION_VERSION,firestoreIndexedDbCache:persistent,multiTabCache:persistent,reusedRealtimeBootstrap:true};
+    data.schedulerSettings={...(data.schedulerSettings||{}),version:STEP8_READ_OPTIMIZATION_VERSION,lowReadMode:true,profileReadDeduplication:true,auxiliaryReadCache:true};
+};
+window.KienNangReadOptimizer=Object.freeze({version:STEP8_READ_OPTIMIZATION_VERSION,report:step8ReadReport,refreshUsers:()=>step8FetchUsersShared(true)});
 
 /* ---------- STABLE RUNTIME & MAINTENANCE CENTER v16.0 ----------
    Giữ nguyên các lớp nâng cấp cũ nhưng chốt implementation cuối tại một registry.
@@ -7028,6 +7145,7 @@ function step6RegressionSuite(){
     test('SPECIAL_TWO_SESSIONS','Tăng cường/học bù cho phép hai ca khác giờ trong ngày',()=>fixedSpecialIsEvent({source:'fixed-special',sessionKind:'extra'})&&!plannerTimeOverlap('08:00','10:00','14:00','16:00')&&plannerTimeOverlap('08:00','10:00','09:00','11:00'));
     test('QUOTA_DETECTION','Nhận diện lỗi hết hạn mức Firestore',()=>syncIsQuotaExceeded({code:'resource-exhausted',message:'Quota exceeded.'})&&syncFriendlyFirestoreError({message:'Quota exceeded.'}).includes('hết hạn mức'));
     test('ACTIVITY_COALESCE','Nhật ký điểm danh được gom lượt ghi',()=>syncIsAttendanceActivity('Điểm danh')&&syncIsAttendanceActivity('Chọn tất cả điểm danh')&&!syncIsAttendanceActivity('Xoá lớp'));
+    test('LOW_READ_MODE','Bộ giảm lượt đọc Firestore đã được chốt',()=>window.KienNangReadOptimizer?.version===STEP8_READ_OPTIMIZATION_VERSION&&typeof step8EnableFirestorePersistence==='function'&&typeof step8FetchUsersShared==='function'&&typeof step8CanReusePartitionData==='function');
     test('SYNC_CONTROLLER','Các hàm lưu dùng cùng bộ điều khiển',()=>saveData===STEP3_SYNC_CONTROLLER.requestSave&&scheduleFirestoreSave===STEP3_SYNC_CONTROLLER.scheduleSave&&pushOnlineToFirestore===STEP3_SYNC_CONTROLLER.flushSave);
     test('PERFORMANCE_CONTROLLER','Bộ điều phối hiệu năng dùng cache trong phiên',()=>window.KienNangPerformance?.version===STEP7_PERFORMANCE_VERSION&&typeof step7ScheduleRender==='function'&&typeof step7MergeListenerChanges==='function');
     return {ok:results.every(item=>item.ok),passed:results.filter(item=>item.ok).length,total:results.length,results};
