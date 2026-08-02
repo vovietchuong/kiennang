@@ -1991,7 +1991,39 @@ function dropSchedule(ev,date){ev.preventDefault();try{const info=JSON.parse(ev.
 function exportScheduleCSV(){let rows=[['Ngày','Bắt đầu','Kết thúc','Lớp','Mã lớp','Tiêu đề','Phòng','Trạng thái','Ghi chú']];filteredCalendarEvents().forEach(e=>rows.push([e.date,e.start||'',e.end||'',e.className,e.classCode||'',e.title,e.room||'',statusLabel(e.status),e.note||'']));const csv='\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'thoi_khoa_bieu_pro.csv');showToast('Đã xuất thời khóa biểu CSV')}
 function openPaymentModal(className,id){if(!canEditClass(data.classes[className]))return showToast('Vai trò hiện tại không được sửa học phí lớp này','error');paymentClass=className;paymentStudentId=id;const s=data.classes[className].students.find(x=>x.id===id);paymentSub.textContent=s.name+' · '+classTitle(className)+' · '+classCode(className);payTuitionInput.value=s.tuition||0;payPaidInput.value=s.paid||0;payNoteInput.value=s.paymentNote||'';paymentConfirm.onclick=()=>{s.tuition=Number(payTuitionInput.value)||0;s.paid=Number(payPaidInput.value)||0;s.paymentNote=payNoteInput.value.trim();saveData();closeModal('paymentModal');logActivity('Cập nhật học phí',s.name,paymentClass,s.id);showToast('Đã cập nhật học phí');render()};openModal('paymentModal')}
 function openEditDateModal(c,i){editingSessionClass=c;editingSessionIndex=i;editDateSessionLabel.textContent='Buổi B'+(i+1)+' · '+classTitle(c)+' · '+classCode(c);editDateInput.value=data.classes[c].sessionDates[i]||'';editDateConfirm.onclick=()=>{data.classes[editingSessionClass].sessionDates[editingSessionIndex]=editDateInput.value.trim();saveData();closeModal('editDateModal');render()};openModal('editDateModal')}
-function confirmDeleteClass(n){if(!canDeleteClass(data.classes[n]))return showToast('Chỉ giáo viên tạo lớp ẩn danh mới được xoá lớp này','error');confirmModalMsg.textContent='Xoá lớp "'+classTitle(n)+'" (mã '+classCode(n)+') và toàn bộ dữ liệu?';confirmCallback=async()=>{const oldTitle=classTitle(n);delete data.classes[n];closeModal('confirmModal');currentView='dashboard';currentClass=null;logActivity('Xoá lớp',oldTitle,n);render();try{clearTimeout(firestoreSaveTimer);await pushOnlineToFirestore();showToast('Đã xoá lớp '+oldTitle+' và ghi hẳn lên Firestore','warn')}catch(err){showToast('Lỗi xoá lớp trên Firestore: '+err.message,'error')}};confirmModalConfirm.onclick=()=>confirmCallback&&confirmCallback();openModal('confirmModal')}
+function confirmDeleteClass(n){
+    if(!canDeleteClass(data.classes[n]))return showToast('Chỉ giáo viên tạo lớp ẩn danh mới được xoá lớp này','error');
+    confirmModalMsg.textContent='Xoá lớp "'+classTitle(n)+'" (mã '+classCode(n)+') và toàn bộ dữ liệu?';
+    confirmCallback=()=>deleteClassSafely(n);
+    confirmModalConfirm.onclick=()=>confirmCallback&&confirmCallback();
+    openModal('confirmModal');
+}
+async function deleteClassSafely(classKey){
+    const cls=data.classes?.[classKey];
+    if(!cls||!canDeleteClass(cls))return showToast('Không tìm thấy lớp hoặc tài khoản không có quyền xoá lớp này','error');
+    const oldTitle=cls.name||classTitle(classKey),beforeData=syncClone(data),previousView=currentView,previousClass=currentClass;
+    const context={failure:'Không thể xoá lớp '+oldTitle,notified:false};
+    syncCriticalMutationContext=context;closeModal('confirmModal');
+    try{
+        /* Không xoá dựa trên một trạng thái cũ còn đang chờ ghi. */
+        if(syncSaveInFlight||syncDirty){
+            setSyncBadge('syncing','Đang xác nhận dữ liệu trước khi xoá');
+            await syncAwaitConfirmedSave();
+        }
+        delete data.classes[classKey];saveData();clearTimeout(firestoreSaveTimer);
+        setSyncBadge('syncing','Đang xoá lớp trên Firestore');
+        await syncAwaitConfirmedSave();
+        logActivity('Xoá lớp',oldTitle,classKey);
+        currentView='dashboard';currentClass=null;render();
+        showToast('Đã xoá lớp '+oldTitle+' và Firestore đã xác nhận','warn');
+    }catch(error){
+        /* Transaction không được xác nhận: khôi phục ngay lớp và toàn bộ dữ liệu liên quan. */
+        data=beforeData;normalize();syncSaveQueued=false;clearTimeout(firestoreSaveTimer);
+        syncDirty=syncHasNormalizedChanges();currentView=previousView;currentClass=previousClass;
+        setSyncBadge('error',syncIsQuotaExceeded(error)?'Hết hạn mức Firestore':'Lỗi lưu');render();
+        if(!context.notified)showToast('Không thể xoá lớp '+oldTitle+': '+syncFriendlyFirestoreError(error),'error');
+    }finally{syncCriticalMutationContext=null}
+}
 function confirmDeleteStudent(c,id){if(!canEditClass(data.classes[c]))return showToast('Vai trò hiện tại không được xoá học sinh lớp này','error');const s=data.classes[c].students.find(x=>x.id===id);confirmModalMsg.textContent='Xoá học sinh "'+s.name+'" khỏi lớp '+classTitle(c)+'?';confirmCallback=()=>{data.classes[c].students=data.classes[c].students.filter(x=>x.id!==id);saveData();closeModal('confirmModal');render()};confirmModalConfirm.onclick=()=>confirmCallback&&confirmCallback();openModal('confirmModal')}
 
 function getStudentTemplateRows(){return [
@@ -5828,6 +5860,7 @@ let syncActiveSavePromise=null;
 let syncChangeRevision=0;
 let syncLastSavedRevision=0;
 let syncLastSaveError='';
+let syncCriticalMutationContext=null;
 let syncApplyingRemote=false;
 let syncRemoteApplyTimer=null;
 let syncRemoteApplyPending=false;
@@ -5841,6 +5874,31 @@ let syncBaseSnapshot=syncEmptySnapshot();
 let syncBaseVersions=syncEmptyVersionMaps();
 let syncRemoteSnapshot=syncEmptySnapshot();
 let syncRemoteVersions=syncEmptyVersionMaps();
+
+function syncIsQuotaExceeded(error){
+    const code=String(error?.code||'').toLowerCase(),message=String(error?.message||error||'').toLowerCase();
+    return code.includes('resource-exhausted')||code.includes('quota')||message.includes('quota exceeded')||message.includes('resource exhausted')||message.includes('hạn mức');
+}
+function syncFriendlyFirestoreError(error){
+    if(syncIsQuotaExceeded(error))return 'Firestore đã hết hạn mức sử dụng. Thay đổi chưa được lưu; vui lòng thử lại sau khi hạn mức được cấp lại hoặc kiểm tra gói Firebase.';
+    const code=String(error?.code||'').toLowerCase(),message=String(error?.message||error||'Lỗi không xác định');
+    if(code.includes('permission-denied')||message.toLowerCase().includes('insufficient permissions'))return 'Tài khoản hiện tại chưa được Firestore cho phép thực hiện thao tác này.';
+    if(code.includes('unavailable')||message.toLowerCase().includes('network'))return 'Kết nối Firestore đang gián đoạn. Dữ liệu chưa được máy chủ xác nhận.';
+    return message;
+}
+function syncNotifySaveFailure(error,defaultPrefix='Chưa lưu được dữ liệu: '){
+    const message=syncFriendlyFirestoreError(error),context=syncCriticalMutationContext;
+    if(context){context.notified=true;showToast((context.failure||'Không hoàn tất thao tác')+': '+message,'error')}
+    else showToast(defaultPrefix+message,'error');
+    return message;
+}
+async function syncAwaitConfirmedSave(){
+    const targetRevision=syncChangeRevision;
+    await pushOnlineToFirestore();
+    if(syncLastSaveError){const error=new Error(syncLastSaveError);if(syncIsQuotaExceeded(error))error.code='resource-exhausted';throw error}
+    if(syncDirty||syncLastSavedRevision<targetRevision)throw new Error('Firestore chưa xác nhận hoàn tất lượt lưu này');
+    return true;
+}
 
 function syncEmptySnapshot(){
     return Object.fromEntries(PARTITION_KINDS.map(kind=>[kind,new Map()]));
@@ -5920,7 +5978,8 @@ function syncCurrentStudentAccessKeys(){
 function syncBuildPartitionSnapshot(){
     const snapshot=syncEmptySnapshot();
     const metaPayload={};
-    Object.entries(data||{}).forEach(([key,value])=>{if(key!=='classes')metaPayload[key]=syncClone(value)});
+    /* Nhật ký có collection riêng; không sao chép lại hàng trăm mục vào meta mỗi lần lưu. */
+    Object.entries(data||{}).forEach(([key,value])=>{if(key!=='classes'&&key!=='activityLog')metaPayload[key]=syncClone(value)});
     metaPayload.storageSchema={version:PARTITION_SCHEMA_VERSION,mode:'partitioned-firestore',centerId:getFirestoreCenterId(),updatedAt:String(data?.meta?.updatedAt||'')};
     metaPayload.securitySchema={...(metaPayload.securitySchema||{}),version:ACCESS_SCHEMA_VERSION,mode:'server-enforced-rbac'};
     snapshot.meta.set('main',metaPayload);
@@ -6217,7 +6276,7 @@ async function syncSavePartitioned(){
     }catch(error){
         syncDirty=true;
         if(error?.code==='kienang/sync-conflict'||String(error?.message||'').includes('Xung đột'))syncShowConflict(error,operations);
-        else{setSyncBadge('error','Lỗi lưu dữ liệu tách lớp');showToast('Chưa lưu được dữ liệu: '+error.message,'error')}
+        else{setSyncBadge('error','Lỗi lưu dữ liệu tách lớp');syncNotifySaveFailure(error,'Chưa lưu được dữ liệu: ')}
         throw error;
     }
 }
@@ -6253,7 +6312,7 @@ async function syncSaveLegacyGuarded(){
     }catch(error){
         syncDirty=true;
         if(error?.code==='kienang/sync-conflict'||String(error?.message||'').includes('Xung đột'))syncShowConflict(error,[]);
-        else{setSyncBadge('error','Lỗi lưu');showToast('Chưa lưu được Firestore: '+error.message,'error')}
+        else{setSyncBadge('error','Lỗi lưu');syncNotifySaveFailure(error,'Chưa lưu được Firestore: ')}
         throw error;
     }
 }
@@ -6344,12 +6403,37 @@ initFirestoreIfEnabled=STEP3_SYNC_CONTROLLER.init;
 
 /* Nhật ký tách riêng: giáo viên chỉ thêm sự kiện của chính mình, Admin đọc toàn bộ. */
 const __securityOldLogActivity=logActivity;
+let syncAttendanceActivityTimer=null;
+const syncAttendanceActivityPending=new Map();
+function syncIsAttendanceActivity(action){return ['Điểm danh','Chọn tất cả điểm danh','Bỏ chọn tất cả điểm danh'].includes(String(action||''))}
+function syncAttendanceLogKey(entry){
+    const session=String(entry?.detail||'').split('·')[0].trim()||'buoi',day=String(entry?.at||new Date().toISOString()).slice(0,10);
+    return day+'|'+String(entry?.userId||getActiveUserId())+'|'+String(entry?.classKey||'')+'|'+session;
+}
+function syncQueueAttendanceActivity(entry,payload){
+    const key=syncAttendanceLogKey(entry),previous=syncAttendanceActivityPending.get(key),count=(previous?.count||0)+1;
+    const stableId='log_att_'+syncHash(key),session=String(entry?.detail||'').split('·')[0].trim()||'Buổi học';
+    syncAttendanceActivityPending.set(key,{...payload,id:stableId,recordId:stableId,count,detail:session+' · đã gom '+count+' lượt cập nhật',at:new Date().toISOString()});
+    clearTimeout(syncAttendanceActivityTimer);syncAttendanceActivityTimer=setTimeout(syncFlushAttendanceActivityLogs,2500);
+}
+async function syncFlushAttendanceActivityLogs(){
+    if(!syncAttendanceActivityPending.size||!firestoreReady||!syncCenterRef)return;
+    const entries=[...syncAttendanceActivityPending.values()];syncAttendanceActivityPending.clear();
+    try{
+        for(let i=0;i<entries.length;i+=350){
+            const batch=firestoreDb.batch();
+            entries.slice(i,i+350).forEach(entry=>batch.set(syncCenterRef.collection('activityLogs').doc(entry.id),entry,{merge:true}));
+            await batch.commit();
+        }
+    }catch(error){console.warn('Activity log:',syncFriendlyFirestoreError(error))}
+}
 logActivity=function(action,detail='',classKey='',studentId=''){
     __securityOldLogActivity(action,detail,classKey,studentId);
     const entry=syncClone((data.activityLog||[])[0]);
     if(!entry||!firestoreReady||!syncCenterRef||isStudent())return;
     const payload={...entry,centerId:getFirestoreCenterId(),actorUid:getActiveUserId(),actorEmail:syncCleanEmail(getActiveUserEmail()),accessSchemaVersion:ACCESS_SCHEMA_VERSION};
-    syncCenterRef.collection('activityLogs').add(payload).catch(error=>console.warn('Activity log:',error.message));
+    if(syncIsAttendanceActivity(action)){syncQueueAttendanceActivity(entry,payload);return}
+    syncCenterRef.collection('activityLogs').add(payload).catch(error=>console.warn('Activity log:',syncFriendlyFirestoreError(error)));
 };
 function syncActivityLogHtml(list){
     return list.length?list.map(l=>`<div class="log-line"><div class="time">${esc(new Date(l.at).toLocaleString('vi-VN'))}</div><div><b>${esc(l.action||'Hoạt động')}</b><div class="subtext">${esc(l.detail||'')} ${l.className?'· '+esc(l.className):''} · ${esc(l.userName||l.actorEmail||l.actorUid||'')}</div></div></div>`).join(''):'<div class="empty-state"><div class="icon">🧾</div><h3>Chưa có nhật ký</h3><p>Các thao tác mới sẽ tự được ghi lại.</p></div>';
@@ -6942,6 +7026,8 @@ function step6RegressionSuite(){
     test('TRANSFER_DEDUP','Chuyển lớp không nhân đôi doanh thu',()=>{const source={...syncClone(st),accountingArchived:true},target={...syncClone(st),id:2,transferredFrom:{classKey:cls.id,className:cls.name,classCode:cls.code}},cls2={id:'step6_class_2',name:'Lớp nhận',code:'TEST2'},entries=accountingLedgerEntries([{s:source,cls},{s:target,cls:cls2}]);return entries.length===3&&entries.reduce((sum,entry)=>sum+accountingEntryDelta(entry),0)===600000});
     test('COURSE_COPY_FILTER','Đợt mới loại học sinh đã nghỉ/chuyển',()=>courseStudentCanCopy({status:'active'},true)&&courseStudentCanCopy({status:'paused'},true)&&!courseStudentCanCopy({status:'left'},true)&&!courseStudentCanCopy({status:'transferred'},true));
     test('SPECIAL_TWO_SESSIONS','Tăng cường/học bù cho phép hai ca khác giờ trong ngày',()=>fixedSpecialIsEvent({source:'fixed-special',sessionKind:'extra'})&&!plannerTimeOverlap('08:00','10:00','14:00','16:00')&&plannerTimeOverlap('08:00','10:00','09:00','11:00'));
+    test('QUOTA_DETECTION','Nhận diện lỗi hết hạn mức Firestore',()=>syncIsQuotaExceeded({code:'resource-exhausted',message:'Quota exceeded.'})&&syncFriendlyFirestoreError({message:'Quota exceeded.'}).includes('hết hạn mức'));
+    test('ACTIVITY_COALESCE','Nhật ký điểm danh được gom lượt ghi',()=>syncIsAttendanceActivity('Điểm danh')&&syncIsAttendanceActivity('Chọn tất cả điểm danh')&&!syncIsAttendanceActivity('Xoá lớp'));
     test('SYNC_CONTROLLER','Các hàm lưu dùng cùng bộ điều khiển',()=>saveData===STEP3_SYNC_CONTROLLER.requestSave&&scheduleFirestoreSave===STEP3_SYNC_CONTROLLER.scheduleSave&&pushOnlineToFirestore===STEP3_SYNC_CONTROLLER.flushSave);
     test('PERFORMANCE_CONTROLLER','Bộ điều phối hiệu năng dùng cache trong phiên',()=>window.KienNangPerformance?.version===STEP7_PERFORMANCE_VERSION&&typeof step7ScheduleRender==='function'&&typeof step7MergeListenerChanges==='function');
     return {ok:results.every(item=>item.ok),passed:results.filter(item=>item.ok).length,total:results.length,results};
